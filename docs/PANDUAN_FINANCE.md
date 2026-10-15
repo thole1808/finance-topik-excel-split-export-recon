@@ -21,8 +21,10 @@ File contoh tidak menjadi sumber transaksi tetap.
    preview selesai dimuat.
 3. Pada **File RB**, pilih workbook Rajabiller berformat `.xlsx`; tunggu
    preview selesai dimuat.
-4. Tinjau tab **Preview LB** dan **Preview RB**. Maksimal 100 baris pertama per
-   file ditampilkan.
+4. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
+   seluruh baris file: pilih jumlah baris per halaman lalu gunakan
+   **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
+   nilai di semua kolom, termasuk transaksi pada halaman lain.
 5. Untuk koreksi, klik ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah
    fokus untuk menerapkan; **Esc** membatalkan. Perubahan pada baris preview
    ikut diterapkan ke export. Baris lain tetap berasal dari file sumber.
@@ -71,10 +73,11 @@ dibaca. Nominal transaksi tetap berasal dari input, sedangkan fee menggunakan
 profil kode produk dan nominal bila tersedia. Untuk kombinasi baru, aplikasi
 menggunakan tabel fee fallback, lalu field fee LB jika tersedia.
 
-Preview hanya menampilkan 100 baris pertama untuk memudahkan pemeriksaan.
-Perubahan yang disimpan di preview memengaruhi baris yang sama pada sheet
-input dan hasil gabungan; nilai perhitungan terkait akan dibuat ulang oleh
-exporter. File sumber tidak dimodifikasi.
+Preview menampilkan data dalam halaman agar file besar tetap mudah ditinjau.
+Pencarian mencakup semua baris, bukan hanya halaman aktif. Perubahan yang
+disimpan di preview memengaruhi baris yang sama pada sheet input dan hasil
+gabungan; nilai perhitungan terkait akan dibuat ulang oleh exporter. File
+sumber tidak dimodifikasi.
 
 ## Pemeriksaan sebelum memakai hasil
 

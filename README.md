@@ -1,5 +1,8 @@
 # Recon Builder — LB & RB
 
+**Versi aplikasi: 1.1.0** — catatan versi dan panduan agent:
+[docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
+
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
 lalu menghasilkan file recon dengan sheet **Summary**, **Records**, **LB**, dan
 **RB**. Layout, lebar kolom, format angka, warna, serta rumus mengacu pada
@@ -26,9 +29,10 @@ Nilai dan jumlah transaksi dibaca ulang dari file yang dipilih setiap kali
 aplikasi dijalankan; tidak ada tanggal atau jumlah baris transaksi yang
 ditetapkan tetap.
 
-Setiap tab Preview LB/RB menampilkan maksimal 100 baris pertama. Klik ganda
-sebuah sel untuk mengeditnya; tekan Enter atau pindah sel untuk menerapkan,
-atau Esc untuk membatalkan. Perubahan tersebut ikut masuk ke export.
+Preview dapat menelusuri semua baris: pilih ukuran halaman 100/250/500/1000,
+gunakan Sebelumnya/Berikutnya, atau cari di semua kolom seluruh file. Klik
+ganda sel untuk mengedit; Enter atau pindah sel menerapkan, Esc membatalkan.
+Perubahan valid ikut masuk ke export.
 
 Untuk command line:
 
@@ -56,6 +60,17 @@ DMG tidak perlu memasang paket Python secara terpisah. Script build memakai
 `.venv` proyek bila tersedia; interpreter lain dapat ditentukan lewat variabel
 `PYTHON`.
 
+## Installer Windows
+
+Build Windows dijalankan di runner Windows melalui GitHub Actions:
+
+- Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
+  `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
+- Untuk installer rilis, push tag versi seperti `v1.1.0`. Workflow membuat
+  GitHub Release dengan `ReconBuilder-Setup.exe`.
+- Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
+  Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
+
 ## Struktur source
 
 ```text
@@ -64,11 +79,16 @@ recon_exporter.py              # Entry point CLI kompatibel
 src/
   app.py                       # Antarmuka Tkinter
   recon_exporter.py            # Baca, transformasi Polars, ekspor XlsxWriter
+  version.py                   # Versi aplikasi (sumber tunggal)
   fee_tables.json              # Fee fallback untuk kode produk baru
   reference_data.json          # Nama produk dan fee dari file acuan
   ref_styles.json              # Warna, format angka, font, dan lebar kolom acuan
 scripts/
   build_dmg.sh                 # Build .app dan .dmg di macOS
+  windows/
+    ReconBuilder.iss           # Konfigurasi installer Inno Setup
+.github/workflows/
+  windows-installer.yml        # Build Windows artifact/release
 ```
 
 ## Catatan

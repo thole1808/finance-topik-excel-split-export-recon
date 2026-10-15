@@ -20,8 +20,10 @@ from src.recon_exporter import (
     build_recon_workbook,
     read_raw_excel,
 )
+from src.version import __version__
 
-PREVIEW_LIMIT = 100
+PREVIEW_PAGE_SIZE = 500
+PREVIEW_PAGE_SIZES = ("100", "250", "500", "1000")
 SOURCE_HEADERS = {
     "LB": {value: key for key, value in LB_COL_MAP.items()},
     "RB": {value: key for key, value in RB_COL_MAP.items()},
@@ -31,7 +33,7 @@ SOURCE_HEADERS = {
 class ReconApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Recon Builder | Finance")
+        self.title(f"Recon Builder | Finance v{__version__}")
         self.geometry("1180x760")
         self.minsize(850, 580)
 
@@ -46,6 +48,11 @@ class ReconApp(tk.Tk):
         self._frames: dict[str, pl.DataFrame | None] = {"LB": None, "RB": None}
         self._preview_widgets: dict[str, ttk.Treeview] = {}
         self._row_labels: dict[str, tk.StringVar] = {}
+        self._search_vars: dict[str, tk.StringVar] = {}
+        self._page_vars: dict[str, tk.StringVar] = {}
+        self._page_size_vars: dict[str, tk.StringVar] = {}
+        self._filtered_indices: dict[str, list[int]] = {"LB": [], "RB": []}
+        self._page_index = {"LB": 0, "RB": 0}
         self._edit_counts: dict[str, set[tuple[int, str]]] = {
             "LB": set(),
             "RB": set(),
@@ -95,9 +102,15 @@ class ReconApp(tk.Tk):
         ).grid(row=0, column=0, sticky="w")
         ttk.Label(
             header,
-            text="Pilih, tinjau, dan koreksi data sebelum membuat workbook recon.",
+            text=(
+                "Pilih, cari, tinjau, dan koreksi seluruh data sebelum "
+                "membuat workbook recon."
+            ),
             foreground="#536273",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+        ttk.Label(
+            header, text=f"Finance · v{__version__}", foreground="#2878C7"
+        ).grid(row=0, column=1, sticky="e", padx=(10, 0))
 
         content = ttk.Frame(self, padding=(20, 8, 20, 8))
         content.grid(row=1, column=0, sticky="nsew")
@@ -119,7 +132,7 @@ class ReconApp(tk.Tk):
 
         preview = ttk.LabelFrame(
             content,
-            text=f"2. Preview & edit — maksimal {PREVIEW_LIMIT} baris per file",
+            text="2. Preview & edit — seluruh baris dapat ditinjau",
             padding=10,
         )
         preview.grid(row=1, column=0, sticky="nsew")
@@ -131,8 +144,9 @@ class ReconApp(tk.Tk):
         self._add_preview_tab("RB", "Preview RB")
         ttk.Label(
             preview,
-            text="Klik ganda sel untuk mengedit. Tekan Enter untuk menerapkan "
-            "atau Esc untuk membatalkan. Perubahan ikut diekspor.",
+            text="Cari mencakup seluruh baris transaksi. Klik ganda sel untuk "
+            "mengedit; Enter/pindah sel menerapkan, Esc membatalkan. "
+            "Perubahan ikut diekspor.",
             foreground="#536273",
         ).grid(row=1, column=0, sticky="w", pady=(8, 0))
 
@@ -178,11 +192,43 @@ class ReconApp(tk.Tk):
     def _add_preview_tab(self, side: str, title: str) -> None:
         frame = ttk.Frame(self.notebook, padding=8)
         frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(1, weight=1)
+        frame.rowconfigure(2, weight=1)
         row_label = tk.StringVar(value="Belum ada file dipilih.")
+        search_var = tk.StringVar()
+        page_var = tk.StringVar(value="Halaman 0 / 0")
+        page_size_var = tk.StringVar(value=str(PREVIEW_PAGE_SIZE))
         self._row_labels[side] = row_label
-        ttk.Label(frame, textvariable=row_label).grid(
-            row=0, column=0, sticky="w", pady=(0, 6)
+        self._search_vars[side] = search_var
+        self._page_vars[side] = page_var
+        self._page_size_vars[side] = page_size_var
+
+        controls = ttk.Frame(frame)
+        controls.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        controls.columnconfigure(0, weight=1)
+        search_entry = ttk.Entry(controls, textvariable=search_var)
+        search_entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        search_entry.bind("<Return>", partial(self._search_from_key, side))
+        ttk.Button(
+            controls, text="Cari seluruh data",
+            command=lambda current=side: self._apply_search(current),
+        ).grid(row=0, column=1, padx=3)
+        ttk.Button(
+            controls, text="Hapus",
+            command=lambda current=side: self._clear_search(current),
+        ).grid(row=0, column=2, padx=3)
+        ttk.Label(controls, text="Baris/halaman").grid(
+            row=0, column=3, padx=(10, 5)
+        )
+        page_size = ttk.Combobox(
+            controls,
+            textvariable=page_size_var,
+            values=PREVIEW_PAGE_SIZES,
+            state="readonly",
+            width=7,
+        )
+        page_size.grid(row=0, column=4, padx=(0, 8))
+        page_size.bind(
+            "<<ComboboxSelected>>", partial(self._page_size_selected, side)
         )
 
         tree = ttk.Treeview(frame, show="headings", selectmode="browse")
@@ -193,13 +239,27 @@ class ReconApp(tk.Tk):
         tree.configure(
             yscrollcommand=vertical.set, xscrollcommand=horizontal.set
         )
-        tree.grid(row=1, column=0, sticky="nsew")
-        vertical.grid(row=1, column=1, sticky="ns")
-        horizontal.grid(row=2, column=0, sticky="ew")
+        tree.grid(row=2, column=0, sticky="nsew")
+        vertical.grid(row=2, column=1, sticky="ns")
+        horizontal.grid(row=3, column=0, sticky="ew")
         tree.bind("<Double-1>", lambda event, current=side: self._begin_edit(
             current, event
         ))
         self._preview_widgets[side] = tree
+        navigation = ttk.Frame(frame)
+        navigation.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        navigation.columnconfigure(1, weight=1)
+        ttk.Button(
+            navigation, text="← Sebelumnya",
+            command=lambda current=side: self._change_page(current, -1),
+        ).grid(row=0, column=0, sticky="w")
+        ttk.Label(navigation, textvariable=page_var).grid(
+            row=0, column=1, sticky="ew"
+        )
+        ttk.Button(
+            navigation, text="Berikutnya →",
+            command=lambda current=side: self._change_page(current, 1),
+        ).grid(row=0, column=2, sticky="e")
         self.notebook.add(frame, text=title)
 
     def _pick_xlsx(self, title: str) -> str:
@@ -248,6 +308,9 @@ class ReconApp(tk.Tk):
         token = self._load_tokens[side]
         self._loading.add(side)
         self._frames[side] = None
+        self._filtered_indices[side] = []
+        self._page_index[side] = 0
+        self._search_vars[side].set("")
         self._edit_counts[side].clear()
         self._invalid_edits = {
             edit for edit in self._invalid_edits if edit[0] != side
@@ -293,6 +356,8 @@ class ReconApp(tk.Tk):
             return
 
         self._frames[side] = frame
+        self._filtered_indices[side] = list(range(frame.height))
+        self._page_index[side] = 0
         self._render_preview(side)
         self.status.set(f"File {side} siap ditinjau dan diedit.")
 
@@ -300,6 +365,7 @@ class ReconApp(tk.Tk):
         tree = self._preview_widgets[side]
         tree.delete(*tree.get_children())
         tree.configure(columns=())
+        self._page_vars[side].set("Halaman 0 / 0")
 
     @staticmethod
     def _display_value(value: Any) -> str:
@@ -323,17 +389,84 @@ class ReconApp(tk.Tk):
             )
             tree.column(column, width=145, minwidth=90, stretch=False)
 
-        for index, row in enumerate(frame.head(PREVIEW_LIMIT).iter_rows(named=True)):
+        page_size = int(self._page_size_vars[side].get())
+        indices = self._filtered_indices[side]
+        page_count = (len(indices) + page_size - 1) // page_size
+        self._page_index[side] = min(
+            self._page_index[side], max(0, page_count - 1)
+        )
+        page_start = self._page_index[side] * page_size
+        page_indices = indices[page_start:page_start + page_size]
+        page = frame[page_indices].iter_rows(named=True)
+        for index, row in zip(page_indices, page):
             values = [self._display_value(row.get(column)) for column in columns]
             tree.insert("", "end", iid=str(index), values=values)
 
-        shown = min(frame.height, PREVIEW_LIMIT)
         edited = len(self._edit_counts[side])
         suffix = f" · {edited} sel diedit" if edited else ""
-        self._row_labels[side].set(
-            f"{side}: {frame.height:,} baris valid · menampilkan "
-            f"{shown:,} baris pertama{suffix}"
+        if self._search_vars[side].get().strip():
+            description = (
+                f"{side}: {len(indices):,} hasil pencarian dari "
+                f"{frame.height:,} baris"
+            )
+        else:
+            description = f"{side}: {frame.height:,} baris"
+        self._row_labels[side].set(f"{description}{suffix}")
+        first = page_start + 1 if page_indices else 0
+        last = page_start + len(page_indices)
+        self._page_vars[side].set(
+            f"Baris {first:,}–{last:,} dari {len(indices):,} · "
+            f"Halaman {self._page_index[side] + 1 if page_count else 0} / "
+            f"{page_count:,}"
         )
+
+    def _change_page(self, side: str, offset: int) -> None:
+        if self._editor is not None and self._editor_target is not None:
+            if not self._commit_edit(*self._editor_target, self._editor):
+                return
+        page_count = (
+            len(self._filtered_indices[side])
+            + int(self._page_size_vars[side].get()) - 1
+        ) // int(self._page_size_vars[side].get())
+        self._page_index[side] = max(
+            0, min(page_count - 1, self._page_index[side] + offset)
+        )
+        self._render_preview(side)
+
+    def _page_size_changed(self, side: str) -> None:
+        self._page_index[side] = 0
+        self._render_preview(side)
+
+    def _page_size_selected(
+        self, side: str, event: tk.Event[Any]
+    ) -> None:
+        event.widget.get()
+        self._page_size_changed(side)
+
+    def _search_from_key(self, side: str, event: tk.Event[Any]) -> str:
+        if event.keysym == "Return":
+            self._apply_search(side)
+        return "break"
+
+    def _apply_search(self, side: str) -> None:
+        if self._editor is not None and self._editor_target is not None:
+            if not self._commit_edit(*self._editor_target, self._editor):
+                return
+        frame = self._frames[side]
+        if frame is None:
+            return
+        query = self._search_vars[side].get().strip().casefold()
+        if not query:
+            matches = list(range(frame.height))
+        else:
+            matches = self._search_indices(frame, query)
+        self._filtered_indices[side] = matches
+        self._page_index[side] = 0
+        self._render_preview(side)
+
+    def _clear_search(self, side: str) -> None:
+        self._search_vars[side].set("")
+        self._apply_search(side)
 
     def _begin_edit(self, side: str, event: tk.Event) -> None:
         if self._busy or side in self._loading:
@@ -349,7 +482,9 @@ class ReconApp(tk.Tk):
         index = int(item)
         column_index = int(column_id[1:]) - 1
         columns = list(tree["columns"])
-        if index >= PREVIEW_LIMIT or column_index >= len(columns):
+        if index >= (self._frames[side].height if self._frames[side] else 0):
+            return
+        if column_index >= len(columns):
             return
         box = tree.bbox(item, column_id)
         if not box:
@@ -416,6 +551,11 @@ class ReconApp(tk.Tk):
 
         self._invalid_edits.discard((side, row_index, column))
         self._edit_counts[side].add((row_index, column))
+        query = self._search_vars[side].get().strip()
+        if query:
+            self._filtered_indices[side] = self._search_indices(
+                self._frames[side], query
+            )
         self._render_preview(side)
         self.status.set(
             f"Perubahan pada file {side} diterapkan dan akan ikut diekspor."
@@ -454,6 +594,27 @@ class ReconApp(tk.Tk):
         return pl.Series(
             "_edit", [raw_value], dtype=pl.String
         ).cast(dtype, strict=True).item()
+
+    @staticmethod
+    def _search_indices(frame: pl.DataFrame, query: str) -> list[int]:
+        columns = [name for name in frame.columns if name != "_row_idx"]
+        contains_query = pl.any_horizontal(
+            pl.col(column)
+            .cast(pl.String)
+            .str.to_lowercase()
+            .str.contains(query.casefold(), literal=True)
+            .fill_null(False)
+            for column in columns
+        )
+        return (
+            frame.select(pl.int_range(pl.len()).alias("_index"))
+            .with_columns(
+                frame.select(contains_query).to_series().alias("_match")
+            )
+            .filter(pl.col("_match"))
+            .get_column("_index")
+            .to_list()
+        )
 
     def _open_output_folder(self) -> None:
         folder = Path(self.out_path.get()).expanduser().parent

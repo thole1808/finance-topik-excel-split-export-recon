@@ -13,6 +13,8 @@ from typing import Any
 import polars as pl
 import xlsxwriter
 
+from src.version import __version__
+
 
 def _resource_path(name: str) -> Path:
     bundle_root = getattr(sys, "_MEIPASS", None)
@@ -351,6 +353,26 @@ def _format_for(
     return cache[key]
 
 
+def _semantic_highlight(
+    sheet: str, column: int, value: Any
+) -> dict[str, Any] | None:
+    recon_columns = {
+        "Records": {14},
+        "LB": {14, 53},
+        "RB": {14, 63},
+    }
+    status_columns = {"LB": {18}, "RB": {16}}
+    is_matched = column in recon_columns.get(sheet, set()) and value == "MATCHED"
+    is_success = column in status_columns.get(sheet, set()) and value is True
+    if is_matched or is_success:
+        return {
+            "bg_color": "#C6EFCE",
+            "font_color": "#006100",
+            "pattern": 1,
+        }
+    return None
+
+
 def _write_cell(
     worksheet: xlsxwriter.worksheet.Worksheet,
     workbook: xlsxwriter.Workbook,
@@ -362,9 +384,19 @@ def _write_cell(
     formula: str | None = None,
     cached_value: Any = None,
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format] | None = None,
+    format_overrides: Mapping[str, Any] | None = None,
 ) -> None:
     cache = format_cache if format_cache is not None else {}
     cell_format = _format_for(workbook, sheet, template_row, column, cache)
+    if format_overrides:
+        style = (
+            REFERENCE_STYLES[sheet]["styles"]
+            .get(str(template_row), {})
+            .get(str(column), {})
+        )
+        options = _format_options(style)
+        options.update(format_overrides)
+        cell_format = workbook.add_format(options)
     if formula is not None:
         worksheet.write_formula(row, column - 1, formula, cell_format, cached_value)
         return
@@ -762,6 +794,11 @@ def _write_wide_sheet(
                 formula=formula_data[0] if formula_data else None,
                 cached_value=formula_data[1] if formula_data else None,
                 format_cache=format_cache,
+                format_overrides=_semantic_highlight(
+                    sheet,
+                    column,
+                    formula_data[1] if formula_data else values.get(column),
+                ),
             )
 
     # Match the reference workbook's fee/amount total formulas below each data block.
@@ -817,6 +854,7 @@ def build_recon_workbook(
         "subject": "Reconciliation workbook",
         "author": "Recon Builder",
     })
+    workbook.set_custom_property("Recon Builder Version", __version__)
     format_cache: dict[
         tuple[str, int, int], xlsxwriter.format.Format
     ] = {}
@@ -845,6 +883,9 @@ def build_recon_workbook(
             _write_cell(
                 ws_records, workbook, "Records", index, column, 2,
                 record.get(key), format_cache=format_cache,
+                format_overrides=_semantic_highlight(
+                    "Records", column, record.get(key)
+                ),
             )
     ws_records.autofilter(0, 0, len(records), len(RECORDS_HEADERS) - 1)
 
