@@ -35,6 +35,7 @@ jobs:
       - name: Build standalone Windows application
         shell: pwsh
         run: |
+          $workspace = (Get-Location).Path
           python -m PyInstaller `
             --clean `
             --noconfirm `
@@ -43,10 +44,10 @@ jobs:
             --name ReconBuilder `
             --collect-all fastexcel `
             --hidden-import fastexcel `
-            --paths . `
-            --add-data "src/ref_styles.json;src" `
-            --add-data "src/fee_tables.json;src" `
-            --add-data "src/reference_data.json;src" `
+            --paths "$workspace" `
+            --add-data "$workspace\src\ref_styles.json;src" `
+            --add-data "$workspace\src\fee_tables.json;src" `
+            --add-data "$workspace\src\reference_data.json;src" `
             --distpath dist `
             --workpath build/pyinstaller `
             --specpath build `

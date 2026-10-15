@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.0**
+**Versi saat ini: 1.1.1**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -33,6 +33,11 @@ memodifikasi kode:
 - Workflow Windows membangun installer Inno Setup; tag versi menghasilkan
   GitHub Release berisi installer.
 
+## Perbaikan versi 1.1.1
+
+- Memperbaiki path file referensi dalam Windows build agar PyInstaller dapat
+  menemukannya ketika file spec berada di direktori build.
+
 ## Gambar yang tersedia
 
 Gambar berikut adalah diagram alur aplikasi yang sama, disediakan untuk
@@ -49,6 +54,7 @@ ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.1 | Memperbaiki path resource pada build installer Windows. |
 | 1.1.0 | Preview/pencarian seluruh data, highlight status hijau, versioning, dan installer Windows otomatis. |
 | 1.0.0 | Export workbook LB/RB menggunakan Polars dan XlsxWriter; UI dan build macOS. |
 
@@ -56,7 +62,7 @@ ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.0`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.1`). Tag
   menjalankan Windows build dan menerbitkan installer ke GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.
