@@ -1,0 +1,4 @@
+polars>=1.0
+fastexcel>=0.11
+xlsxwriter>=3.2
+pyinstaller>=6.0

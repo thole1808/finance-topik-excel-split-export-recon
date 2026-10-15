@@ -1,0 +1,19 @@
+# Source artifacts and local environments
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Generated application builds
+/build/
+/dist/
+
+# Legacy root-level copies; the application uses data under src/
+/fee_tables.json
+/ref_styles.json
+
+# Finance workbooks may contain sensitive transaction/customer data
+*.xlsx
+*.xls
+*.xlsm
+*.csv
