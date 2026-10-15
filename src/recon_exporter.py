@@ -433,7 +433,6 @@ def _write_summary(
         "Unmatched (Loket Bayar Only)",
     )
     for summary_row, category in enumerate(categories, start=2):
-        excel_row = summary_row
         write_row = summary_row - 1
         _write_cell(
             worksheet, workbook, "Summary", write_row, 1, 2, category,

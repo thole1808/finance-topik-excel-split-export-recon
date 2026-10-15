@@ -8,6 +8,9 @@ lalu menghasilkan file recon dengan sheet **Summary**, **Records**, **LB**, dan
 Panduan pengguna Finance (alur, format input, isi output, dan pengecekan):
 [docs/PANDUAN_FINANCE.md](docs/PANDUAN_FINANCE.md).
 
+Gambar alur: [PNG](docs/flow-recon-finance.png) ·
+[JPG](docs/flow-recon-finance.jpg).
+
 ## Menjalankan dari source
 
 Python 3.10+ direkomendasikan.
@@ -22,6 +25,10 @@ Pilih file LB dan RB berformat Excel `.xlsx`, tentukan nama output, lalu klik
 Nilai dan jumlah transaksi dibaca ulang dari file yang dipilih setiap kali
 aplikasi dijalankan; tidak ada tanggal atau jumlah baris transaksi yang
 ditetapkan tetap.
+
+Setiap tab Preview LB/RB menampilkan maksimal 100 baris pertama. Klik ganda
+sebuah sel untuk mengeditnya; tekan Enter atau pindah sel untuk menerapkan,
+atau Esc untuk membatalkan. Perubahan tersebut ikut masuk ke export.
 
 Untuk command line:
 

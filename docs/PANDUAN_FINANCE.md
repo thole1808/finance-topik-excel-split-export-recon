@@ -5,37 +5,30 @@ memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 
 ## Gambaran alur
 
-```mermaid
-flowchart TD
-    A["Pilih file LB (.xlsx)"] --> C["Validasi file dan header"]
-    B["Pilih file RB (.xlsx)"] --> C
-    C --> D["Baca sheet pertama dengan Polars"]
-    D --> E["Buang baris footer RB yang No-nya bukan angka"]
-    E --> F["Susun Records dan hitung fee/status"]
-    F --> G["Tulis workbook dengan XlsxWriter"]
-    G --> H["Summary"]
-    G --> I["Records gabungan"]
-    G --> J["Sheet LB"]
-    G --> K["Sheet RB"]
-    H --> L["Periksa hasil, lalu simpan/arsipkan"]
-    I --> L
-    J --> L
-    K --> L
-```
+![Diagram alur Recon Builder untuk Finance](flow-recon-finance.png)
 
-Alur singkat: **Pilih LB + RB → validasi → proses data → export Excel →
-periksa Summary dan transaksi**. Jumlah baris, tanggal, nominal, dan nilai lain
-diambil dari file yang dipilih setiap kali proses berjalan. File contoh tidak
-menjadi sumber transaksi tetap.
+Versi JPG tersedia di [flow-recon-finance.jpg](flow-recon-finance.jpg).
+
+Alur singkat: **Pilih LB + RB → validasi → preview/koreksi → proses data →
+export Excel → periksa Summary dan transaksi**. Jumlah baris, tanggal, nominal,
+dan nilai lain diambil dari file yang dipilih setiap kali proses berjalan.
+File contoh tidak menjadi sumber transaksi tetap.
 
 ## Menjalankan aplikasi
 
 1. Buka **ReconBuilder.app** (atau jalankan `python3 app.py` dari source).
-2. Pada **File LB**, pilih workbook Loket Bayar berformat `.xlsx`.
-3. Pada **File RB**, pilih workbook Rajabiller berformat `.xlsx`.
-4. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
-5. Klik **Generate Recon** dan tunggu pesan sukses.
-6. Buka file output. Mulai pemeriksaan dari sheet **Summary**, lalu telusuri
+2. Pada **File LB**, pilih workbook Loket Bayar berformat `.xlsx`; tunggu
+   preview selesai dimuat.
+3. Pada **File RB**, pilih workbook Rajabiller berformat `.xlsx`; tunggu
+   preview selesai dimuat.
+4. Tinjau tab **Preview LB** dan **Preview RB**. Maksimal 100 baris pertama per
+   file ditampilkan.
+5. Untuk koreksi, klik ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah
+   fokus untuk menerapkan; **Esc** membatalkan. Perubahan pada baris preview
+   ikut diterapkan ke export. Baris lain tetap berasal dari file sumber.
+6. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
+7. Klik **Generate Recon** dan tunggu pesan sukses.
+8. Buka file output. Mulai pemeriksaan dari sheet **Summary**, lalu telusuri
    detail pada **Records**, **LB**, dan **RB**.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
@@ -77,6 +70,11 @@ tanggal, warna, serta lebar kolom mengikuti workbook acuan agar nilai mudah
 dibaca. Nominal transaksi tetap berasal dari input, sedangkan fee menggunakan
 profil kode produk dan nominal bila tersedia. Untuk kombinasi baru, aplikasi
 menggunakan tabel fee fallback, lalu field fee LB jika tersedia.
+
+Preview hanya menampilkan 100 baris pertama untuk memudahkan pemeriksaan.
+Perubahan yang disimpan di preview memengaruhi baris yang sama pada sheet
+input dan hasil gabungan; nilai perhitungan terkait akan dibuat ulang oleh
+exporter. File sumber tidak dimodifikasi.
 
 ## Pemeriksaan sebelum memakai hasil
 
