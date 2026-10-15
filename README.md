@@ -50,7 +50,11 @@ Hasilnya:
 - `dist/ReconBuilder.dmg`
 
 DMG berisi aplikasi desktop mandiri; spreadsheet LB/RB dipilih saat aplikasi
-dijalankan dan tidak dibundel bersama aplikasi.
+dijalankan dan tidak dibundel bersama aplikasi. Engine Excel Polars
+(`fastexcel`/Calamine) dikemas eksplisit ke dalam aplikasi, sehingga pengguna
+DMG tidak perlu memasang paket Python secara terpisah. Script build memakai
+`.venv` proyek bila tersedia; interpreter lain dapat ditentukan lewat variabel
+`PYTHON`.
 
 ## Struktur source
 
