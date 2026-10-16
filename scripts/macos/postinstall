@@ -1,17 +1,29 @@
 #!/bin/bash
 set -u
 
-APP_PATH="/Applications/ReconBuilder.app"
+APP_PATH="/Applications/Recon Builder.app"
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+CONSOLE_USER="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null || true)"
 CONSOLE_UID="$(/usr/bin/stat -f%u /dev/console 2>/dev/null || true)"
 
-if [[ -d "$APP_PATH" && -x "$LSREGISTER" ]]; then
+if [[ -d "$APP_PATH" ]]; then
     if [[ -n "$CONSOLE_UID" && "$CONSOLE_UID" != "0" ]]; then
-        /bin/launchctl asuser "$CONSOLE_UID" "$LSREGISTER" -f "$APP_PATH" \
-            >/dev/null 2>&1 || "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
+        USER_HOME="$(/usr/bin/dscl . -read "/Users/$CONSOLE_USER" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+        if [[ -n "$USER_HOME" ]]; then
+            DESKTOP_APP="$USER_HOME/Desktop/Recon Builder.app"
+            /bin/mkdir -p "$USER_HOME/Desktop"
+            if [[ ! -e "$DESKTOP_APP" || -L "$DESKTOP_APP" ]]; then
+                /bin/ln -sfn "$APP_PATH" "$DESKTOP_APP"
+                /usr/sbin/chown -h "$CONSOLE_USER" "$DESKTOP_APP" 2>/dev/null || true
+            fi
+        fi
+        if [[ -x "$LSREGISTER" ]]; then
+            /bin/launchctl asuser "$CONSOLE_UID" "$LSREGISTER" -f "$APP_PATH" \
+                >/dev/null 2>&1 || "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
+        fi
         /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/killall Dock \
             >/dev/null 2>&1 || true
-    else
+    elif [[ -x "$LSREGISTER" ]]; then
         "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
     fi
 fi

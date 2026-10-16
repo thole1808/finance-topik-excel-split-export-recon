@@ -69,10 +69,13 @@ PKG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.pkg"
     -c "Add :CFBundleVersion string $APP_VERSION" \
     "$APP_BUNDLE/Contents/Info.plist"
 codesign --force --deep --sign - "$APP_BUNDLE"
+PKG_ROOT="$BUILD_DIR/pkgroot"
+mkdir -p "$PKG_ROOT/Applications"
+ditto --rsrc --extattr "$APP_BUNDLE" "$PKG_ROOT/Applications/Recon Builder.app"
 pkgbuild \
-    --component "$APP_BUNDLE" \
+    --root "$PKG_ROOT" \
     --scripts "$PROJECT_ROOT/scripts/macos" \
-    --install-location /Applications \
+    --install-location / \
     --identifier com.devops.reconbuilder \
     --version "$APP_VERSION" \
     "$PROJECT_ROOT/dist/$PKG_NAME"

@@ -207,11 +207,36 @@ def _start_macos_update(dmg_path: Path, process_id: int) -> None:
         detail = getattr(exc, "stderr", "") or str(exc)
         raise UpdateError(f"DMG update tidak dapat dibuka: {detail}") from exc
     source_bundle = next(mountpoint.glob("*.app"), None)
+    source_package = next(mountpoint.glob("*.pkg"), None)
+    target = app_bundle
+    if source_package is not None:
+        target = Path("/Applications/Recon Builder.app")
+        command = " ".join((
+            f"while /bin/kill -0 {int(process_id)} 2>/dev/null; do /bin/sleep 1; done;",
+            f"trap '/usr/bin/hdiutil detach {shlex.quote(str(mountpoint))} -quiet >/dev/null 2>&1 || true' EXIT;",
+            f"/usr/sbin/installer -pkg {shlex.quote(str(source_package))} -target / &&",
+            f"/bin/launchctl asuser $(/usr/bin/stat -f%u /dev/console) "
+            f"/usr/bin/open {shlex.quote(str(target))}",
+        ))
+        try:
+            applescript_command = command.replace("\\", "\\\\").replace('"', '\\"')
+            applescript = f'do shell script "{applescript_command}" with administrator privileges'
+            subprocess.Popen(
+                ["/usr/bin/osascript", "-e", applescript],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError as exc:
+            subprocess.run(["/usr/bin/hdiutil", "detach", str(mountpoint), "-quiet"], check=False)
+            shutil.rmtree(mountpoint, ignore_errors=True)
+            raise UpdateError(f"Updater macOS tidak dapat dijalankan: {exc}") from exc
+        return
     if source_bundle is None:
         subprocess.run(["/usr/bin/hdiutil", "detach", str(mountpoint), "-quiet"], check=False)
         shutil.rmtree(mountpoint, ignore_errors=True)
         raise UpdateError("DMG tidak berisi ReconBuilder.app.")
-    target = app_bundle
     staging = target.with_name(f".{target.name}.update")
     backup = target.with_name(f".{target.name}.previous")
     command = " ".join((

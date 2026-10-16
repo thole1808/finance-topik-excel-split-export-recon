@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.9**
+**Versi saat ini: 1.2.10**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -161,6 +161,15 @@ pengguna meminta penerbitan release.
   aplikasi. Tab **File Hasil** menampilkan hasil yang masih ada, membuka workbook,
   atau menyalin workbook ke lokasi pilihan. Log SQLite tetap menjadi indeks
   daftar file; workbook tidak dimasukkan ke database.
+
+## Implementasi 1.2.10 — pemasangan Mac eksplisit dan shortcut Desktop
+
+- macOS PKG memakai payload root eksplisit agar app terpasang ke
+  `/Applications/Recon Builder.app`, tanpa bergantung pada component bundle
+  placement. Postinstall membuat shortcut symlink di Desktop pengguna aktif,
+  mendaftarkan Launch Services, dan menyegarkan Dock.
+- Updater macOS menerima DMG yang berisi PKG: setelah verifikasi checksum dan
+  persetujuan admin, memasang PKG lalu membuka lagi app terpasang.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -465,7 +474,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.9, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.10, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -481,6 +490,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.10 | PKG menyalin app eksplisit ke Applications, membuat shortcut Desktop dan mendaftarkan Launchpad; updater memasang PKG. |
 | 1.2.9 | Mendaftarkan app Mac ke Launchpad; tab File Hasil, penyimpanan default lokal aplikasi, dan simpan salinan. |
 | 1.2.8 | Watermark menggunakan pola batik floral Indonesia transparan. |
 | 1.2.7 | Watermark motif Kawung dan Parang khas batik Indonesia, transparan. |
