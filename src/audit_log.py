@@ -30,6 +30,16 @@ def audit_directory() -> Path:
     return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "recon-builder"
 
 
+def generated_files_directory() -> Path:
+    """Return the persistent per-user location for generated workbooks."""
+    if platform.system() == "Windows":
+        root = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData/Local"))
+        return root / "Recon Builder" / "Generated Files"
+    if platform.system() == "Darwin":
+        return audit_directory() / "Generated Files"
+    return audit_directory() / "Generated Files"
+
+
 class AuditLog:
     """Persist app activity locally and detect edits to prior log entries."""
 
@@ -83,6 +93,27 @@ class AuditLog:
             if output_path:
                 return Path(output_path)
         return None
+
+    def generated_outputs(self, limit: int = 1000) -> list[dict[str, Any]]:
+        """Return successful output records, newest first, for the results tab."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT occurred_at, details_json FROM events "
+                "WHERE action = 'generate_succeeded' ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        outputs: list[dict[str, Any]] = []
+        for row in rows:
+            details = json.loads(row["details_json"])
+            output_path = details.get("output_path")
+            if not output_path:
+                continue
+            outputs.append({
+                "occurred_at": row["occurred_at"],
+                "path": Path(output_path),
+                "size_bytes": details.get("size_bytes", 0),
+            })
+        return outputs
 
     @staticmethod
     def _canonical(payload: dict[str, Any]) -> str:

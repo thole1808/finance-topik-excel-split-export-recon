@@ -1,0 +1,19 @@
+#!/bin/bash
+set -u
+
+APP_PATH="/Applications/ReconBuilder.app"
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+CONSOLE_UID="$(/usr/bin/stat -f%u /dev/console 2>/dev/null || true)"
+
+if [[ -d "$APP_PATH" && -x "$LSREGISTER" ]]; then
+    if [[ -n "$CONSOLE_UID" && "$CONSOLE_UID" != "0" ]]; then
+        /bin/launchctl asuser "$CONSOLE_UID" "$LSREGISTER" -f "$APP_PATH" \
+            >/dev/null 2>&1 || "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
+        /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/killall Dock \
+            >/dev/null 2>&1 || true
+    else
+        "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
+    fi
+fi
+
+exit 0

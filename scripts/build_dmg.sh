@@ -63,11 +63,15 @@ PKG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.pkg"
     -c "Set :CFBundleDisplayName Recon Builder" \
     "$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy \
+    -c "Set :CFBundleIdentifier com.devops.reconbuilder" \
+    "$APP_BUNDLE/Contents/Info.plist"
+/usr/libexec/PlistBuddy \
     -c "Add :CFBundleVersion string $APP_VERSION" \
     "$APP_BUNDLE/Contents/Info.plist"
 codesign --force --deep --sign - "$APP_BUNDLE"
 pkgbuild \
     --component "$APP_BUNDLE" \
+    --scripts "$PROJECT_ROOT/scripts/macos" \
     --install-location /Applications \
     --identifier com.devops.reconbuilder \
     --version "$APP_VERSION" \

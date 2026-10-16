@@ -7,6 +7,7 @@ import threading
 import datetime as dt
 import os
 import sys
+import shutil
 import time
 import json
 import getpass
@@ -27,7 +28,7 @@ from src.recon_exporter import (
     read_recon_reference,
     read_raw_excel,
 )
-from src.audit_log import AuditLog
+from src.audit_log import AuditLog, generated_files_directory
 from src.announcements import announce
 from src.localization import format_local_datetime
 from src.version import __version__
@@ -63,7 +64,7 @@ class ReconApp(tk.Tk):
         self.recon_path = tk.StringVar()
         self.backdate_path = tk.StringVar()
         self.out_path = tk.StringVar(
-            value=str(Path.home() / "Desktop" / "Recon Builder Output")
+            value=str(generated_files_directory())
         )
         self.last_output_path: Path | None = self.audit.last_successful_output()
         self._pending_output_path: Path | None = None
@@ -102,6 +103,8 @@ class ReconApp(tk.Tk):
         self._editor_target: tuple[str, int, str] | None = None
         self._terminal: tk.Text | None = None
         self._history_tree: ttk.Treeview | None = None
+        self._generated_files_tree: ttk.Treeview | None = None
+        self._generated_file_paths: dict[str, Path] = {}
         self._clock_var = tk.StringVar()
         self._release_status_var = tk.StringVar(
             value=f"APP v{__version__}  ·  RELEASE v{__version__}"
@@ -321,6 +324,7 @@ class ReconApp(tk.Tk):
         self._add_preview_tab("Backdate LB", "Backdate · LB", editable=False)
         self._add_preview_tab("Backdate RB", "Backdate · RB", editable=False)
         self._add_preview_tab("Backdate RECON", "Backdate · RECON", editable=False)
+        self._add_generated_files_tab()
         self._add_history_tab()
         ttk.Label(
             preview,
@@ -495,6 +499,123 @@ class ReconApp(tk.Tk):
         ).grid(row=0, column=2, sticky="e")
         self.notebook.add(frame, text=title)
 
+    def _add_generated_files_tab(self) -> None:
+        frame = ttk.Frame(self.notebook, padding=10)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+        controls = ttk.Frame(frame)
+        controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(
+            controls,
+            text="File hasil tersimpan di folder data Recon Builder pada komputer ini.",
+        ).pack(side="left")
+        ttk.Button(
+            controls, text="Muat ulang", command=self._refresh_generated_files
+        ).pack(side="right")
+        ttk.Button(
+            controls, text="Unduh / Simpan Salinan…",
+            command=self._save_generated_copy,
+        ).pack(side="right", padx=(0, 6))
+        ttk.Button(
+            controls, text="Buka File", command=self._open_generated_file
+        ).pack(side="right", padx=(0, 6))
+        columns = ("time", "file", "size", "location")
+        tree = ttk.Treeview(frame, columns=columns, show="headings")
+        for key, title, width in (
+            ("time", "Waktu dibuat", 280), ("file", "Nama file", 330),
+            ("size", "Ukuran", 100), ("location", "Lokasi tersimpan", 500),
+        ):
+            tree.heading(key, text=title, anchor="w")
+            tree.column(key, width=width, minwidth=90, stretch=key == "location")
+        tree.bind("<Double-1>", lambda _event: self._open_generated_file())
+        vertical = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        horizontal = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        tree.grid(row=1, column=0, sticky="nsew")
+        vertical.grid(row=1, column=1, sticky="ns")
+        horizontal.grid(row=2, column=0, sticky="ew")
+        self._generated_files_tree = tree
+        self.notebook.add(frame, text="File Hasil")
+
+    def _refresh_generated_files(self) -> None:
+        tree = self._generated_files_tree
+        if tree is None:
+            return
+        tree.delete(*tree.get_children())
+        self._generated_file_paths.clear()
+        for index, record in enumerate(self.audit.generated_outputs()):
+            path = Path(record["path"])
+            if not path.is_file():
+                continue
+            item = f"generated-{index}"
+            self._generated_file_paths[item] = path
+            size = path.stat().st_size
+            size_label = (
+                f"{size / (1024 * 1024):.1f} MB"
+                if size >= 1024 * 1024 else f"{size / 1024:.0f} KB"
+            )
+            tree.insert(
+                "", "end", iid=item,
+                values=(
+                    format_local_datetime(record["occurred_at"]),
+                    path.name, size_label, str(path.parent),
+                ),
+            )
+
+    def _selected_generated_file(self) -> Path | None:
+        tree = self._generated_files_tree
+        if tree is None or not tree.selection():
+            messagebox.showinfo("File hasil", "Pilih file hasil terlebih dahulu.")
+            return None
+        path = self._generated_file_paths.get(tree.selection()[0])
+        if path is None or not path.is_file():
+            messagebox.showwarning(
+                "File tidak ditemukan",
+                "File hasil ini sudah dipindah atau dihapus dari komputer.",
+            )
+            self._refresh_generated_files()
+            return None
+        return path
+
+    def _open_generated_file(self) -> None:
+        path = self._selected_generated_file()
+        if path is None:
+            return
+        try:
+            if platform.system() == "Darwin":
+                subprocess.Popen(["open", str(path)])
+            elif platform.system() == "Windows":
+                os.startfile(str(path))
+            else:
+                subprocess.Popen(["xdg-open", str(path)])
+            self.audit.record(self.operator, "generated_file_opened", file=path.name)
+        except OSError as exc:
+            messagebox.showerror("File tidak bisa dibuka", str(exc))
+
+    def _save_generated_copy(self) -> None:
+        source = self._selected_generated_file()
+        if source is None:
+            return
+        destination = filedialog.asksaveasfilename(
+            title="Simpan salinan file hasil",
+            initialfile=source.name,
+            defaultextension=".xlsx",
+            filetypes=[("Workbook Excel", "*.xlsx")],
+        )
+        if not destination:
+            return
+        target = Path(destination).expanduser()
+        try:
+            if target.resolve() != source.resolve():
+                shutil.copy2(source, target)
+            self.audit.record(
+                self.operator, "generated_file_saved_copy",
+                source=source.name, destination=str(target),
+            )
+            messagebox.showinfo("File disimpan", f"Salinan file tersimpan di:\n{target}")
+        except OSError as exc:
+            messagebox.showerror("Gagal menyimpan salinan", str(exc))
+
     def _add_history_tab(self) -> None:
         frame = ttk.Frame(self.notebook, padding=10)
         frame.columnconfigure(0, weight=1)
@@ -557,6 +678,7 @@ class ReconApp(tk.Tk):
             valid=valid, first_invalid_event=broken_id,
         )
         self._refresh_history()
+        self._refresh_generated_files()
         if valid:
             messagebox.showinfo("Riwayat", "Rantai hash riwayat masih valid.")
         else:
@@ -1606,6 +1728,7 @@ class ReconApp(tk.Tk):
         )
         announce("Selesai. File rekonsiliasi dari BO Biller sudah berhasil dibuat.")
         self._refresh_history()
+        self._refresh_generated_files()
         messagebox.showinfo("Recon selesai", f"File berhasil dibuat:\n{result}")
 
 

@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.8**
+**Versi saat ini: 1.2.9**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -152,6 +152,15 @@ pengguna meminta penerbitan release.
   `assets/batik.png`, diolah menjadi `assets/batik-watermark.png` transparan
   berwarna teal. Pola ditempatkan kecil di kanan bawah agar tidak menghalangi
   teks atau tabel, dan dibundel pada installer Mac/Windows.
+
+## Implementasi 1.2.9 — Launchpad dan file hasil tersimpan
+
+- macOS PKG mengatur bundle ID `com.devops.reconbuilder` dan postinstall
+  mendaftarkan app lewat Launch Services serta menyegarkan Dock/Launchpad.
+- Output Generate baru disimpan di folder **Generated Files** pada data lokal
+  aplikasi. Tab **File Hasil** menampilkan hasil yang masih ada, membuka workbook,
+  atau menyalin workbook ke lokasi pilihan. Log SQLite tetap menjadi indeks
+  daftar file; workbook tidak dimasukkan ke database.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -456,7 +465,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.8, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.9, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -472,6 +481,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.9 | Mendaftarkan app Mac ke Launchpad; tab File Hasil, penyimpanan default lokal aplikasi, dan simpan salinan. |
 | 1.2.8 | Watermark menggunakan pola batik floral Indonesia transparan. |
 | 1.2.7 | Watermark motif Kawung dan Parang khas batik Indonesia, transparan. |
 | 1.2.6 | Installer macOS ke Applications dan shortcut Start Menu/Desktop Windows. |

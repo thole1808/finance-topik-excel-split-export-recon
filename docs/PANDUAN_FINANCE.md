@@ -50,8 +50,9 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
    menerapkan; **Esc** membatalkan. Perubahan pada baris preview ikut
    diterapkan ke export. Baris lain tetap berasal dari file upload.
    Preview recon bersifat referensi dan tidak dapat diedit.
-8. Tentukan folder output. Nama file dibuat otomatis dari tanggal dan waktu
-   lokal, misalnya `ReconBuilder_20261017_143025_123456.xlsx`.
+8. Folder output otomatis memakai folder data aplikasi pada komputer. Nama file
+   dibuat dari tanggal dan waktu lokal, misalnya
+   `ReconBuilder_20261017_143025_123456.xlsx`.
 9. Klik **Generate Recon**. Terminal proses menampilkan tahapan penulisan dan
    jumlah baris Records yang diproses. Tunggu pesan sukses.
 10. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
@@ -66,6 +67,9 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
     transaksi Backdate pukul 23:00 atau lebih tetap terlihat di blok utama.
 11. **Buka Folder Output** akan memilih file terakhir yang berhasil dibuat
     langsung di foldernya.
+12. Buka tab **File Hasil** untuk melihat workbook yang tersimpan. Pilih file
+    lalu tekan **Buka File** atau **Unduh / Simpan Salinan…** untuk menyalinnya
+    ke lokasi yang mudah dibagikan.
 
 ## Update aplikasi dan notifikasi suara
 

@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.8** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.9** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -56,9 +56,11 @@ atau pindah sel menerapkan, Esc membatalkan. Perubahan valid ikut masuk ke
 export.
 
 Workbook Backdate ditampilkan di tab terpisah untuk sheet LB, RB, dan RECON.
-Hasil dibuat di folder output dengan nama `ReconBuilder_YYYYMMDD_HHMMSS.xlsx`
-(ditambah pecahan detik untuk mencegah nama ganda). Tombol buka output memilih
-file hasil terakhir. Aplikasi memakai akun PC/laptop yang sedang login sebagai
+Hasil dibuat secara default pada folder data Recon Builder di komputer, dengan
+nama `ReconBuilder_YYYYMMDD_HHMMSS.xlsx` (ditambah pecahan detik untuk mencegah
+nama ganda). Tab **File Hasil** menampilkan workbook yang sudah dibuat, membuka
+file, atau menyimpan salinan ke lokasi pilihan. Tombol buka output memilih file
+hasil terakhir. Aplikasi memakai akun PC/laptop yang sedang login sebagai
 operator, menampilkan jam lokal dan terminal proses, serta mencatat aktivitas
 ke SQLite lokal. Riwayat dapat
 diperiksa integritasnya dan diekspor sebagai CSV. Log lokal mendeteksi perubahan
@@ -113,7 +115,7 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
 - Untuk installer rilis manual, push tag yang sama dengan versi source seperti
-  `v1.2.8`. Workflow mengisi release dengan installer Windows, paket macOS,
+  `v1.2.9`. Workflow mengisi release dengan installer Windows, paket macOS,
   DMG, flowchart PNG/JPG,
   dan checksum. Push versi baru ke `main` membuat tag/release secara otomatis.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
