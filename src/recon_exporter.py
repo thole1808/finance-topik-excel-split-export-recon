@@ -153,6 +153,11 @@ def _datetime_value(value: Any) -> Any:
     return parsed if parsed is not None else _clean(value)
 
 
+def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
+    timestamp = _as_datetime(row.get("tanggal"))
+    return timestamp is not None and timestamp.time() >= dt.time(23, 0)
+
+
 def _status_text(value: Any) -> str:
     cleaned = _clean(value)
     return str(cleaned).strip().upper() if cleaned is not None else ""
@@ -789,9 +794,20 @@ def _write_wide_sheet(
         formulas_by_row=formulas_by_row,
     )
 
-    for index, record in enumerate(rows):
+    tomorrow_rows = [
+        record for record in rows if _is_tomorrow_transaction(record)
+    ]
+    tomorrow_start = 40 if sheet == "LB" else 50
+    tomorrow_end = 72 if sheet == "LB" else 63
+
+    for index in range(len(rows)):
         excel_row = index + 4
+        record = rows[index]
         values = values_function(record)
+        tomorrow_values = (
+            values_function(tomorrow_rows[index])
+            if index < len(tomorrow_rows) else {}
+        )
         formulas: dict[int, tuple[str, Any]] = {}
         if sheet == "LB":
             formula_row = excel_row
@@ -837,6 +853,12 @@ def _write_wide_sheet(
             }
 
         for column in range(1, max_column + 1):
+            is_tomorrow_column = tomorrow_start <= column <= tomorrow_end
+            value = (
+                tomorrow_values.get(column)
+                if is_tomorrow_column
+                else values.get(column)
+            )
             formula_data = formulas.get(column)
             date_columns = (
                 {1, 21, 40, 56} if sheet == "LB"
@@ -853,16 +875,15 @@ def _write_wide_sheet(
             _write_cell(
                 worksheet, workbook, sheet, excel_row - 1, column,
                 template_row,
-                values.get(column),
+                value,
                 formula=formula_data[0] if formula_data else None,
                 cached_value=formula_data[1] if formula_data else None,
                 format_cache=format_cache,
                 format_overrides={
                     **(cell_overrides or {}),
                     **(_semantic_highlight(
-                        sheet,
-                        column,
-                        formula_data[1] if formula_data else values.get(column),
+                        sheet, column,
+                        formula_data[1] if formula_data else value,
                     ) or {}),
                 } or None,
             )

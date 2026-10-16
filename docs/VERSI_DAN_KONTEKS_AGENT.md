@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.3**
+**Versi saat ini: 1.1.4**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -57,6 +57,11 @@ memodifikasi kode:
   Excel dengan format yang menyertakan jam, menit, dan detik; filter jam tidak
   lagi beroperasi pada nilai teks/tanggal tengah malam.
 
+## Perbaikan versi 1.1.4
+
+- Bagian `For tomorrow because different time` pada sheet LB/RB kini berisi
+  hanya transaksi dengan jam mulai pukul 23:00:00; jam 00:00 tidak ikut.
+
 ## Gambar yang tersedia
 
 Gambar berikut adalah diagram alur aplikasi yang sama, disediakan untuk
@@ -73,6 +78,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.4 | Bagian For tomorrow hanya memuat transaksi mulai jam 23:00. |
 | 1.1.3 | Filter dan hitungan SUCCESS/FAILED pada sheet LB/RB; mempertahankan timestamp sebagai datetime Excel. |
 | 1.1.2 | Upload recon referensi, preview Summary/Records, dan flow diagram yang diperbarui. |
 | 1.1.1 | Memperbaiki path resource pada build installer Windows. |
@@ -83,7 +89,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.3`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.4`). Tag
   menjalankan Windows build dan menerbitkan installer ke GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.

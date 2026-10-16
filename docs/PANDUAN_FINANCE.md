@@ -90,6 +90,10 @@ waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
 23.59, filter tanggal hari ini dan batas waktu **23:00:00–23:59:59**. Nilai
 timestamp tetap menyertakan jam, menit, dan detik.
 
+Bagian **For tomorrow because different time** pada sheet `LB`/`RB` hanya
+menampilkan transaksi dengan waktu **23:00:00 atau lebih**. Data sebelum pukul
+23.00, termasuk pukul 00.00, tidak dimasukkan ke bagian tersebut.
+
 File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`
 pada output selalu dihitung ulang menggunakan upload LB/RB yang sedang diproses.
