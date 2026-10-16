@@ -16,6 +16,7 @@ from typing import Any
 
 from src.version import __version__
 from src.device_identity import masked_device_identity
+from src.localization import format_local_datetime
 
 ZERO_HASH = "0" * 64
 
@@ -156,6 +157,12 @@ class AuditLog:
                 "SELECT * FROM events ORDER BY id DESC LIMIT ?", (limit,)
             ).fetchall())
 
+    def has_action(self, action: str) -> bool:
+        with self._connect() as connection:
+            return connection.execute(
+                "SELECT 1 FROM events WHERE action = ? LIMIT 1", (action,)
+            ).fetchone() is not None
+
     def export_csv(self, path: Path) -> Path:
         fields = (
             "id", "occurred_at", "operator", "os_user", "host", "app_version",
@@ -169,5 +176,9 @@ class AuditLog:
             for row in connection.execute(
                 "SELECT " + ",".join(fields) + " FROM events ORDER BY id"
             ):
-                writer.writerow([row[field] for field in fields])
+                writer.writerow([
+                    format_local_datetime(row[field]) if field == "occurred_at"
+                    else row[field]
+                    for field in fields
+                ])
         return Path(path)

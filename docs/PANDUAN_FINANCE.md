@@ -22,8 +22,9 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 ## Menjalankan aplikasi
 
 1. Buka **ReconBuilder.app** (atau jalankan `python3 app.py` dari source).
-   Masukkan nama atau ID operator ketika diminta. Jendela aplikasi akan
-   dimaksimalkan dan jam lokal tampil di header.
+   Aplikasi otomatis memakai nama akun PC/laptop yang sedang login untuk
+   mencatat riwayat; tidak ada prompt operator. Jendela dimaksimalkan dan jam
+   lokal tampil di header.
 2. Pada **Upload LB**, pilih workbook Loket Bayar berformat `.xlsx`; tunggu
    preview selesai dimuat.
 3. Pada **Upload RB**, pilih workbook Rajabiller berformat `.xlsx`; tunggu
@@ -69,7 +70,7 @@ Header menampilkan versi aplikasi dan versi release. Saat aplikasi dibuka,
 aplikasi memeriksa GitHub Release. Jika versi baru tersedia, tombol berubah
 menjadi **Update v...** dan header menampilkan versi release yang tersedia.
 Klik tombol tersebut untuk mengunduh installer sesuai sistem operasi; aplikasi memeriksa
-SHA-256 sebelum memasang dan membuka kembali aplikasi. macOS dapat meminta
+SHA-256 sebelum memasang dan membuka kembali aplikasi versi baru. macOS dapat meminta
 otorisasi administrator bila aplikasi berada di folder sistem. Windows dapat
 meminta konfirmasi UAC. Koneksi internet dan release GitHub yang berhasil
 diterbitkan diperlukan. Update otomatis tersedia untuk macOS dan Windows.
@@ -78,13 +79,15 @@ Nomor versi pada aplikasi berasal dari `src/version.py`; release memakai tag
 
 Aplikasi membacakan “Mohon tunggu. Proses generate file recon sedang berjalan.”
 saat Generate dimulai dan membacakan pemberitahuan sukses setelah file selesai
-dibuat. Tombol **Tes Suara** di bagian bawah aplikasi dapat dipakai untuk
-memastikan speaker berfungsi. Aplikasi memilih suara bahasa Indonesia yang
-tersedia di sistem; bila tidak tersedia, aplikasi memakai suara bawaan.
+dibuat. Tombol **Tes Suara** di bagian bawah aplikasi tersedia satu kali saja;
+setelah dipakai, tombol disembunyikan pada sesi berikutnya. Aplikasi memilih
+voice Indonesia yang terpasang di sistem, lalu memakai voice bawaan jika tidak
+ada. Voice sistem adalah text-to-speech, bukan rekaman manusia.
 
 Jam menggunakan tanggal dan waktu lokal dari komputer, termasuk zona waktu
 yang diatur pada sistem operasi, dengan nama hari dan bulan berbahasa Indonesia.
-Nama file output dan waktu riwayat tetap memakai waktu lokal komputer.
+Nama file output dan waktu riwayat tetap memakai waktu lokal komputer. Kolom
+Waktu Riwayat dan CSV menggunakan nama hari/bulan Indonesia dan zona waktu PC.
 
 Jendela dimaksimalkan saat dibuka, mengisi area yang tersedia pada laptop atau
 layar lebar, dan kontrol preview menyesuaikan ukuran jendela. Lebar minimum
@@ -101,8 +104,8 @@ berversi hasil build macOS di root repository sebelum push versi baru.
 
 ## Riwayat penggunaan dan audit
 
-Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, nama/ID yang
-dimasukkan, akun OS, perangkat, versi aplikasi, IP lokal tersamarkan, MAC
+Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, nama akun PC
+yang sedang login, perangkat, versi aplikasi, IP lokal tersamarkan, MAC
 tersamarkan, aksi, dan rinciannya. IP disimpan sebagai tiga oktet pertama
 (misalnya `192.168.1.*`); MAC hanya menampilkan tiga oktet awal
 (misalnya `AA:BB:CC:**:**:**`). Alamat mentah tidak disimpan. Aplikasi
@@ -118,8 +121,8 @@ Database SQLite tersimpan per akun komputer: macOS
 `~/.local/share/recon-builder/usage-history.sqlite3` (kecuali XDG_DATA_HOME
 ditetapkan). Simpan/backup file tersebut sesuai kebijakan Finance. Rantai hash
 mendeteksi perubahan pada rekaman yang tersisa, tetapi log lokal bukan bukti
-non-repudiation: operator dapat memasukkan identitas lain dan pemilik perangkat
-dapat menghapus atau mengganti database. Untuk pembuktian lintas operator yang
+non-repudiation: akun PC tidak membuktikan siapa orang yang memakai perangkat,
+dan pemilik perangkat dapat menghapus atau mengganti database. Untuk pembuktian lintas operator yang
 kuat, aplikasi perlu login terverifikasi (misalnya SSO) dan mengirim event ke
 server audit terpusat dengan hak tulis terbatas serta retensi yang dikelola.
 Rincian audit menyimpan nilai sel yang diedit dan query pencarian; batasi akses

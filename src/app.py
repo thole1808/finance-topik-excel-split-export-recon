@@ -8,12 +8,13 @@ import datetime as dt
 import os
 import time
 import json
+import getpass
 from functools import partial
 from pathlib import Path
 import platform
 from typing import Any
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, ttk
 
 import polars as pl
 
@@ -27,6 +28,7 @@ from src.recon_exporter import (
 )
 from src.audit_log import AuditLog
 from src.announcements import announce
+from src.localization import format_local_datetime
 from src.version import __version__
 from src.updater import (
     UpdateError,
@@ -38,13 +40,6 @@ from src.updater import (
 
 PREVIEW_PAGE_SIZE = 500
 PREVIEW_PAGE_SIZES = ("100", "250", "500", "1000", "Semua")
-INDONESIAN_WEEKDAYS = (
-    "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu",
-)
-INDONESIAN_MONTHS = (
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
-    "Agustus", "September", "Oktober", "November", "Desember",
-)
 SOURCE_HEADERS = {
     "LB": {value: key for key, value in LB_COL_MAP.items()},
     "RB": {value: key for key, value in RB_COL_MAP.items()},
@@ -57,16 +52,7 @@ class ReconApp(tk.Tk):
         self.withdraw()
         self.title(f"Recon Builder | Finance v{__version__}")
         self.audit = AuditLog()
-        self.operator = simpledialog.askstring(
-            "Operator Recon Builder",
-            "Masukkan nama atau ID operator untuk mencatat riwayat pemakaian:",
-            initialvalue=self.audit.last_operator(),
-            parent=self,
-        )
-        if self.operator is None or not self.operator.strip():
-            self.destroy()
-            raise SystemExit(0)
-        self.operator = self.operator.strip()
+        self.operator = getpass.getuser().strip() or "Operator"
         self.audit.record(self.operator, "app_started")
         self.geometry("1440x900")
         self.minsize(960, 660)
@@ -120,6 +106,7 @@ class ReconApp(tk.Tk):
             value=f"APP v{__version__}  ·  RELEASE v{__version__}"
         )
         self._update_button: ttk.Button | None = None
+        self._voice_test_button: ttk.Button | None = None
         self._update_info: UpdateRelease | None = None
         self._update_checking = False
         self._build_ui()
@@ -143,14 +130,7 @@ class ReconApp(tk.Tk):
                 self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
 
     def _update_clock(self) -> None:
-        current = dt.datetime.now().astimezone()
-        weekday = INDONESIAN_WEEKDAYS[current.weekday()]
-        month = INDONESIAN_MONTHS[current.month - 1]
-        timezone = current.tzname() or "waktu lokal"
-        self._clock_var.set(
-            f"{weekday}, {current.day} {month} {current.year}"
-            f"  ·  {current:%H:%M:%S} {timezone}"
-        )
+        self._clock_var.set(format_local_datetime(dt.datetime.now()))
         self.after(1000, self._update_clock)
 
     def _build_ui(self) -> None:
@@ -345,9 +325,11 @@ class ReconApp(tk.Tk):
         ttk.Button(
             actions, text="Buka Folder Output", command=self._open_output_folder
         ).pack(side="left")
-        ttk.Button(
-            actions, text="Tes Suara", command=self._test_voice
-        ).pack(side="left", padx=(8, 0))
+        if not self.audit.has_action("voice_tested"):
+            self._voice_test_button = ttk.Button(
+                actions, text="Tes Suara", command=self._test_voice
+            )
+            self._voice_test_button.pack(side="left", padx=(8, 0))
         ttk.Label(
             footer, textvariable=self.status, foreground="#35465a"
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
@@ -513,7 +495,7 @@ class ReconApp(tk.Tk):
         columns = ("time", "operator", "action", "details", "host", "ip", "mac")
         tree = ttk.Treeview(frame, columns=columns, show="headings")
         for key, title, width in (
-            ("time", "Waktu", 190), ("operator", "Operator", 140),
+            ("time", "Waktu lokal", 300), ("operator", "Akun PC", 140),
             ("action", "Aktivitas", 180), ("details", "Rincian", 620),
             ("host", "Perangkat", 170), ("ip", "IP (masked)", 135),
             ("mac", "MAC (masked)", 145),
@@ -539,7 +521,8 @@ class ReconApp(tk.Tk):
             tree.insert(
                 "", "end",
                 values=(
-                    event["occurred_at"], event["operator"], event["action"],
+                    format_local_datetime(event["occurred_at"]),
+                    event["operator"], event["action"],
                     event["details_json"], event["host"],
                     details.get("ip_masked", "—"), details.get("mac_masked", "—"),
                 ),
@@ -1250,8 +1233,10 @@ class ReconApp(tk.Tk):
 
     def _test_voice(self) -> None:
         self.audit.record(self.operator, "voice_tested")
-        announce("Tes suara Recon Builder. Notifikasi suara aktif.")
+        announce("Halo, ini tes suara Recon Builder. Speaker berfungsi.")
         self.status.set("Tes suara dikirim ke speaker perangkat.")
+        if self._voice_test_button is not None:
+            self._voice_test_button.pack_forget()
 
     def _check_updates_silently(self) -> None:
         self._check_for_updates(silent=True)
@@ -1512,7 +1497,7 @@ class ReconApp(tk.Tk):
         self._busy = True
         self.generate_button.configure(state="disabled")
         self.progress.start(10)
-        announce("Mohon tunggu. Proses generate file recon sedang berjalan.")
+        announce("Mohon tunggu sebentar ya, file rekonsiliasi sedang dibuat.")
         self.status.set(
             "Membuat file recon gabungan Backdate dan End Date…"
             if backdate_path else
@@ -1597,7 +1582,7 @@ class ReconApp(tk.Tk):
             output_path=str(result),
             elapsed_seconds=round(elapsed, 3), size_bytes=result.stat().st_size,
         )
-        announce("Berhasil. Generate file recon dari BO Biller selesai.")
+        announce("Selesai. File rekonsiliasi dari BO Biller sudah berhasil dibuat.")
         self._refresh_history()
         messagebox.showinfo("Recon selesai", f"File berhasil dibuat:\n{result}")
 

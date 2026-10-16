@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.4**
+**Versi saat ini: 1.2.5**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -29,11 +29,11 @@ memodifikasi kode:
 - UI dimaksimalkan saat start, memakai tema navy/teal, menampilkan jam lokal,
   label **Powered By DevOps**, dan terminal tahapan generate.
 - Riwayat disimpan di SQLite lokal oleh `src/audit_log.py`. Event dicatat dalam
-  rantai SHA-256, termasuk operator yang diketik, user OS, host, versi, aksi,
+  rantai SHA-256, termasuk nama akun PC otomatis, user OS, host, versi, aksi,
   dan rincian. Aktivitas utama meliputi file dipilih/dimuat, sheet/tab, pencarian,
   ukuran halaman/navigasi, edit nilai, generate sukses/gagal, ekspor log, dan
   file output dibuka. UI menyediakan pemeriksaan rantai dan ekspor CSV.
-- Batas keamanan: identitas operator belum diverifikasi dan database lokal dapat
+- Batas keamanan: akun PC bukan verifikasi identitas orang, dan database lokal dapat
   dihapus/diganti oleh pemilik perangkat. Hash chain hanya mendeteksi perubahan
   pada catatan yang tersisa. Kebutuhan agar pengguna tidak dapat menyangkal
   aktivitas memerlukan autentikasi individu dan server audit terpusat dengan
@@ -111,6 +111,22 @@ pengguna meminta penerbitan release.
 - Jendela dimaksimalkan saat start dengan minimum 960×660. Header disusun ulang
   agar tetap muat pada laptop, sementara preview mengambil ruang sisa dan tabel
   memiliki scrollbar; layar lebar menggunakan ruang kerja yang lebih besar.
+
+## Implementasi 1.2.5 — akun PC, restart update, dan waktu riwayat lokal
+
+- Prompt operator dihilangkan; akun OS yang sedang login otomatis menjadi nama
+  operator.
+- Helper update macOS/Windows menunggu proses lama berakhir, memasang release,
+  lalu membuka kembali aplikasi yang baru. Setup Windows berjalan senyap setelah
+  konfirmasi operator dan meminta UAC bila perlu; jika UAC dibatalkan, versi
+  yang saat ini terpasang dibuka kembali.
+- Kolom waktu Riwayat dan CSV diformat memakai zona waktu PC serta nama hari dan
+  bulan Indonesia. Timestamp ISO yang di-hash di SQLite tidak diubah, sehingga
+  pemeriksaan integritas tetap valid.
+- Tombol **Tes Suara** hanya tampil sebelum penggunaan pertama akun lokal, lalu
+  disembunyikan. Kalimat lebih percakapan dan voice id-ID dipilih bila tersedia.
+  Voice sistem tetap sintesis suara; rekaman penutur manusia harus disediakan
+  sebagai file audio.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -415,7 +431,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.4, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.5, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -431,6 +447,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.5 | Akun PC otomatis, updater menutup/memasang/membuka kembali, waktu riwayat lokal Indonesia, tes suara sekali. |
 | 1.2.4 | Waktu Bahasa Indonesia sesuai zona lokal, voice Indonesia, tombol tes suara, layout untuk laptop/layar lebar. |
 | 1.2.3 | Tombol update di header, label versi APP/RELEASE, UI dirapikan, IP/MAC masked di riwayat, rencana mobile. |
 | 1.2.2 | Tag/release otomatis, suara status, updater checksum, ikon baru, flowchart PNG/JPG di release. |

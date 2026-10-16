@@ -250,6 +250,49 @@ def _start_macos_update(dmg_path: Path, process_id: int) -> None:
         raise UpdateError(f"Updater macOS tidak dapat dijalankan: {exc}") from exc
 
 
+def _powershell_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def _start_windows_update(installer_path: Path, process_id: int) -> None:
+    """Wait for this app to exit, install silently, then reopen the new app."""
+    executable = Path(sys.executable).resolve()
+    if executable.name.lower() != "reconbuilder.exe":
+        raise UpdateError("Lokasi aplikasi Windows tidak dikenali untuk update.")
+    script = "\n".join((
+        f"$waitPid = {int(process_id)}",
+        f"$installer = {_powershell_quote(str(installer_path.resolve()))}",
+        f"$application = {_powershell_quote(str(executable))}",
+        "while (Get-Process -Id $waitPid -ErrorAction SilentlyContinue) {",
+        "  Start-Sleep -Seconds 1",
+        "}",
+        "try {",
+        "  $setup = Start-Process -FilePath $installer -Verb RunAs -Wait -PassThru `",
+        "    -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'",
+        "  if ($setup.ExitCode -ne 0) { throw \"Installer exit code $($setup.ExitCode)\" }",
+        "} catch {",
+        "  Start-Process -FilePath $application",
+        "  exit 1",
+        "}",
+        "Start-Process -FilePath $application",
+    ))
+    try:
+        subprocess.Popen(
+            [
+                "powershell.exe", "-NoProfile", "-NonInteractive",
+                "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden",
+                "-Command", script,
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+    except OSError as exc:
+        raise UpdateError(f"Updater Windows tidak dapat dijalankan: {exc}") from exc
+
+
 def start_installer(installer_path: Path, process_id: int) -> None:
     """Launch the signed-platform installer and let it replace the running app."""
     if not getattr(sys, "frozen", False):
@@ -258,15 +301,6 @@ def start_installer(installer_path: Path, process_id: int) -> None:
         _start_macos_update(installer_path, process_id)
         return
     if platform.system() == "Windows":
-        try:
-            subprocess.Popen(
-                [str(installer_path)],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                close_fds=True,
-            )
-        except OSError as exc:
-            raise UpdateError(f"Installer Windows tidak dapat dijalankan: {exc}") from exc
+        _start_windows_update(installer_path, process_id)
         return
     raise UpdateError("Update otomatis hanya tersedia untuk macOS dan Windows.")
