@@ -20,6 +20,68 @@ memodifikasi kode:
    [`.github/workflows/windows-installer.yml`](../.github/workflows/windows-installer.yml)
    dan [`scripts/windows/ReconBuilder.iss`](../scripts/windows/ReconBuilder.iss).
 
+## Serah-terima sesi — 16 Oktober 2026
+
+Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
+
+### Permintaan terakhir dan keputusan tata letak
+
+- Pengguna mengoreksi ringkasan yang sebelumnya diletakkan di sisi kanan:
+  ringkasan harus menjadi baris subtotal di tabel LB dan RB, tepat setelah
+  kelompok `SUCCESS` dan tepat setelah kelompok `FAILED`.
+- Mengacu pada `recon-2026-10-14-v1.xlsx` dan cuplikan yang dikirim:
+  kolom F subtotal adalah `Amount + Margin Biller`; kolom G–K adalah
+  `Amount`, `Total Fee`, `Customer Fee`, `LST Fee`, dan `Margin Biller`.
+- Sisakan tiga baris kosong setelah subtotal SUCCESS sebelum baris transaksi
+  FAILED. Subtotal FAILED juga diletakkan segera setelah transaksi FAILED.
+- Subtotal status menjumlahkan transaksi Current Day dan For tomorrow.
+  Nilai transaksi sumber/recon per baris tidak diubah. Footer SUM lama di
+  bawah kolom nilai bukan lokasi subtotal.
+
+### Implementasi yang sudah ada
+
+- Logika berada di [`src/recon_exporter.py`](../src/recon_exporter.py):
+  output mengurutkan SUCCESS lalu FAILED; menulis subtotal di baris kelompok;
+  memakai formula Excel beserta cached values; dan memberi tiga baris sela
+  setelah subtotal SUCCESS. Data Current Day dan For tomorrow dipasangkan
+  berdasarkan status/urutan tanggal di baris yang sama.
+- Versi aplikasi dinaikkan menjadi **1.1.13** di
+  [`src/version.py`](../src/version.py). README dan panduan Finance menjelaskan
+  lokasi serta pemetaan kolom subtotal.
+- Validasi pada input lokal LB/RB menunjukkan subtotal formula/cached values
+  di kedua sheet sama dengan perhitungan dari input untuk kelima nilai dan
+  kedua status. Posisi subtotal SUCCESS, tiga baris kosong, dan subtotal FAILED
+  juga diperiksa.
+- Syntax check dan diagnostic Pylance untuk exporter lulus tanpa error.
+- DMG 1.1.13 dibangun di `dist/ReconBuilder.dmg`; signature aplikasi serta
+  checksum DMG valid. File dist tidak dilacak Git.
+- Windows installer build workflow sukses; artifact tersedia di
+  [GitHub Actions run 38882283710](https://github.com/thole1808/finance-topik-excel-split-export-recon/actions/runs/38882283710).
+
+### Status Git dan artefak
+
+- Branch `main` sudah dipush ke repo pengguna:
+  [finance-topik-excel-split-export-recon](https://github.com/thole1808/finance-topik-excel-split-export-recon).
+- Commit terbaru saat catatan ini dibuat: `89c8ee6` (`Document subtotal
+  column layout`), setelah `e43dfa4` (`Place status totals below LB and RB
+  groups`). Belum ada perubahan source yang tertinggal untuk dipush.
+- [DMG macOS lokal](../dist/ReconBuilder.dmg) adalah hasil build versi 1.1.13.
+  `Archive.zip`, `ReconBuilder.dmg` lama di root, dan `flow-recon-finance.png`
+  lokal tidak ditambahkan/dihapus karena merupakan berkas lokal tak terlacak
+  yang status/kegunaannya belum dikonfirmasi.
+
+### Konteks versi sebelumnya
+
+- Versi 1.1.11 memperbaiki profil fee RB untuk tiga pasangan produk/nominal
+  AXD10H|66750, AXD2H|25650, dan AXBR8H|72105; file acuan hanya preview dan
+  bukan sumber data export.
+- Versi 1.1.12 menambahkan blok total di sisi kanan untuk Amount saja. Pengguna
+  mengoreksi tata letak dan cakupan tersebut; jangan kembali memakai lokasi
+  ringkasan samping. Versi 1.1.13 menggantinya dengan subtotal di bawah grup.
+- Jika pengguna meminta perubahan lanjutan, baca permintaan terbaru dan
+  workbook acuan sebelum mengubah posisi atau cakupan subtotal. Jangan
+  mengasumsikan total seluruh status menggantikan subtotal SUCCESS/FAILED.
+
 ## Fitur versi 1.1.0
 
 - Preview menjelajahi semua baris LB/RB dengan pagination 100, 250, 500, atau
