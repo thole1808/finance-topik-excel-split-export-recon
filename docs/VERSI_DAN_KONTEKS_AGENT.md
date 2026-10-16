@@ -65,10 +65,15 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Commit terbaru saat catatan ini dibuat: `89c8ee6` (`Document subtotal
   column layout`), setelah `e43dfa4` (`Place status totals below LB and RB
   groups`). Belum ada perubahan source yang tertinggal untuk dipush.
-- [DMG macOS lokal](../dist/ReconBuilder.dmg) adalah hasil build versi 1.1.13.
-  `Archive.zip`, `ReconBuilder.dmg` lama di root, dan `flow-recon-finance.png`
-  lokal tidak ditambahkan/dihapus karena merupakan berkas lokal tak terlacak
-  yang status/kegunaannya belum dikonfirmasi.
+- DMG versi 1.1.13 tersedia di `dist/ReconBuilder.dmg` dan root
+  `ReconBuilder.dmg`; keduanya identik. Root DMG disimpan untuk distribusi repo.
+- `Archive.zip` dihapus setelah dipastikan hanya berisi salinan DMG lama dan
+  flow PNG lama. Flow diagram yang digunakan dokumentasi berada di `docs/`.
+- Cache Python dan direktori PyInstaller `build/` yang bisa dibuat ulang
+  dibersihkan. ZIP installer lokal versi 1.1.2 dan 1.1.6 yang sudah usang
+  dihapus; DMG dan ZIP versi 1.1.13 tetap tersedia di `dist/`.
+- Workbook LB/RB, workbook referensi/output, dan `.venv` dipertahankan; file
+  tersebut merupakan data kerja/environment lokal dan tidak dimasukkan Git.
 
 ### Konteks versi sebelumnya
 
