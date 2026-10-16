@@ -22,7 +22,8 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 ## Menjalankan aplikasi
 
 1. Di macOS, buka DMG lalu seret **Recon Builder.app** ke shortcut
-   **Applications**. Selesai. Buka Finder > Applications untuk menjalankan
+   **Applications**. Selesai. Petunjuk `CARA INSTALL.txt` di DMG dapat dibuka
+   oleh semua pengguna. Buka Finder > Applications untuk menjalankan
    **Recon Builder**. PKG terpisah juga tersedia;
    installer PKG membuka Finder dan menyorot app setelah pemasangan. Di Windows,
    jalankan

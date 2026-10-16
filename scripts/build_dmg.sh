@@ -112,10 +112,12 @@ ln -s /Applications "$DMG_STAGE/Applications"
 cat > "$DMG_STAGE/CARA INSTALL.txt" <<'EOF'
 Buka DMG, lalu seret Recon Builder.app ke Applications. Selesai.
 EOF
+chmod 644 "$DMG_STAGE/CARA INSTALL.txt"
 hdiutil create \
     -ov \
     -format UDZO \
     -size 600m \
+    -srcowners off \
     -volname "Recon Builder" \
     -srcfolder "$DMG_STAGE" \
     "$PROJECT_ROOT/dist/$DMG_NAME"
