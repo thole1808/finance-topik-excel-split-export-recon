@@ -9,6 +9,28 @@ import subprocess
 import threading
 
 _messages: queue.Queue[str] = queue.Queue()
+_macos_voice: str | None | bool = False
+
+
+def _indonesian_macos_voice() -> str | None:
+    """Choose an installed Indonesian voice, if this Mac provides one."""
+    global _macos_voice
+    if _macos_voice is False:
+        try:
+            voices = subprocess.run(
+                ["say", "-v", "?"], capture_output=True, text=True,
+                timeout=5, check=False,
+            ).stdout
+            _macos_voice = next(
+                (
+                    line.split()[0] for line in voices.splitlines()
+                    if len(line.split()) > 1 and line.split()[1] == "id_ID"
+                ),
+                None,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            _macos_voice = None
+    return _macos_voice or None
 
 
 def _speech_worker() -> None:
@@ -17,8 +39,13 @@ def _speech_worker() -> None:
         try:
             current_platform = platform.system()
             if current_platform == "Darwin" and shutil.which("say"):
+                voice = _indonesian_macos_voice()
+                command = ["say"]
+                if voice:
+                    command.extend(["-v", voice])
+                command.append(message)
                 subprocess.run(
-                    ["say", message],
+                    command,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     check=False,
@@ -27,6 +54,10 @@ def _speech_worker() -> None:
                 script = (
                     "Add-Type -AssemblyName System.Speech; "
                     "$voice = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+                    "$idVoice = $voice.GetInstalledVoices() | "
+                    "Where-Object { $_.VoiceInfo.Culture.Name -like 'id*' } | "
+                    "Select-Object -First 1; "
+                    "if ($idVoice) { $voice.SelectVoice($idVoice.VoiceInfo.Name) }; "
                     f"$voice.Speak('{message}')"
                 )
                 subprocess.run(

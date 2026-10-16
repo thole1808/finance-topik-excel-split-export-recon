@@ -21,7 +21,7 @@
   <rect width="1800" height="1800" fill="#f3f7fb"/>
 
   <text x="76" y="76" class="title">ALUR RECON BUILDER</text>
-  <text x="78" y="116" class="subtitle">Versi 1.2.3 · Upload → preview per sheet → proses → hasil bertimestamp + riwayat</text>
+  <text x="78" y="116" class="subtitle">Versi 1.2.4 · Upload → preview per sheet → proses → hasil bertimestamp + riwayat</text>
 
   <!-- Upload sources -->
   <rect x="76" y="190" width="350" height="135" rx="20" class="card"/>
@@ -142,8 +142,8 @@
 
   <rect x="76" y="1510" width="1670" height="210" rx="20" fill="#eaf4f8" stroke="#aac9e8" stroke-width="2"/>
   <text x="108" y="1555" class="heading">Operator · proses · pembaruan</text>
-  <text x="108" y="1595" class="body">Header menampilkan versi APP dan RELEASE serta tombol Update di kanan atas; update memeriksa checksum sebelum dipasang.</text>
+  <text x="108" y="1595" class="body">Header menampilkan versi APP/RELEASE dan tombol Update; jam mengikuti zona lokal dengan nama hari/bulan Indonesia.</text>
   <text x="108" y="1632" class="body">Backdate LB/RB/RECON punya tab sendiri; Preview Semua menampilkan semua baris.</text>
-  <text x="108" y="1669" class="body">SQLite mencatat aktivitas, IP lokal dan MAC dalam bentuk masked; pengumuman suara memberi status generate.</text>
+  <text x="108" y="1669" class="body">SQLite mencatat IP/MAC masked; voice Indonesia memberi status generate dan tombol Tes Suara mengecek speaker.</text>
   <text x="108" y="1702" class="small">Ikon ikut installer. Log lokal dapat dihapus pemilik perangkat; lihat roadmap mobile untuk rencana APK/iOS.</text>
 </svg>

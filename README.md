@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.3** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.4** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -108,7 +108,7 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
 - Untuk installer rilis manual, push tag yang sama dengan versi source seperti
-  `v1.2.3`. Workflow mengisi release dengan installer, DMG, flowchart PNG/JPG,
+  `v1.2.4`. Workflow mengisi release dengan installer, DMG, flowchart PNG/JPG,
   dan checksum. Push versi baru ke `main` membuat tag/release secara otomatis.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.

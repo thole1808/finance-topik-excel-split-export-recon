@@ -78,7 +78,17 @@ Nomor versi pada aplikasi berasal dari `src/version.py`; release memakai tag
 
 Aplikasi membacakan “Mohon tunggu. Proses generate file recon sedang berjalan.”
 saat Generate dimulai dan membacakan pemberitahuan sukses setelah file selesai
-dibuat. Suara menggunakan layanan text-to-speech bawaan sistem operasi.
+dibuat. Tombol **Tes Suara** di bagian bawah aplikasi dapat dipakai untuk
+memastikan speaker berfungsi. Aplikasi memilih suara bahasa Indonesia yang
+tersedia di sistem; bila tidak tersedia, aplikasi memakai suara bawaan.
+
+Jam menggunakan tanggal dan waktu lokal dari komputer, termasuk zona waktu
+yang diatur pada sistem operasi, dengan nama hari dan bulan berbahasa Indonesia.
+Nama file output dan waktu riwayat tetap memakai waktu lokal komputer.
+
+Jendela dimaksimalkan saat dibuka, mengisi area yang tersedia pada laptop atau
+layar lebar, dan kontrol preview menyesuaikan ukuran jendela. Lebar minimum
+jendela 960 piksel; perkecil atau maksimalkan jendela sesuai ruang kerja.
 
 Ikon Recon Builder disertakan dalam aplikasi macOS dan installer Windows, lalu
 ikut diperbarui bersama versi aplikasi. Diagram alur tersedia sebagai PNG dan

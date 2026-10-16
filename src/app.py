@@ -38,6 +38,13 @@ from src.updater import (
 
 PREVIEW_PAGE_SIZE = 500
 PREVIEW_PAGE_SIZES = ("100", "250", "500", "1000", "Semua")
+INDONESIAN_WEEKDAYS = (
+    "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu",
+)
+INDONESIAN_MONTHS = (
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
+    "Agustus", "September", "Oktober", "November", "Desember",
+)
 SOURCE_HEADERS = {
     "LB": {value: key for key, value in LB_COL_MAP.items()},
     "RB": {value: key for key, value in RB_COL_MAP.items()},
@@ -62,7 +69,7 @@ class ReconApp(tk.Tk):
         self.operator = self.operator.strip()
         self.audit.record(self.operator, "app_started")
         self.geometry("1440x900")
-        self.minsize(1024, 700)
+        self.minsize(960, 660)
 
         self.lb_path = tk.StringVar()
         self.rb_path = tk.StringVar()
@@ -136,7 +143,14 @@ class ReconApp(tk.Tk):
                 self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
 
     def _update_clock(self) -> None:
-        self._clock_var.set(dt.datetime.now().astimezone().strftime("%A, %d %B %Y · %H:%M:%S"))
+        current = dt.datetime.now().astimezone()
+        weekday = INDONESIAN_WEEKDAYS[current.weekday()]
+        month = INDONESIAN_MONTHS[current.month - 1]
+        timezone = current.tzname() or "waktu lokal"
+        self._clock_var.set(
+            f"{weekday}, {current.day} {month} {current.year}"
+            f"  ·  {current:%H:%M:%S} {timezone}"
+        )
         self.after(1000, self._update_clock)
 
     def _build_ui(self) -> None:
@@ -235,11 +249,11 @@ class ReconApp(tk.Tk):
             header, textvariable=self._release_status_var,
             background="#102A43", foreground="#55D6BE",
             font=("Helvetica", 9, "bold"),
-        ).grid(row=0, column=1, sticky="e", padx=(20, 0))
+        ).grid(row=2, column=0, sticky="w", pady=(8, 0))
         ttk.Label(
             header, text="Powered By DevOps", background="#102A43",
             foreground="#C7D8E7", font=("Helvetica", 10, "bold"),
-        ).grid(row=1, column=1, sticky="e", padx=(10, 0))
+        ).grid(row=2, column=2, sticky="e", pady=(8, 0))
         self._update_button = ttk.Button(
             header, text="Periksa Update", command=self._on_update_button,
             style="Header.TButton",
@@ -248,7 +262,7 @@ class ReconApp(tk.Tk):
         ttk.Label(
             header, textvariable=self._clock_var, background="#102A43",
             foreground="#FFFFFF", font=("Helvetica", 10),
-        ).grid(row=0, column=3, rowspan=2, sticky="e", padx=(24, 0))
+        ).grid(row=0, column=1, rowspan=2, sticky="e", padx=(24, 0))
 
         content = ttk.Frame(self, padding=(24, 12, 24, 8))
         content.grid(row=1, column=0, sticky="nsew")
@@ -331,6 +345,9 @@ class ReconApp(tk.Tk):
         ttk.Button(
             actions, text="Buka Folder Output", command=self._open_output_folder
         ).pack(side="left")
+        ttk.Button(
+            actions, text="Tes Suara", command=self._test_voice
+        ).pack(side="left", padx=(8, 0))
         ttk.Label(
             footer, textvariable=self.status, foreground="#35465a"
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
@@ -1230,6 +1247,11 @@ class ReconApp(tk.Tk):
 
     def _terminal_from_worker(self, line: str) -> None:
         self.after(0, self._terminal_write, line)
+
+    def _test_voice(self) -> None:
+        self.audit.record(self.operator, "voice_tested")
+        announce("Tes suara Recon Builder. Notifikasi suara aktif.")
+        self.status.set("Tes suara dikirim ke speaker perangkat.")
 
     def _check_updates_silently(self) -> None:
         self._check_for_updates(silent=True)

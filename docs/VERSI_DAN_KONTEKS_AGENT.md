@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.3**
+**Versi saat ini: 1.2.4**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -99,6 +99,18 @@ pengguna meminta penerbitan release.
   atau ekspor CSV. Alamat dibaca lokal; aplikasi tidak meminta layanan IP luar.
 - File `docs/ROADMAP_MOBILE.md` menjelaskan rencana porting Android/iOS. Tkinter
   dan Python Polars tidak dapat langsung dibangun sebagai APK/IPA.
+
+## Implementasi 1.2.4 — waktu Indonesia, suara Indonesia, dan layar responsif
+
+- Jam header memakai waktu lokal/zona waktu komputer. Nama hari dan bulan
+  ditampilkan dalam Bahasa Indonesia; nama file dan log tetap memakai waktu
+  lokal mesin.
+- macOS memilih voice `id_ID` jika tersedia. Windows memilih voice terpasang
+  berbahasa Indonesia jika tersedia; jika tidak, gunakan voice sistem. Tombol
+  **Tes Suara** di footer memudahkan operator memeriksa speaker sebelum Generate.
+- Jendela dimaksimalkan saat start dengan minimum 960×660. Header disusun ulang
+  agar tetap muat pada laptop, sementara preview mengambil ruang sisa dan tabel
+  memiliki scrollbar; layar lebar menggunakan ruang kerja yang lebih besar.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -403,7 +415,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.3, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.4, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -419,6 +431,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.4 | Waktu Bahasa Indonesia sesuai zona lokal, voice Indonesia, tombol tes suara, layout untuk laptop/layar lebar. |
 | 1.2.3 | Tombol update di header, label versi APP/RELEASE, UI dirapikan, IP/MAC masked di riwayat, rencana mobile. |
 | 1.2.2 | Tag/release otomatis, suara status, updater checksum, ikon baru, flowchart PNG/JPG di release. |
 | 1.2.1 | Nama DMG mencantumkan versi aplikasi dan waktu build. |
