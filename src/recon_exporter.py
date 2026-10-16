@@ -6,7 +6,7 @@ import datetime as dt
 import json
 import math
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -1211,6 +1211,7 @@ def build_recon_workbook(
     backdate_lb_df: pl.DataFrame | None = None,
     backdate_rb_df: pl.DataFrame | None = None,
     backdate_recon_df: pl.DataFrame | None = None,
+    progress_callback: Callable[[str], None] | None = None,
 ) -> Path:
     """Write a recon workbook, optionally merging Backdate rows before End Date."""
     output_path = Path(output_path).expanduser().resolve()
@@ -1241,6 +1242,8 @@ def build_recon_workbook(
         if has_backdate else _to_rows(rb_df)
     )
     records: list[dict[str, Any]] = []
+    if progress_callback:
+        progress_callback("Menyusun daftar transaksi dan status.")
     if has_backdate:
         backdate_records = _records(
             _to_rows(backdate_lb_df), _to_rows(backdate_rb_df)
@@ -1271,6 +1274,8 @@ def build_recon_workbook(
     ws_summary.freeze_panes(1, 0)
     _set_widths(ws_summary, "Summary")
     _write_summary(ws_summary, workbook, records, format_cache)
+    if progress_callback:
+        progress_callback("Sheet Summary selesai.")
 
     ws_records = workbook.add_worksheet("Records")
     ws_records.hide_gridlines(2)
@@ -1298,12 +1303,16 @@ def build_recon_workbook(
                 record.get(key), format_cache=format_cache,
                 format_overrides=format_overrides or None,
             )
+        if progress_callback and index % 5000 == 0:
+            progress_callback(f"Records: {index:,}/{len(records):,} baris ditulis.")
     ws_records.autofilter(0, 0, len(records), len(RECORDS_HEADERS) - 1)
 
     ws_lb = workbook.add_worksheet("LB")
     ws_lb.hide_gridlines(2)
     ws_lb.freeze_panes(3, 0)
     _set_widths(ws_lb, "LB")
+    if progress_callback:
+        progress_callback(f"Membangun sheet LB ({len(lb_rows):,} baris sumber).")
     _write_wide_sheet(
         ws_lb, workbook, "LB", lb_rows, _lb_values, LB_SHEET_LAYOUT, 72,
         format_cache,
@@ -1313,11 +1322,15 @@ def build_recon_workbook(
     ws_rb.hide_gridlines(2)
     ws_rb.freeze_panes(3, 0)
     _set_widths(ws_rb, "RB")
+    if progress_callback:
+        progress_callback(f"Membangun sheet RB ({len(rb_rows):,} baris sumber).")
     _write_wide_sheet(
         ws_rb, workbook, "RB", rb_rows, _rb_values, RB_SHEET_LAYOUT, 63,
         format_cache,
     )
     workbook.close()
+    if progress_callback:
+        progress_callback("Workbook ditutup dan file Excel siap.")
     return output_path
 
 

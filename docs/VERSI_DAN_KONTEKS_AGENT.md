@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.22**
+**Versi saat ini: 1.2.0**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -19,6 +19,38 @@ memodifikasi kode:
 5. Workflow dan konfigurasi installer di
    [`.github/workflows/windows-installer.yml`](../.github/workflows/windows-installer.yml)
    dan [`scripts/windows/ReconBuilder.iss`](../scripts/windows/ReconBuilder.iss).
+
+## Implementasi 1.2.0 — UI, output, dan riwayat operator
+
+- Preview menyediakan pilihan **Semua** selain paging; ketiga sheet Backdate
+  (`LB`, `RB`, `RECON`) tampil sebagai tab tersendiri.
+- Output dipilih sebagai folder; nama workbook menggunakan waktu lokal sampai
+  mikrodetik. Tombol output memilih file terakhir setelah generate.
+- UI dimaksimalkan saat start, memakai tema navy/teal, menampilkan jam lokal,
+  label **Powered By DevOps**, dan terminal tahapan generate.
+- Riwayat disimpan di SQLite lokal oleh `src/audit_log.py`. Event dicatat dalam
+  rantai SHA-256, termasuk operator yang diketik, user OS, host, versi, aksi,
+  dan rincian. Aktivitas utama meliputi file dipilih/dimuat, sheet/tab, pencarian,
+  ukuran halaman/navigasi, edit nilai, generate sukses/gagal, ekspor log, dan
+  file output dibuka. UI menyediakan pemeriksaan rantai dan ekspor CSV.
+- Batas keamanan: identitas operator belum diverifikasi dan database lokal dapat
+  dihapus/diganti oleh pemilik perangkat. Hash chain hanya mendeteksi perubahan
+  pada catatan yang tersisa. Kebutuhan agar pengguna tidak dapat menyangkal
+  aktivitas memerlukan autentikasi individu dan server audit terpusat dengan
+  kontrol akses/retensi; jangan menyebut log lokal ini anti-pemalsuan.
+- File database: macOS `~/Library/Application Support/Recon Builder/`, Windows
+  `%APPDATA%/Recon Builder/`, Linux `$XDG_DATA_HOME/recon-builder/` atau
+  `~/.local/share/recon-builder/`.
+- Tidak ada penghapusan source berdasarkan tebakan. Launcher root, exporter CLI,
+  workflow, dan installer masih dirujuk/digunakan. Workbook, environment, dan
+  artefak lokal dipertahankan.
+
+### Catatan build dan publish 1.2.0
+
+Perbarui versi di `src/version.py`, build aplikasi macOS melalui
+`scripts/build_dmg.sh`, dan push commit source/docs ke `main`. Windows installer
+dibangun oleh GitHub Actions saat push. Tag release perlu dibuat terpisah jika
+pengguna meminta penerbitan release.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -323,21 +355,23 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.1.11, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.0, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
 - [`flow-recon-finance.png`](flow-recon-finance.png) — PNG 1800×1800.
 - [`flow-recon-finance.jpg`](flow-recon-finance.jpg) — JPEG 1800×1800.
 
-Diagram menerangkan upload LB/RB/recon referensi → validasi → preview/edit →
-proses Polars → export XlsxWriter → sheet Summary/Records/LB/RB → pemeriksaan
-Finance. Gambar ini bukan screenshot interaktif aplikasi.
+Diagram menerangkan upload file per sheet → validasi → preview/edit → proses
+Polars dan terminal → export bertimestamp → sheet Summary/Records/LB/RB →
+pemeriksaan Finance dan pencatatan aktivitas lokal. Gambar ini bukan screenshot
+interaktif aplikasi.
 
 ## Riwayat versi ringkas
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.0 | Tab tiap sheet Backdate, preview Semua, output bertimestamp, UI maximize/clock/terminal, dan audit SQLite lokal. |
 | 1.1.22 | Tulis semua baris For tomorrow LB berurutan mulai dari baris 4. |
 | 1.1.21 | Mulai tabel For tomorrow LB tepat di bawah header meski ada banyak baris Current Day/Backdate. |
 | 1.1.20 | Lengkapi tabel recon For tomorrow LB di AN:BA untuk transaksi End Date jam 23. |

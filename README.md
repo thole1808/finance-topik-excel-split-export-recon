@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.1.22** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.0** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -43,11 +43,21 @@ Nilai dan jumlah transaksi dibaca ulang dari file yang dipilih setiap kali
 aplikasi dijalankan; tidak ada tanggal atau jumlah baris transaksi yang
 ditetapkan tetap.
 
-Preview dapat menelusuri semua baris: pilih ukuran halaman 100/250/500/1000,
+Preview dapat menelusuri semua baris: pilih ukuran halaman 100/250/500/1000 atau Semua,
 gunakan Sebelumnya/Berikutnya, atau cari di semua kolom seluruh file. Pilih
 sel lalu klik **Edit sel terpilih**, atau klik ganda sel untuk mengedit; Enter
 atau pindah sel menerapkan, Esc membatalkan. Perubahan valid ikut masuk ke
 export.
+
+Workbook Backdate ditampilkan di tab terpisah untuk sheet LB, RB, dan RECON.
+Hasil dibuat di folder output dengan nama `ReconBuilder_YYYYMMDD_HHMMSS.xlsx`
+(ditambah pecahan detik untuk mencegah nama ganda). Tombol buka output memilih
+file hasil terakhir. Aplikasi meminta ID operator, menampilkan jam lokal dan
+terminal proses, serta mencatat aktivitas ke SQLite lokal. Riwayat dapat
+diperiksa integritasnya dan diekspor sebagai CSV. Log lokal mendeteksi perubahan
+pada entri yang masih ada, tetapi tidak mencegah pemilik perangkat menghapus
+database atau memalsukan identitas operator; audit yang kuat memerlukan login
+terverifikasi dan penyimpanan log terpusat.
 
 Pada sheet LB/RB, subtotal Amount dan empat kolom fee muncul setelah kelompok
 SUCCESS dan FAILED. Ada tiga baris kosong setelah subtotal SUCCESS; transaksi
@@ -87,7 +97,7 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
-- Untuk installer rilis, push tag versi seperti `v1.1.22`. Workflow membuat
+- Untuk installer rilis, push tag versi seperti `v1.2.0`. Workflow membuat
   GitHub Release berisi `ReconBuilder-Setup.exe` dan `ReconBuilder.dmg`.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
@@ -100,6 +110,7 @@ recon_exporter.py              # Entry point CLI kompatibel
 src/
   app.py                       # Antarmuka Tkinter
   recon_exporter.py            # Baca, transformasi Polars, ekspor XlsxWriter
+  audit_log.py                 # Riwayat penggunaan SQLite dengan hash chain
   version.py                   # Versi aplikasi (sumber tunggal)
   fee_tables.json              # Fee fallback untuk kode produk baru
   reference_data.json          # Nama produk dan fee dari file acuan

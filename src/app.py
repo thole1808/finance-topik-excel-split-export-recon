@@ -5,12 +5,13 @@ from __future__ import annotations
 import subprocess
 import threading
 import datetime as dt
+import time
 from functools import partial
 from pathlib import Path
 import platform
 from typing import Any
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 import polars as pl
 
@@ -22,10 +23,11 @@ from src.recon_exporter import (
     read_recon_reference,
     read_raw_excel,
 )
+from src.audit_log import AuditLog
 from src.version import __version__
 
 PREVIEW_PAGE_SIZE = 500
-PREVIEW_PAGE_SIZES = ("100", "250", "500", "1000")
+PREVIEW_PAGE_SIZES = ("100", "250", "500", "1000", "Semua")
 SOURCE_HEADERS = {
     "LB": {value: key for key, value in LB_COL_MAP.items()},
     "RB": {value: key for key, value in RB_COL_MAP.items()},
@@ -35,17 +37,32 @@ SOURCE_HEADERS = {
 class ReconApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
+        self.withdraw()
         self.title(f"Recon Builder | Finance v{__version__}")
-        self.geometry("1280x820")
-        self.minsize(900, 620)
+        self.audit = AuditLog()
+        self.operator = simpledialog.askstring(
+            "Operator Recon Builder",
+            "Masukkan nama atau ID operator untuk mencatat riwayat pemakaian:",
+            initialvalue=self.audit.last_operator(),
+            parent=self,
+        )
+        if self.operator is None or not self.operator.strip():
+            self.destroy()
+            raise SystemExit(0)
+        self.operator = self.operator.strip()
+        self.audit.record(self.operator, "app_started")
+        self.geometry("1440x900")
+        self.minsize(1024, 700)
 
         self.lb_path = tk.StringVar()
         self.rb_path = tk.StringVar()
         self.recon_path = tk.StringVar()
         self.backdate_path = tk.StringVar()
         self.out_path = tk.StringVar(
-            value=str(Path.home() / "Desktop" / "recon-output.xlsx")
+            value=str(Path.home() / "Desktop" / "Recon Builder Output")
         )
+        self.last_output_path: Path | None = self.audit.last_successful_output()
+        self._pending_output_path: Path | None = None
         self.status = tk.StringVar(
             value="Upload file Excel LB, RB, dan recon untuk memulai."
         )
@@ -54,6 +71,9 @@ class ReconApp(tk.Tk):
             "RB": None,
             "Recon Summary": None,
             "Recon Records": None,
+            "Backdate LB": None,
+            "Backdate RB": None,
+            "Backdate RECON": None,
         }
         self._preview_widgets: dict[str, ttk.Treeview] = {}
         self._row_labels: dict[str, tk.StringVar] = {}
@@ -70,37 +90,60 @@ class ReconApp(tk.Tk):
         self._edit_counts: dict[str, set[tuple[int, str]]] = {
             side: set() for side in self._frames
         }
-        self._load_tokens = {"LB": 0, "RB": 0, "Recon": 0}
+        self._load_tokens = {"LB": 0, "RB": 0, "Recon": 0, "Backdate": 0}
         self._loading: set[str] = set()
         self._invalid_edits: set[tuple[str, int, str]] = set()
         self._busy = False
         self._editor: tk.Entry | None = None
         self._editor_target: tuple[str, int, str] | None = None
+        self._terminal: tk.Text | None = None
+        self._history_tree: ttk.Treeview | None = None
+        self._clock_var = tk.StringVar()
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.deiconify()
+        self.after(100, self._maximize_window)
+        self._update_clock()
+        self.audit.record(self.operator, "audit_chain_check", **{
+            "valid": self.audit.verify_chain()[0]
+        })
+        self._refresh_history()
+
+    def _maximize_window(self) -> None:
+        try:
+            self.state("zoomed")
+        except tk.TclError:
+            try:
+                self.attributes("-zoomed", True)
+            except tk.TclError:
+                self.geometry(f"{self.winfo_screenwidth()}x{self.winfo_screenheight()}+0+0")
+
+    def _update_clock(self) -> None:
+        self._clock_var.set(dt.datetime.now().astimezone().strftime("%A, %d %B %Y · %H:%M:%S"))
+        self.after(1000, self._update_clock)
 
     def _build_ui(self) -> None:
         style = ttk.Style(self)
         if "clam" in style.theme_names():
             style.theme_use("clam")
-        style.configure("TFrame", background="#F4F7FB")
-        style.configure("Header.TFrame", background="#FFFFFF")
-        style.configure("TLabelframe", background="#F4F7FB", borderwidth=1)
-        style.configure("TLabelframe.Label", background="#F4F7FB",
-                        foreground="#12233F", font=("Helvetica", 11, "bold"))
-        style.configure("TLabel", background="#F4F7FB")
+        style.configure("TFrame", background="#EDF3F8")
+        style.configure("Header.TFrame", background="#102A43")
+        style.configure("TLabelframe", background="#FFFFFF", borderwidth=1)
+        style.configure("TLabelframe.Label", background="#EDF3F8",
+                        foreground="#123B5D", font=("Helvetica", 11, "bold"))
+        style.configure("TLabel", background="#EDF3F8", foreground="#263D56")
         style.configure(
-            "Header.TLabel", background="#FFFFFF", foreground="#142B49",
+            "Header.TLabel", background="#102A43", foreground="#FFFFFF",
             font=("Helvetica", 23, "bold"),
         )
         style.configure(
-            "Subtitle.TLabel", background="#FFFFFF", foreground="#61748B",
+            "Subtitle.TLabel", background="#102A43", foreground="#C7D8E7",
             font=("Helvetica", 10),
         )
-        style.configure("TNotebook", background="#F4F7FB", borderwidth=0)
+        style.configure("TNotebook", background="#EDF3F8", borderwidth=0)
         style.configure(
-            "TNotebook.Tab", padding=(16, 10),
-            font=("Helvetica", 10, "bold"), background="#E6EDF5",
+            "TNotebook.Tab", padding=(18, 11),
+            font=("Helvetica", 10, "bold"), background="#DCE7F0",
             foreground="#455A72",
         )
         style.map(
@@ -125,7 +168,7 @@ class ReconApp(tk.Tk):
         )
         style.configure(
             "Accent.TButton", font=("Helvetica", 10, "bold"),
-            foreground="#FFFFFF", background="#1F6EAA", padding=(14, 9),
+            foreground="#FFFFFF", background="#087E8B", padding=(14, 9),
         )
         style.map(
             "Accent.TButton",
@@ -161,9 +204,17 @@ class ReconApp(tk.Tk):
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
         ttk.Label(
             header, text=f"FINANCE  ·  v{__version__}",
-            background="#FFFFFF", foreground="#1F6EAA",
+            background="#102A43", foreground="#55D6BE",
             font=("Helvetica", 10, "bold"),
         ).grid(row=0, column=1, sticky="e", padx=(10, 0))
+        ttk.Label(
+            header, text="Powered By DevOps", background="#102A43",
+            foreground="#C7D8E7", font=("Helvetica", 10, "bold"),
+        ).grid(row=1, column=1, sticky="e", padx=(10, 0))
+        ttk.Label(
+            header, textvariable=self._clock_var, background="#102A43",
+            foreground="#FFFFFF", font=("Helvetica", 10),
+        ).grid(row=0, column=2, rowspan=2, sticky="e", padx=(24, 0))
 
         content = ttk.Frame(self, padding=(24, 12, 24, 8))
         content.grid(row=1, column=0, sticky="nsew")
@@ -188,7 +239,7 @@ class ReconApp(tk.Tk):
             self.recon_path, self._browse_recon,
         )
         self._add_file_row(
-            files, 4, "File output", self.out_path, self._browse_out
+            files, 4, "Folder output", self.out_path, self._browse_out
         )
         ttk.Label(
             files,
@@ -208,6 +259,7 @@ class ReconApp(tk.Tk):
         preview.rowconfigure(0, weight=1)
         self.notebook = ttk.Notebook(preview)
         self.notebook.grid(row=0, column=0, sticky="nsew")
+        self.notebook.bind("<<NotebookTabChanged>>", self._tab_changed)
         self._add_preview_tab("LB", "Preview LB")
         self._add_preview_tab("RB", "Preview RB")
         self._add_preview_tab(
@@ -216,9 +268,13 @@ class ReconApp(tk.Tk):
         self._add_preview_tab(
             "Recon Records", "Recon · Records", editable=False
         )
+        self._add_preview_tab("Backdate LB", "Backdate · LB", editable=False)
+        self._add_preview_tab("Backdate RB", "Backdate · RB", editable=False)
+        self._add_preview_tab("Backdate RECON", "Backdate · RECON", editable=False)
+        self._add_history_tab()
         ttk.Label(
             preview,
-            text="Cari mencakup seluruh baris transaksi. Klik ganda sel untuk "
+            text="Pilih Semua untuk melihat seluruh baris. Klik ganda sel untuk "
             "mengedit LB/RB; Enter/pindah sel menerapkan, Esc membatalkan. "
             "Summary/Records dari file recon hanya sebagai referensi.",
             foreground="#536273",
@@ -243,7 +299,25 @@ class ReconApp(tk.Tk):
         ).pack(side="left")
         ttk.Label(
             footer, textvariable=self.status, foreground="#35465a"
-        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
+        ttk.Label(
+            footer, text="Terminal proses Generate", foreground="#123B5D",
+            font=("Helvetica", 9, "bold"),
+        ).grid(row=2, column=0, columnspan=2, sticky="w")
+        terminal_frame = ttk.Frame(footer)
+        terminal_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(3, 0))
+        terminal_frame.columnconfigure(0, weight=1)
+        self._terminal = tk.Text(
+            terminal_frame, height=4, wrap="word", state="disabled",
+            background="#102A43", foreground="#D9E7F2",
+            insertbackground="#FFFFFF", relief="flat", font=("Menlo", 9),
+        )
+        terminal_scroll = ttk.Scrollbar(
+            terminal_frame, orient="vertical", command=self._terminal.yview
+        )
+        self._terminal.configure(yscrollcommand=terminal_scroll.set)
+        self._terminal.grid(row=0, column=0, sticky="ew")
+        terminal_scroll.grid(row=0, column=1, sticky="ns")
 
     def _add_file_row(
         self,
@@ -366,6 +440,86 @@ class ReconApp(tk.Tk):
         ).grid(row=0, column=2, sticky="e")
         self.notebook.add(frame, text=title)
 
+    def _add_history_tab(self) -> None:
+        frame = ttk.Frame(self.notebook, padding=10)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+        controls = ttk.Frame(frame)
+        controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(
+            controls,
+            text=f"Operator aktif: {self.operator} · riwayat disimpan lokal",
+        ).pack(side="left")
+        ttk.Button(
+            controls, text="Periksa integritas", command=self._verify_audit
+        ).pack(side="right", padx=(6, 0))
+        ttk.Button(
+            controls, text="Ekspor CSV", command=self._export_audit_csv
+        ).pack(side="right", padx=(6, 0))
+        ttk.Button(
+            controls, text="Muat ulang", command=self._refresh_history
+        ).pack(side="right")
+        columns = ("time", "operator", "action", "details", "host")
+        tree = ttk.Treeview(frame, columns=columns, show="headings")
+        for key, title, width in (
+            ("time", "Waktu", 190), ("operator", "Operator", 140),
+            ("action", "Aktivitas", 180), ("details", "Rincian", 620),
+            ("host", "Perangkat", 170),
+        ):
+            tree.heading(key, text=title, anchor="w")
+            tree.column(key, width=width, minwidth=90, stretch=key == "details")
+        vertical = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+        horizontal = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        tree.grid(row=1, column=0, sticky="nsew")
+        vertical.grid(row=1, column=1, sticky="ns")
+        horizontal.grid(row=2, column=0, sticky="ew")
+        self._history_tree = tree
+        self.notebook.add(frame, text="Riwayat")
+
+    def _refresh_history(self) -> None:
+        tree = self._history_tree
+        if tree is None:
+            return
+        tree.delete(*tree.get_children())
+        for event in self.audit.recent_events(1000):
+            tree.insert(
+                "", "end",
+                values=(
+                    event["occurred_at"], event["operator"], event["action"],
+                    event["details_json"], event["host"],
+                ),
+            )
+
+    def _verify_audit(self) -> None:
+        valid, broken_id = self.audit.verify_chain()
+        self.audit.record(
+            self.operator, "audit_integrity_checked",
+            valid=valid, first_invalid_event=broken_id,
+        )
+        self._refresh_history()
+        if valid:
+            messagebox.showinfo("Riwayat", "Rantai hash riwayat masih valid.")
+        else:
+            messagebox.showerror(
+                "Riwayat berubah",
+                f"Integritas riwayat gagal mulai event #{broken_id}.",
+            )
+
+    def _export_audit_csv(self) -> None:
+        destination = filedialog.asksaveasfilename(
+            title="Ekspor riwayat pemakaian",
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv")],
+            initialfile=f"ReconBuilder_History_{dt.datetime.now():%Y%m%d_%H%M%S}.csv",
+        )
+        if not destination:
+            return
+        path = self.audit.export_csv(Path(destination))
+        self.audit.record(self.operator, "audit_exported", file=path.name)
+        self._refresh_history()
+        messagebox.showinfo("Riwayat diekspor", f"File riwayat:\n{path}")
+
     def _pick_xlsx(self, title: str) -> str:
         return filedialog.askopenfilename(
             title=title,
@@ -389,6 +543,74 @@ class ReconApp(tk.Tk):
         if selected:
             self._load_recon_source(Path(selected))
 
+    def _load_backdate_source(self, path: Path) -> None:
+        if path.suffix.lower() != ".xlsx":
+            return
+        self._load_tokens["Backdate"] += 1
+        token = self._load_tokens["Backdate"]
+        self._loading.add("Backdate")
+        for side in ("Backdate LB", "Backdate RB", "Backdate RECON"):
+            self._frames[side] = None
+            self._filtered_indices[side] = []
+            self._page_index[side] = 0
+            self._search_vars[side].set("")
+            self._clear_preview(side)
+            self._row_labels[side].set(f"Membaca {path.name}…")
+        self.status.set("Membaca dan mengelompokkan sheet Backdate…")
+        self.audit.record(
+            self.operator, "backdate_upload_selected", file=path.name
+        )
+        threading.Thread(
+            target=self._backdate_load_worker, args=(path, token), daemon=True
+        ).start()
+
+    def _backdate_load_worker(self, path: Path, token: int) -> None:
+        try:
+            frames = read_backdate_workbook(path)
+            error = None
+        except Exception as exc:
+            frames = None
+            error = str(exc)
+        self.after(0, self._backdate_loaded, token, path, frames, error)
+
+    def _backdate_loaded(
+        self,
+        token: int,
+        path: Path,
+        frames: dict[str, pl.DataFrame] | None,
+        error: str | None,
+    ) -> None:
+        if token != self._load_tokens["Backdate"]:
+            return
+        self._loading.discard("Backdate")
+        if error is not None or frames is None:
+            self.audit.record(
+                self.operator, "backdate_upload_failed",
+                file=path.name, error=error or "unknown",
+            )
+            for side in ("Backdate LB", "Backdate RB", "Backdate RECON"):
+                self._row_labels[side].set("File gagal dibaca.")
+            self.status.set("Gagal membaca workbook Backdate.")
+            messagebox.showerror(
+                "Gagal membaca Backdate", error or "Workbook kosong."
+            )
+            return
+        for sheet_name, frame in frames.items():
+            side = f"Backdate {sheet_name}"
+            self._frames[side] = frame
+            self._filtered_indices[side] = list(range(frame.height))
+            self._page_index[side] = 0
+            self._render_preview(side)
+        self.audit.record(
+            self.operator, "backdate_workbook_loaded", file=path.name,
+            sheets={name: frame.height for name, frame in frames.items()},
+        )
+        self.status.set(
+            "Backdate siap ditinjau: " + ", ".join(
+                f"{name} {frame.height:,} baris" for name, frame in frames.items()
+            )
+        )
+
     def _browse_backdate(self) -> None:
         selected = self._pick_xlsx("Upload File Backdate (.xlsx)")
         if not selected:
@@ -401,15 +623,24 @@ class ReconApp(tk.Tk):
             )
             return
         self.backdate_path.set(str(path))
+        self._load_backdate_source(path)
 
     def _browse_out(self) -> None:
-        selected = filedialog.asksaveasfilename(
-            title="Simpan file recon sebagai",
-            defaultextension=".xlsx",
-            filetypes=[("Excel Workbook (*.xlsx)", "*.xlsx")],
+        initial = Path(self.out_path.get()).expanduser()
+        if not initial.is_dir():
+            initial = Path.home() / "Desktop"
+        selected = filedialog.askdirectory(
+            title="Pilih folder untuk menyimpan hasil recon",
+            initialdir=str(initial),
         )
         if selected:
             self.out_path.set(selected)
+
+    def _page_size_for(self, side: str) -> int:
+        selection = self._page_size_vars[side].get()
+        if selection == "Semua":
+            return max(1, len(self._filtered_indices[side]))
+        return int(selection)
 
     def _load_source(self, side: str, path: Path) -> None:
         if path.suffix.lower() != ".xlsx":
@@ -428,6 +659,9 @@ class ReconApp(tk.Tk):
             return
         path_variable = self.lb_path if side == "LB" else self.rb_path
         path_variable.set(str(path))
+        self.audit.record(
+            self.operator, "source_upload_selected", side=side, file=path.name
+        )
         self._load_tokens[side] += 1
         token = self._load_tokens[side]
         self._loading.add(side)
@@ -470,6 +704,7 @@ class ReconApp(tk.Tk):
             )
             return
         self.recon_path.set(str(path))
+        self.audit.record(self.operator, "recon_upload_selected", file=path.name)
         self._load_tokens["Recon"] += 1
         token = self._load_tokens["Recon"]
         self._loading.add("Recon")
@@ -511,6 +746,10 @@ class ReconApp(tk.Tk):
                 self._frames[side] = None
                 self._row_labels[side].set("File gagal dibaca.")
             self.status.set("Gagal membaca file recon.")
+            self.audit.record(
+                self.operator, "recon_upload_failed", file=Path(self.recon_path.get()).name,
+                error=error or "unknown",
+            )
             messagebox.showerror(
                 "Gagal membaca file recon", error or "Data kosong."
             )
@@ -527,6 +766,11 @@ class ReconApp(tk.Tk):
             f"File recon siap sebagai referensi: {summary_count:,} baris "
             f"Summary, {record_count:,} baris Records."
         )
+        self.audit.record(
+            self.operator, "recon_reference_loaded",
+            file=Path(self.recon_path.get()).name,
+            sheets={name.removeprefix("Recon "): frame.height for name, frame in frames.items()},
+        )
 
     def _source_loaded(
         self,
@@ -542,6 +786,10 @@ class ReconApp(tk.Tk):
             self._frames[side] = None
             self._row_labels[side].set("File gagal dibaca.")
             self.status.set(f"Gagal membaca file {side}.")
+            self.audit.record(
+                self.operator, "source_upload_failed", side=side,
+                file=self._path_for_side(side).name, error=error or "unknown",
+            )
             messagebox.showerror("Gagal membaca file", error or "Data kosong.")
             return
 
@@ -550,6 +798,14 @@ class ReconApp(tk.Tk):
         self._page_index[side] = 0
         self._render_preview(side)
         self.status.set(f"File {side} siap ditinjau dan diedit.")
+        self.audit.record(
+            self.operator, "source_loaded", side=side,
+            file=self._path_for_side(side).name, rows=frame.height,
+        )
+
+    def _path_for_side(self, side: str) -> Path:
+        raw = self.lb_path.get() if side == "LB" else self.rb_path.get()
+        return Path(raw) if raw else Path("unknown.xlsx")
 
     def _clear_preview(self, side: str) -> None:
         tree = self._preview_widgets[side]
@@ -574,12 +830,15 @@ class ReconApp(tk.Tk):
         for column in columns:
             tree.heading(
                 column,
-                text=SOURCE_HEADERS.get(side, {}).get(column, column),
+                text=SOURCE_HEADERS.get(
+                    side.split()[-1] if side.startswith("Backdate ") else side,
+                    {},
+                ).get(column, column),
                 anchor="w",
             )
             tree.column(column, width=145, minwidth=90, stretch=False)
 
-        page_size = int(self._page_size_vars[side].get())
+        page_size = self._page_size_for(side)
         indices = self._filtered_indices[side]
         page_count = (len(indices) + page_size - 1) // page_size
         self._page_index[side] = min(
@@ -617,18 +876,34 @@ class ReconApp(tk.Tk):
         if self._editor is not None and self._editor_target is not None:
             if not self._commit_edit(*self._editor_target, self._editor):
                 return
-        page_count = (
-            len(self._filtered_indices[side])
-            + int(self._page_size_vars[side].get()) - 1
-        ) // int(self._page_size_vars[side].get())
+        page_size = self._page_size_for(side)
+        page_count = (len(self._filtered_indices[side]) + page_size - 1) // page_size
         self._page_index[side] = max(
             0, min(page_count - 1, self._page_index[side] + offset)
+        )
+        self.audit.record(
+            self.operator, "preview_page_changed", tab=side,
+            page=self._page_index[side] + 1,
         )
         self._render_preview(side)
 
     def _page_size_changed(self, side: str) -> None:
         self._page_index[side] = 0
+        self.audit.record(
+            self.operator, "preview_page_size_changed", tab=side,
+            page_size=self._page_size_vars[side].get(),
+        )
         self._render_preview(side)
+
+    def _tab_changed(self, _event: tk.Event[Any]) -> None:
+        selected = self.notebook.select()
+        if selected:
+            tab_title = self.notebook.tab(selected, "text")
+            self.audit.record(
+                self.operator, "tab_opened", tab=tab_title,
+            )
+            if tab_title == "Riwayat":
+                self._refresh_history()
 
     def _page_size_selected(
         self, side: str, event: tk.Event[Any]
@@ -653,6 +928,10 @@ class ReconApp(tk.Tk):
             matches = list(range(frame.height))
         else:
             matches = self._search_indices(frame, query)
+        self.audit.record(
+            self.operator, "preview_searched", tab=side,
+            query=query, matches=len(matches),
+        )
         self._filtered_indices[side] = matches
         self._page_index[side] = 0
         self._render_preview(side)
@@ -774,6 +1053,12 @@ class ReconApp(tk.Tk):
             self._frames[side] = frame.with_columns(updated)
         except (TypeError, ValueError, pl.exceptions.PolarsError) as exc:
             self._invalid_edits.add((side, row_index, column))
+            self.audit.record(
+                self.operator, "preview_cell_edit_rejected", tab=side,
+                row=row_index + 1,
+                column=SOURCE_HEADERS.get(side, {}).get(column, column),
+                attempted_value=raw_value, error=str(exc),
+            )
             messagebox.showerror(
                 "Nilai tidak valid",
                 f"Nilai untuk kolom {SOURCE_HEADERS.get(side, {}).get(column, column)} "
@@ -783,6 +1068,13 @@ class ReconApp(tk.Tk):
 
         self._invalid_edits.discard((side, row_index, column))
         self._edit_counts[side].add((row_index, column))
+        self.audit.record(
+            self.operator, "preview_cell_edited", tab=side,
+            row=row_index + 1,
+            column=SOURCE_HEADERS.get(side, {}).get(column, column),
+            previous_value=self._display_value(frame.get_column(column)[row_index]),
+            updated_value=self._display_value(value),
+        )
         query = self._search_vars[side].get().strip()
         if query:
             self._filtered_indices[side] = self._search_indices(
@@ -849,7 +1141,11 @@ class ReconApp(tk.Tk):
         )
 
     def _open_output_folder(self) -> None:
-        folder = Path(self.out_path.get()).expanduser().parent
+        output_file = self.last_output_path
+        folder = (
+            output_file.parent if output_file is not None
+            else Path(self.out_path.get()).expanduser()
+        )
         if not folder.is_dir():
             messagebox.showwarning(
                 "Folder tidak ada", f"Folder output belum ada:\n{folder}"
@@ -857,13 +1153,21 @@ class ReconApp(tk.Tk):
             return
         current_platform = platform.system()
         if current_platform == "Darwin":
-            command = ["open", str(folder)]
+            command = ["open", "-R", str(output_file)] if output_file and output_file.is_file() else ["open", str(folder)]
         elif current_platform == "Windows":
-            command = ["explorer", str(folder)]
+            command = ["explorer", "/select,", str(output_file)] if output_file and output_file.is_file() else ["explorer", str(folder)]
         else:
-            command = ["xdg-open", str(folder)]
+            command = (
+                ["xdg-open", str(output_file)]
+                if output_file and output_file.is_file()
+                else ["xdg-open", str(folder)]
+            )
         try:
             subprocess.Popen(command)
+            self.audit.record(
+                self.operator, "output_location_opened",
+                file=output_file.name if output_file else None,
+            )
         except OSError as exc:
             messagebox.showerror("Folder tidak bisa dibuka", str(exc))
 
@@ -874,7 +1178,20 @@ class ReconApp(tk.Tk):
                 "Tunggu pembacaan file/export selesai sebelum menutup aplikasi.",
             )
             return
+        self.audit.record(self.operator, "app_closed")
         self.destroy()
+
+    def _terminal_write(self, line: str) -> None:
+        if self._terminal is None:
+            return
+        timestamp = dt.datetime.now().astimezone().strftime("%H:%M:%S")
+        self._terminal.configure(state="normal")
+        self._terminal.insert("end", f"[{timestamp}] {line}\n")
+        self._terminal.see("end")
+        self._terminal.configure(state="disabled")
+
+    def _terminal_from_worker(self, line: str) -> None:
+        self.after(0, self._terminal_write, line)
 
     def _on_generate(self) -> None:
         if self._editor is not None:
@@ -899,7 +1216,8 @@ class ReconApp(tk.Tk):
         rb_path = Path(self.rb_path.get().strip()).expanduser()
         recon_path = Path(self.recon_path.get().strip()).expanduser()
         backdate_value = self.backdate_path.get().strip()
-        output = Path(self.out_path.get().strip()).expanduser()
+        output_dir = Path(self.out_path.get().strip()).expanduser()
+        backdate_frames = None
 
         backdate_path: Path | None = None
         if backdate_value:
@@ -914,6 +1232,16 @@ class ReconApp(tk.Tk):
                 messagebox.showerror(
                     "File Backdate",
                     "File Backdate yang dipilih tidak ditemukan.",
+                )
+                return
+            backdate_frames = {
+                sheet: self._frames[f"Backdate {sheet}"]
+                for sheet in ("LB", "RB", "RECON")
+            }
+            if any(frame is None for frame in backdate_frames.values()):
+                messagebox.showerror(
+                    "File Backdate",
+                    "Pastikan semua sheet Backdate selesai dimuat sebelum Generate.",
                 )
                 return
 
@@ -940,19 +1268,34 @@ class ReconApp(tk.Tk):
         if not self.out_path.get().strip():
             messagebox.showerror("File output", "Tentukan lokasi file output.")
             return
-        if output.resolve() in {
-            lb_path.resolve(), rb_path.resolve(), recon_path.resolve(),
-            *([backdate_path.resolve()] if backdate_path else []),
-        }:
-            messagebox.showerror(
-                "File output", "File output tidak boleh menimpa file upload."
-            )
+        if output_dir.exists() and not output_dir.is_dir():
+            messagebox.showerror("Folder output", "Lokasi output harus berupa folder.")
             return
-        if output.suffix.lower() != ".xlsx":
-            messagebox.showerror(
-                "Format tidak didukung", "File output harus berakhiran .xlsx."
-            )
+
+        try:
+            output_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            messagebox.showerror("Folder output", str(exc))
             return
+        output = output_dir / dt.datetime.now().astimezone().strftime(
+            "ReconBuilder_%Y%m%d_%H%M%S_%f.xlsx"
+        )
+        self._pending_output_path = output
+        self._terminal.configure(state="normal")
+        self._terminal.delete("1.0", "end")
+        self._terminal.configure(state="disabled")
+        self._terminal_write("Generate dimulai")
+        self.audit.record(
+            self.operator, "generate_started", output=output.name,
+            output_path=str(output),
+            lb_rows=self._frames["LB"].height,
+            rb_rows=self._frames["RB"].height,
+            backdate_file=backdate_path.name if backdate_path else None,
+            backdate_rows=(
+                {sheet: frame.height for sheet, frame in backdate_frames.items()}
+                if backdate_frames else None
+            ),
+        )
 
         self._busy = True
         self.generate_button.configure(state="disabled")
@@ -962,47 +1305,86 @@ class ReconApp(tk.Tk):
             if backdate_path else
             "Membuat file recon dari data yang sudah ditinjau…"
         )
+        started_at = time.perf_counter()
         threading.Thread(
             target=self._export_worker,
             args=(
                 self._frames["LB"], self._frames["RB"], output,
-                backdate_path,
+                backdate_path, started_at, backdate_frames,
             ),
             daemon=True,
         ).start()
 
     def _export_worker(
         self, lb_frame: pl.DataFrame | None, rb_frame: pl.DataFrame | None,
-        output: Path, backdate_path: Path | None = None,
+        output: Path, backdate_path: Path | None, started_at: float,
+        backdate_frames: dict[str, pl.DataFrame | None] | None,
     ) -> None:
         try:
             if lb_frame is None or rb_frame is None:
                 raise ValueError("File LB dan RB harus dimuat sebelum export.")
-            backdate = (
-                read_backdate_workbook(backdate_path)
-                if backdate_path is not None else None
-            )
+            if backdate_path is not None and backdate_frames is not None:
+                self._terminal_from_worker(
+                    f"Membaca Backdate: {backdate_path.name}"
+                )
+                self._terminal_from_worker(
+                    "Sheet Backdate: " + ", ".join(
+                        f"{name} {frame.height:,} baris"
+                        for name, frame in backdate_frames.items()
+                        if frame is not None
+                    )
+                )
             result = build_recon_workbook(
                 lb_frame,
                 rb_frame,
                 output,
-                backdate_lb_df=backdate["LB"] if backdate else None,
-                backdate_rb_df=backdate["RB"] if backdate else None,
-                backdate_recon_df=backdate["RECON"] if backdate else None,
+                backdate_lb_df=backdate_frames["LB"] if backdate_frames else None,
+                backdate_rb_df=backdate_frames["RB"] if backdate_frames else None,
+                backdate_recon_df=backdate_frames["RECON"] if backdate_frames else None,
+                progress_callback=self._terminal_from_worker,
             )
-            self.after(0, self._export_finished, result, None)
+            self.after(0, self._export_finished, result, None, started_at)
         except Exception as exc:
-            self.after(0, self._export_finished, None, str(exc))
+            self.after(0, self._export_finished, None, str(exc), started_at)
 
-    def _export_finished(self, result: Path | None, error: str | None) -> None:
+    def _export_finished(
+        self, result: Path | None, error: str | None, started_at: float
+    ) -> None:
+        elapsed = time.perf_counter() - started_at
         self.progress.stop()
         self._busy = False
         self.generate_button.configure(state="normal")
         if error is not None:
             self.status.set("Export gagal.")
+            self._terminal_write(f"GAGAL: {error}\n")
+            self.audit.record(
+                self.operator, "generate_failed",
+                output=(
+                    self._pending_output_path.name
+                    if self._pending_output_path else None
+                ),
+                output_path=(
+                    str(self._pending_output_path)
+                    if self._pending_output_path else None
+                ),
+                error=error, elapsed_seconds=round(elapsed, 3),
+            )
+            self._pending_output_path = None
+            self._refresh_history()
             messagebox.showerror("Gagal membuat recon", error)
             return
-        self.status.set(f"Export selesai: {result}")
+        self.last_output_path = result
+        self._pending_output_path = None
+        self.status.set(f"Export selesai: {result.name}")
+        self._terminal_write(
+            f"Selesai dalam {elapsed:.1f} detik\nFile: {result}\n"
+        )
+        self.audit.record(
+            self.operator, "generate_succeeded", output=result.name,
+            output_path=str(result),
+            elapsed_seconds=round(elapsed, 3), size_bytes=result.stat().st_size,
+        )
+        self._refresh_history()
         messagebox.showinfo("Recon selesai", f"File berhasil dibuat:\n{result}")
 
 

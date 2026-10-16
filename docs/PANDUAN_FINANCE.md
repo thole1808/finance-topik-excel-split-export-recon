@@ -10,8 +10,9 @@ memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 Versi JPG tersedia di [flow-recon-finance.jpg](flow-recon-finance.jpg).
 File sumber diagram: [flow-recon-finance.svg](flow-recon-finance.svg).
 
-Alur singkat: **Upload LB + RB + file recon referensi → validasi → preview/
-koreksi → proses data → export Excel → periksa Summary, Records, LB, dan RB**.
+Alur singkat: **Operator → upload LB/RB/recon dan Backdate opsional → validasi →
+preview per sheet/koreksi → proses dengan terminal → export bertimestamp →
+riwayat aktivitas → periksa Summary, Records, LB, dan RB**.
 Jumlah baris, tanggal, nominal, dan nilai lain diambil dari file yang diupload
 setiap kali proses berjalan. Data pada sheet Summary dan Records dari file recon
 referensi ditampilkan untuk ditinjau; Summary dan Records pada output dihitung
@@ -21,6 +22,8 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 ## Menjalankan aplikasi
 
 1. Buka **ReconBuilder.app** (atau jalankan `python3 app.py` dari source).
+   Masukkan nama atau ID operator ketika diminta. Jendela aplikasi akan
+   dimaksimalkan dan jam lokal tampil di header.
 2. Pada **Upload LB**, pilih workbook Loket Bayar berformat `.xlsx`; tunggu
    preview selesai dimuat.
 3. Pada **Upload RB**, pilih workbook Rajabiller berformat `.xlsx`; tunggu
@@ -32,16 +35,20 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
    (opsional)**. Workbook harus memiliki sheet `LB`, `RB`, dan `RECON` dengan
    header yang cocok. Jika tidak ada Backdate, biarkan field ini kosong.
 6. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
-   seluruh baris file: pilih jumlah baris per halaman lalu gunakan
+   seluruh baris file: pilih jumlah baris per halaman atau **Semua**, lalu gunakan
    **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
    nilai di semua kolom, termasuk transaksi pada halaman lain.
+   Sheet Backdate tampil sebagai tab **Backdate · LB**, **Backdate · RB**, dan
+   **Backdate · RECON**, sekalipun semuanya berasal dari satu workbook.
 7. Untuk koreksi LB/RB, pilih sel lalu klik **Edit sel terpilih**, atau klik
    ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah fokus untuk
    menerapkan; **Esc** membatalkan. Perubahan pada baris preview ikut
    diterapkan ke export. Baris lain tetap berasal dari file upload.
    Preview recon bersifat referensi dan tidak dapat diedit.
-8. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
-9. Klik **Generate Recon** dan tunggu pesan sukses.
+8. Tentukan folder output. Nama file dibuat otomatis dari tanggal dan waktu
+   lokal, misalnya `ReconBuilder_20261017_143025_123456.xlsx`.
+9. Klik **Generate Recon**. Terminal proses menampilkan tahapan penulisan dan
+   jumlah baris Records yang diproses. Tunggu pesan sukses.
 10. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
     Dengan Backdate, transaksi yang dibentuk dari sumber `LB`/`RB` Backdate
     muncul di bagian awal `Records` berdasarkan Datetime, lalu diikuti hasil
@@ -52,6 +59,31 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
     menghitung gabungan Backdate dan End Date. Transaksi End Date pukul
     23:00–23:59 ditampilkan di bagian **For tomorrow because different time**;
     transaksi Backdate pukul 23:00 atau lebih tetap terlihat di blok utama.
+11. **Buka Folder Output** akan memilih file terakhir yang berhasil dibuat
+    langsung di foldernya.
+
+## Riwayat penggunaan dan audit
+
+Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, nama/ID yang
+dimasukkan, akun OS, perangkat, versi aplikasi, aksi, dan rinciannya. Aplikasi
+mencatat pembukaan/penutupan, tab yang dibuka, file yang dipilih/dimuat, pencarian,
+perubahan sel (nilai lama dan baru), navigasi preview, proses generate (hasil,
+durasi, ukuran atau kegagalan), dan pembukaan lokasi output. Gunakan
+**Periksa integritas** untuk memvalidasi rantai hash, atau **Ekspor CSV** untuk
+menyimpan seluruh log.
+
+Database SQLite tersimpan per akun komputer: macOS
+`~/Library/Application Support/Recon Builder/usage-history.sqlite3`, Windows
+`%APPDATA%/Recon Builder/usage-history.sqlite3`, Linux
+`~/.local/share/recon-builder/usage-history.sqlite3` (kecuali XDG_DATA_HOME
+ditetapkan). Simpan/backup file tersebut sesuai kebijakan Finance. Rantai hash
+mendeteksi perubahan pada rekaman yang tersisa, tetapi log lokal bukan bukti
+non-repudiation: operator dapat memasukkan identitas lain dan pemilik perangkat
+dapat menghapus atau mengganti database. Untuk pembuktian lintas operator yang
+kuat, aplikasi perlu login terverifikasi (misalnya SSO) dan mengirim event ke
+server audit terpusat dengan hak tulis terbatas serta retensi yang dikelola.
+Rincian audit menyimpan nilai sel yang diedit dan query pencarian; batasi akses
+ke database/CSV ekspor sesuai kebijakan data Finance.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
 `.csv`, PDF, dan file selain Excel tidak didukung. Sheet pertama pada setiap
@@ -148,7 +180,9 @@ File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`
 pada output selalu dihitung ulang menggunakan upload LB/RB yang sedang diproses.
 
-Preview menampilkan data dalam halaman agar file besar tetap mudah ditinjau.
+Preview menampilkan data dalam halaman agar file besar tetap mudah ditinjau;
+opsi **Semua** menampilkan seluruh baris pada satu halaman. Setiap sheet
+Backdate dapat ditinjau lewat tabnya sendiri.
 Pencarian mencakup semua baris, bukan hanya halaman aktif. Perubahan yang
 disimpan di preview memengaruhi baris yang sama pada sheet input dan hasil
 gabungan; nilai perhitungan terkait akan dibuat ulang oleh exporter. File
