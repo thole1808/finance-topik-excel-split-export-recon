@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.14**
+**Versi saat ini: 1.2.15**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -200,6 +200,11 @@ pengguna meminta penerbitan release.
 - File `CARA INSTALL.txt` diberi permission baca umum (`0644`) dan image dibuat
   tanpa mempertahankan ownership dari mesin build, agar pengguna dapat membuka
   petunjuk di dalam DMG.
+
+## Implementasi 1.2.15 — terminal proses lebih besar
+
+- Panel Terminal proses Generate ditambah dari 4 menjadi 9 baris dan font
+  diperbesar dari 9 menjadi 10 pt. Panel tetap mengisi lebar footer aplikasi.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -504,7 +509,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.14, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.15, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -520,6 +525,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.15 | Panel Terminal proses Generate diperbesar menjadi 9 baris dan font 10 pt, tetap responsif selebar jendela. |
 | 1.2.14 | Permission `CARA INSTALL.txt` dibuat terbaca untuk semua user dan ownership mesin build tidak dibawa ke DMG. |
 | 1.2.13 | PKG tidak relocatable dan gagal secara nyata bila bundle tidak ada di `/Applications`; instruksi DMG dibuat singkat. |
 | 1.2.12 | DMG memuat app langsung dan alias Applications agar pemasangan Mac dapat dilakukan dengan drag-and-drop; PKG tetap tersedia terpisah. |

@@ -367,9 +367,9 @@ class ReconApp(tk.Tk):
         terminal_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(3, 0))
         terminal_frame.columnconfigure(0, weight=1)
         self._terminal = tk.Text(
-            terminal_frame, height=4, wrap="word", state="disabled",
+            terminal_frame, height=9, wrap="word", state="disabled",
             background="#102A43", foreground="#D9E7F2",
-            insertbackground="#FFFFFF", relief="flat", font=("Menlo", 9),
+            insertbackground="#FFFFFF", relief="flat", font=("Menlo", 10),
         )
         terminal_scroll = ttk.Scrollbar(
             terminal_frame, orient="vertical", command=self._terminal.yview

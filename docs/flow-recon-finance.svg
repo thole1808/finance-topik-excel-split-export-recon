@@ -21,7 +21,7 @@
   <rect width="1800" height="1800" fill="#f3f7fb"/>
 
   <text x="76" y="76" class="title">ALUR RECON BUILDER</text>
-  <text x="78" y="116" class="subtitle">Versi 1.2.14 · Upload → preview per sheet → proses → hasil bertimestamp + riwayat</text>
+  <text x="78" y="116" class="subtitle">Versi 1.2.15 · Upload → preview per sheet → proses → hasil bertimestamp + riwayat</text>
 
   <!-- Upload sources -->
   <rect x="76" y="190" width="350" height="135" rx="20" class="card"/>
