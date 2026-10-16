@@ -22,3 +22,4 @@ __pycache__/
 *.dmg
 *.pkg
 dist/SHA256SUMS*.txt
+*.dmg.zip
