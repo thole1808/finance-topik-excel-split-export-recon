@@ -109,6 +109,41 @@ class ReconExporterBackdateTests(unittest.TestCase):
                 return True
         return False
 
+    def _cells_in_row(self, path: Path, sheet_number: int, row: int) -> dict[str, str]:
+        cells = self._sheet_cells(path, sheet_number)
+        result: dict[str, str] = {}
+        for address, cell in cells.items():
+            column = address.rstrip("0123456789")
+            row_text = address[len(column):]
+            if column not in {
+                "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU",
+                "AV", "AW", "AX", "AY", "AZ", "BA",
+            } or not row_text.isdigit() or int(row_text) != row:
+                continue
+            value = cell.findtext(f"{MAIN_NS}v")
+            if value is None:
+                value = "".join(
+                    cell.itertext()
+                )
+            result[column] = value
+        return result
+
+    def _find_lb_tomorrow_row(
+        self, path: Path, timestamp: dt.datetime
+    ) -> dict[str, str] | None:
+        expected = (
+            timestamp - dt.datetime(1899, 12, 30)
+        ).total_seconds() / 86400
+        for address, cell in self._sheet_cells(path, 3).items():
+            if not address.startswith("AN") or not address[2:].isdigit():
+                continue
+            value = cell.findtext(f"{MAIN_NS}v")
+            if value is not None and math.isclose(
+                float(value), expected, abs_tol=1e-9
+            ):
+                return self._cells_in_row(path, 3, int(address[2:]))
+        return None
+
     def test_combines_subtotals_keeps_source_references_and_end_date_23(self) -> None:
         backdate_lb = pl.DataFrame([
             _lb_row(
@@ -211,6 +246,17 @@ class ReconExporterBackdateTests(unittest.TestCase):
                     output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
+            tomorrow_row = self._find_lb_tomorrow_row(
+                output, dt.datetime(2026, 10, 15, 23, 30)
+            )
+            self.assertIsNotNone(tomorrow_row)
+            assert tomorrow_row is not None
+            self.assertTrue(all(tomorrow_row.get(column) for column in (
+                "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU",
+                "AV", "AW", "AX", "AY", "AZ", "BA",
+            )))
+            self.assertEqual(tomorrow_row["AY"], "SUCCESS")
+            self.assertEqual(tomorrow_row["BA"], "MATCHED")
             self.assertTrue(
                 self._has_date(
                     output, 4, "AX", dt.datetime(2026, 10, 15, 23, 30)

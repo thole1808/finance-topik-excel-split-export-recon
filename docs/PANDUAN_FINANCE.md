@@ -131,7 +131,9 @@ Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
 membatasi jumlah hari. Transaksi End Date pukul 23:00–23:59 ditampilkan di
 blok recon dan data sumber **For tomorrow because different time**, serta tetap
 ada di `Records`. Transaksi Backdate pukul 23:00 atau lebih tetap di blok
-utama. Baris total per status mencakup semua transaksi sumber.
+utama. Pada LB, tabel recon For tomorrow memuat kolom Datetime sampai
+`Recon Result`, dan data sumber tampil di sampingnya. Baris total per status
+mencakup semua transaksi sumber.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai

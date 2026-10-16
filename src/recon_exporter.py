@@ -997,11 +997,12 @@ def _write_wide_sheet(
     }
     for section in ("A", "B", "C"):
         values_by_row[3].update(layout[section])
+    output_max_column = max(max_column, 79) if sheet == "LB" else max_column
     _write_template_rows(
         worksheet,
         workbook,
         sheet,
-        max_column,
+        output_max_column,
         values_by_row,
         format_cache,
         formulas_by_row=formulas_by_row,
@@ -1009,6 +1010,8 @@ def _write_wide_sheet(
 
     tomorrow_start = 40 if sheet == "LB" else 50
     tomorrow_end = 72 if sheet == "LB" else 63
+    tomorrow_recon_start = 40 if sheet == "LB" else 50
+    tomorrow_recon_end = 53 if sheet == "LB" else 63
 
     for index, (excel_row, current_day_record, tomorrow_record) in enumerate(
         output_slots
@@ -1083,7 +1086,7 @@ def _write_wide_sheet(
                 ),
             }
 
-        for column in range(1, max_column + 1):
+        for column in range(1, output_max_column + 1):
             status_columns = (
                 {12, 51} if sheet == "LB"
                 else {12, 61}
@@ -1092,16 +1095,26 @@ def _write_wide_sheet(
                 is_main_column = 1 <= column <= 19
                 is_current_source_column = 21 <= column <= 37
                 is_tomorrow_source_column = 56 <= column <= 72
+                is_tomorrow_recon_column = 40 <= column <= 53
             else:
                 is_main_column = 1 <= column <= 16
                 is_current_source_column = 18 <= column <= 30
                 is_tomorrow_source_column = 34 <= column <= 46
-            is_tomorrow_column = tomorrow_start <= column <= tomorrow_end
+                is_tomorrow_recon_column = 50 <= column <= 63
+            is_tomorrow_column = (
+                tomorrow_recon_start <= column <= tomorrow_recon_end
+            )
             if is_main_column or is_current_source_column:
                 value = current_day_values.get(column)
                 status_row = current_day_record
                 has_status_row = status_row is not None
-            elif is_tomorrow_column or is_tomorrow_source_column:
+            elif is_tomorrow_column:
+                value = tomorrow_values.get(
+                    column - tomorrow_recon_start + 1
+                )
+                status_row = tomorrow_record
+                has_status_row = status_row is not None
+            elif is_tomorrow_source_column:
                 value = tomorrow_values.get(column)
                 status_row = tomorrow_record
                 has_status_row = status_row is not None
@@ -1111,7 +1124,10 @@ def _write_wide_sheet(
                 has_status_row = False
             row_highlight = (
                 _status_highlight(status_row.get("status"))
-                if column in status_columns and has_status_row
+                if (
+                    column in status_columns
+                    or (sheet == "LB" and column == 51)
+                ) and has_status_row
                 else None
             )
             formula_data = formulas.get(column)
@@ -1119,6 +1135,8 @@ def _write_wide_sheet(
                 {1, 21, 40, 56} if sheet == "LB"
                 else {1, 20, 36, 50}
             )
+            if sheet == "LB" and is_tomorrow_recon_column:
+                date_columns = {40}
             cell_overrides = (
                 {"num_format": DATETIME_NUMBER_FORMAT}
                 if column in date_columns else None
@@ -1129,7 +1147,7 @@ def _write_wide_sheet(
             )
             _write_cell(
                 worksheet, workbook, sheet, excel_row - 1, column,
-                template_row,
+                4 if is_tomorrow_recon_column else template_row,
                 value,
                 formula=formula_data[0] if formula_data else None,
                 cached_value=formula_data[1] if formula_data else None,
