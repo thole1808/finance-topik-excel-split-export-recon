@@ -170,7 +170,7 @@ class ReconApp(tk.Tk):
                     canvas_img.paste(resized, (i * new_w, 0))
                 canvas_img = canvas_img.crop((0, 0, w, h))
                 # Overlay gelap agar teks di atas tetap terbaca
-                overlay = PILImage.new("RGBA", (w, h), (16, 42, 67, 200))
+                overlay = PILImage.new("RGBA", (w, h), (16, 42, 67, 170))
                 canvas_img = PILImage.alpha_composite(canvas_img, overlay)
                 self._batik_photo = ImageTk.PhotoImage(canvas_img)
                 canvas.config(width=w, height=h)
@@ -280,34 +280,40 @@ class ReconApp(tk.Tk):
         self._header = header
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
-        ttk.Label(
-            header, text="Recon Builder", style="Header.TLabel"
+        tk.Label(
+            header, text="Recon Builder",
+            background="#102A43", foreground="#FFFFFF",
+            font=("Helvetica", 23, "bold"),
         ).grid(row=0, column=0, sticky="w")
-        ttk.Label(
+        tk.Label(
             header,
             text=(
                 "Upload, cari, tinjau, dan koreksi data sebelum "
                 "membuat workbook recon."
             ),
-            style="Subtitle.TLabel",
+            background="#102A43", foreground="#C7D8E7",
+            font=("Helvetica", 10),
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
-        ttk.Label(
+        self._release_status_label = tk.Label(
             header, textvariable=self._release_status_var,
             background="#102A43", foreground="#55D6BE",
             font=("Helvetica", 9, "bold"),
-        ).grid(row=2, column=0, sticky="w", pady=(8, 0))
-        ttk.Label(
-            header, text="Powered By DevOps", background="#102A43",
-            foreground="#C7D8E7", font=("Helvetica", 10, "bold"),
+        )
+        self._release_status_label.grid(row=2, column=0, sticky="w", pady=(8, 0))
+        tk.Label(
+            header, text="Powered By DevOps",
+            background="#102A43", foreground="#C7D8E7",
+            font=("Helvetica", 10, "bold"),
         ).grid(row=2, column=2, sticky="e", pady=(8, 0))
         self._update_button = ttk.Button(
             header, text="Periksa Update", command=self._on_update_button,
             style="Header.TButton",
         )
         self._update_button.grid(row=0, column=2, rowspan=2, sticky="e", padx=(24, 0))
-        ttk.Label(
-            header, textvariable=self._clock_var, background="#102A43",
-            foreground="#FFFFFF", font=("Helvetica", 10),
+        tk.Label(
+            header, textvariable=self._clock_var,
+            background="#102A43", foreground="#FFFFFF",
+            font=("Helvetica", 10),
         ).grid(row=0, column=1, rowspan=2, sticky="e", padx=(24, 0))
 
         content = ttk.Frame(self, padding=(24, 12, 24, 8))
@@ -398,7 +404,7 @@ class ReconApp(tk.Tk):
             )
             self._voice_test_button.pack(side="left", padx=(8, 0))
         ttk.Label(
-            footer, textvariable=self.status, foreground="#35465a"
+            footer, textvariable=self.status, foreground="#1A3050"
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
         ttk.Label(
             footer, text="Terminal proses Generate", foreground="#123B5D",
