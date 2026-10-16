@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.1** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.2** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -85,6 +85,8 @@ Hasilnya:
 - `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.dmg`
 
 Script juga menyalin DMG bernama sama ke root repository untuk workflow release.
+Setiap push versi baru ke `main` membuat tag `v<versi>` dan GitHub Release
+berisi Windows installer, DMG, flowchart PNG/JPG, dan `SHA256SUMS.txt`.
 
 DMG berisi aplikasi desktop mandiri; spreadsheet LB/RB dipilih saat aplikasi
 dijalankan dan tidak dibundel bersama aplikasi. Engine Excel Polars
@@ -99,8 +101,9 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
-- Untuk installer rilis, push tag versi seperti `v1.2.1`. Workflow membuat
-  GitHub Release berisi `ReconBuilder-Setup.exe` dan DMG bernama versi/waktu.
+- Untuk installer rilis manual, push tag yang sama dengan versi source seperti
+  `v1.2.2`. Workflow mengisi release dengan installer, DMG, flowchart PNG/JPG,
+  dan checksum. Push versi baru ke `main` membuat tag/release secara otomatis.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
 
@@ -113,10 +116,16 @@ src/
   app.py                       # Antarmuka Tkinter
   recon_exporter.py            # Baca, transformasi Polars, ekspor XlsxWriter
   audit_log.py                 # Riwayat penggunaan SQLite dengan hash chain
+  announcements.py             # Pemberitahuan suara lintas OS
+  updater.py                   # Pemeriksaan, unduhan, dan pemasangan update
   version.py                   # Versi aplikasi (sumber tunggal)
   fee_tables.json              # Fee fallback untuk kode produk baru
   reference_data.json          # Nama produk dan fee dari file acuan
   ref_styles.json              # Warna, format angka, font, dan lebar kolom acuan
+assets/
+  recon-builder.svg            # Master ikon Recon Builder
+  recon-builder.icns           # Ikon aplikasi macOS
+  recon-builder.ico            # Ikon aplikasi/installer Windows
 scripts/
   build_dmg.sh                 # Build .app dan .dmg di macOS
   windows/

@@ -21,7 +21,7 @@
   <rect width="1800" height="1800" fill="#f3f7fb"/>
 
   <text x="76" y="76" class="title">ALUR RECON BUILDER</text>
-  <text x="78" y="116" class="subtitle">Versi 1.2.1 · Upload → preview per sheet → proses → hasil bertimestamp + riwayat</text>
+  <text x="78" y="116" class="subtitle">Versi 1.2.2 · Upload → preview per sheet → proses → hasil bertimestamp + riwayat</text>
 
   <!-- Upload sources -->
   <rect x="76" y="190" width="350" height="135" rx="20" class="card"/>
@@ -141,9 +141,9 @@
   <text x="76" y="1468" class="small">Catatan: label MATCHED/INTERNAL saat ini berasal dari status, bukan hasil pencocokan silang settlement LB ↔ RB.</text>
 
   <rect x="76" y="1510" width="1670" height="210" rx="20" fill="#eaf4f8" stroke="#aac9e8" stroke-width="2"/>
-  <text x="108" y="1555" class="heading">Operator · proses · audit</text>
-  <text x="108" y="1595" class="body">Aplikasi dimaksimalkan, menampilkan jam lokal, Powered By DevOps, dan tahapan generate pada terminal.</text>
-  <text x="108" y="1632" class="body">Backdate LB/RB/RECON ditinjau dalam tab sendiri; Preview Semua menampilkan seluruh baris.</text>
-  <text x="108" y="1669" class="body">File output diberi tanggal/waktu; SQLite lokal mencatat aksi dan hash chain dapat diperiksa/diekspor.</text>
-  <text x="108" y="1702" class="small">Catatan: audit lokal dapat dihapus oleh pemilik perangkat; non-repudiation memerlukan login terverifikasi dan server audit pusat.</text>
+  <text x="108" y="1555" class="heading">Operator · proses · pembaruan</text>
+  <text x="108" y="1595" class="body">Aplikasi membacakan proses mulai/berhasil, memaksimalkan layar, dan menampilkan jam lokal serta Powered By DevOps.</text>
+  <text x="108" y="1632" class="body">Backdate LB/RB/RECON punya tab sendiri; Preview Semua menampilkan semua baris.</text>
+  <text x="108" y="1669" class="body">SQLite mencatat aktivitas; updater mengunduh release HTTPS yang checksum-nya diverifikasi.</text>
+  <text x="108" y="1702" class="small">Ikon baru ikut installer. Release memuat flowchart PNG/JPG; audit lokal tetap dapat dihapus pemilik perangkat.</text>
 </svg>

@@ -5,6 +5,7 @@ from __future__ import annotations
 import subprocess
 import threading
 import datetime as dt
+import os
 import time
 from functools import partial
 from pathlib import Path
@@ -24,7 +25,15 @@ from src.recon_exporter import (
     read_raw_excel,
 )
 from src.audit_log import AuditLog
+from src.announcements import announce
 from src.version import __version__
+from src.updater import (
+    UpdateError,
+    UpdateRelease,
+    download_update,
+    latest_update,
+    start_installer,
+)
 
 PREVIEW_PAGE_SIZE = 500
 PREVIEW_PAGE_SIZES = ("100", "250", "500", "1000", "Semua")
@@ -99,6 +108,9 @@ class ReconApp(tk.Tk):
         self._terminal: tk.Text | None = None
         self._history_tree: ttk.Treeview | None = None
         self._clock_var = tk.StringVar()
+        self._update_button: ttk.Button | None = None
+        self._update_info: UpdateRelease | None = None
+        self._update_checking = False
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.deiconify()
@@ -108,6 +120,7 @@ class ReconApp(tk.Tk):
             "valid": self.audit.verify_chain()[0]
         })
         self._refresh_history()
+        self.after(1500, self._check_updates_silently)
 
     def _maximize_window(self) -> None:
         try:
@@ -297,6 +310,10 @@ class ReconApp(tk.Tk):
         ttk.Button(
             actions, text="Buka Folder Output", command=self._open_output_folder
         ).pack(side="left")
+        self._update_button = ttk.Button(
+            actions, text="Periksa Update", command=self._on_update_button
+        )
+        self._update_button.pack(side="left", padx=(8, 0))
         ttk.Label(
             footer, textvariable=self.status, foreground="#35465a"
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
@@ -1172,10 +1189,11 @@ class ReconApp(tk.Tk):
             messagebox.showerror("Folder tidak bisa dibuka", str(exc))
 
     def _on_close(self) -> None:
-        if self._busy or self._loading:
+        if self._busy or self._loading or self._update_checking:
             messagebox.showwarning(
                 "Proses masih berjalan",
-                "Tunggu pembacaan file/export selesai sebelum menutup aplikasi.",
+                "Tunggu proses file atau pemeriksaan update selesai sebelum "
+                "menutup aplikasi.",
             )
             return
         self.audit.record(self.operator, "app_closed")
@@ -1192,6 +1210,146 @@ class ReconApp(tk.Tk):
 
     def _terminal_from_worker(self, line: str) -> None:
         self.after(0, self._terminal_write, line)
+
+    def _check_updates_silently(self) -> None:
+        self._check_for_updates(silent=True)
+
+    def _on_update_button(self) -> None:
+        if self._busy:
+            return
+        if self._update_info is None:
+            self._check_for_updates(silent=False)
+            return
+        release = self._update_info
+        if not messagebox.askyesno(
+            "Update tersedia",
+            f"Recon Builder v{release.version} tersedia. Unduh dan pasang sekarang?\n\n"
+            "Aplikasi akan ditutup dan dibuka kembali setelah proses update.",
+        ):
+            self.audit.record(
+                self.operator, "update_declined", version=release.version
+            )
+            return
+        self._busy = True
+        self._update_button.configure(state="disabled", text="Mengunduh update…")
+        self._terminal_write(f"Mengunduh Recon Builder v{release.version}…")
+        self.audit.record(self.operator, "update_started", version=release.version)
+        threading.Thread(
+            target=self._download_and_start_update,
+            args=(release,),
+            daemon=True,
+        ).start()
+
+    def _check_for_updates(self, *, silent: bool) -> None:
+        if self._update_checking or self._busy:
+            return
+        self._update_checking = True
+        self.audit.record(
+            self.operator, "update_check_started", automatic=silent
+        )
+        if self._update_button is not None:
+            self._update_button.configure(state="disabled", text="Memeriksa…")
+        threading.Thread(
+            target=self._update_check_worker, args=(silent,), daemon=True
+        ).start()
+
+    def _update_check_worker(self, silent: bool) -> None:
+        try:
+            release = latest_update(__version__)
+            error = None
+        except Exception as exc:
+            release = None
+            error = str(exc)
+        self.after(0, self._update_check_finished, release, error, silent)
+
+    def _update_check_finished(
+        self, release: UpdateRelease | None, error: str | None, silent: bool
+    ) -> None:
+        self._update_checking = False
+        if self._update_button is not None:
+            self._update_button.configure(state="normal")
+        if error:
+            self._update_info = None
+            if self._update_button is not None:
+                self._update_button.configure(text="Periksa Update")
+            self.audit.record(self.operator, "update_check_failed", error=error)
+            if not silent:
+                messagebox.showerror("Pemeriksaan update gagal", error)
+            return
+        self._update_info = release
+        if release is not None:
+            if self._update_button is not None:
+                self._update_button.configure(
+                    text=f"Klik untuk Update · v{release.version}",
+                    style="Accent.TButton",
+                )
+            self.audit.record(
+                self.operator, "update_available", version=release.version,
+                release_url=release.html_url,
+            )
+            if not silent:
+                messagebox.showinfo(
+                    "Update tersedia",
+                    f"Versi terbaru v{release.version} siap dipasang.",
+                )
+        else:
+            self.audit.record(
+                self.operator, "update_check_completed",
+                current_version=__version__, update_available=False,
+            )
+            if self._update_button is not None:
+                self._update_button.configure(
+                    text=f"Periksa Update · v{__version__}",
+                    style="TButton",
+                )
+            if not silent:
+                messagebox.showinfo(
+                    "Aplikasi terbaru",
+                    f"Recon Builder v{__version__} sudah versi terbaru.",
+                )
+
+    def _download_and_start_update(self, release: UpdateRelease) -> None:
+        try:
+            installer = download_update(
+                release,
+                progress_callback=lambda completed, total: self.after(
+                    0, self._update_download_progress, completed, total
+                ),
+            )
+            start_installer(installer, os.getpid())
+            error = None
+        except Exception as exc:
+            error = str(exc)
+        self.after(0, self._update_install_finished, release, error)
+
+    def _update_download_progress(self, completed: int, total: int) -> None:
+        if total <= 0:
+            return
+        percent = min(100, int(completed * 100 / total))
+        if self._update_button is not None:
+            self._update_button.configure(text=f"Mengunduh update… {percent}%")
+
+    def _update_install_finished(
+        self, release: UpdateRelease, error: str | None
+    ) -> None:
+        self._busy = False
+        if error:
+            if self._update_button is not None:
+                self._update_button.configure(
+                    state="normal", text=f"Klik untuk Update · v{release.version}"
+                )
+            self.audit.record(
+                self.operator, "update_failed", version=release.version,
+                error=error,
+            )
+            self._refresh_history()
+            messagebox.showerror("Update gagal", error)
+            return
+        self.audit.record(
+            self.operator, "update_installer_started", version=release.version
+        )
+        self.audit.record(self.operator, "app_closed_for_update")
+        self.destroy()
 
     def _on_generate(self) -> None:
         if self._editor is not None:
@@ -1300,6 +1458,7 @@ class ReconApp(tk.Tk):
         self._busy = True
         self.generate_button.configure(state="disabled")
         self.progress.start(10)
+        announce("Mohon tunggu. Proses generate file recon sedang berjalan.")
         self.status.set(
             "Membuat file recon gabungan Backdate dan End Date…"
             if backdate_path else
@@ -1384,6 +1543,7 @@ class ReconApp(tk.Tk):
             output_path=str(result),
             elapsed_seconds=round(elapsed, 3), size_bytes=result.stat().st_size,
         )
+        announce("Berhasil. Generate file recon dari BO Biller selesai.")
         self._refresh_history()
         messagebox.showinfo("Recon selesai", f"File berhasil dibuat:\n{result}")
 

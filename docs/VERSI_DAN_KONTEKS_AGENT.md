@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.1**
+**Versi saat ini: 1.2.2**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -59,6 +59,31 @@ pengguna meminta penerbitan release.
 - Script menyimpan hasil di `dist/` dan menyalin artefak bernama sama ke root
   untuk workflow release. GitHub Actions memilih DMG untuk versi source yang
   sama saat membuat release.
+
+## Implementasi 1.2.2 — release otomatis, suara, updater, dan ikon
+
+- Push ke `main` dengan versi baru membangun Windows installer, memvalidasi
+  kecocokan tag dengan `src/version.py`, membuat tag `v<versi>` dan GitHub
+  Release, lalu melampirkan installer, DMG bertimestamp, diagram PNG/JPG, dan
+  `SHA256SUMS.txt`. Push tag manual yang versinya cocok memakai alur release
+  yang sama. Push lain dengan versi yang release-nya sudah ada tidak membuat
+  release duplikat.
+- Aplikasi mengucapkan “Mohon tunggu. Proses generate file recon sedang
+  berjalan.” saat Generate dimulai, dan “Berhasil. Generate file recon dari BO
+  Biller selesai.” hanya setelah workbook berhasil dibuat. OS memakai suara
+  bawaan; pesan diantrekan agar tidak tumpang tindih.
+- Tombol **Periksa Update** memeriksa GitHub Releases saat aplikasi dibuka dan
+  menampilkan label versi baru. Kliknya mengunduh installer OS, memeriksa
+  SHA-256, lalu menjalankan updater. macOS mengganti `.app` setelah proses lama
+  ditutup; Windows menjalankan Setup dan menutup aplikasi agar installer dapat
+  mengganti file. macOS meminta izin administrator bila aplikasi dipasang di
+  folder sistem. Tidak ada updater otomatis untuk Linux.
+- Aset ikon master `assets/recon-builder.svg` menghasilkan PNG, ICNS, dan ICO.
+  Ikon dibundel di aplikasi/installer; update menggantinya bersama versi baru.
+- Batas update: harus ada release GitHub yang sukses dan artefak dengan checksum.
+  Bila jaringan tidak tersedia, aplikasi tetap dapat dipakai dan tombol bisa
+  dicoba kembali. SHA-256 mendeteksi kerusakan/perubahan berkas terhadap
+  manifest release; ia bukan tanda tangan publisher terpisah.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -363,7 +388,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.1, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.2, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -379,6 +404,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.2 | Tag/release otomatis, suara status, updater checksum, ikon baru, flowchart PNG/JPG di release. |
 | 1.2.1 | Nama DMG mencantumkan versi aplikasi dan waktu build. |
 | 1.2.0 | Tab tiap sheet Backdate, preview Semua, output bertimestamp, UI maximize/clock/terminal, dan audit SQLite lokal. |
 | 1.1.22 | Tulis semua baris For tomorrow LB berurutan mulai dari baris 4. |

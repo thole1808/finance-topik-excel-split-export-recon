@@ -62,6 +62,29 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 11. **Buka Folder Output** akan memilih file terakhir yang berhasil dibuat
     langsung di foldernya.
 
+## Update aplikasi dan notifikasi suara
+
+Saat aplikasi dibuka, **Periksa Update** memeriksa GitHub Release. Jika versi
+baru tersedia, tombol berubah menjadi **Klik untuk Update · v...**. Klik tombol
+tersebut untuk mengunduh installer sesuai sistem operasi; aplikasi memeriksa
+SHA-256 sebelum memasang dan membuka kembali aplikasi. macOS dapat meminta
+otorisasi administrator bila aplikasi berada di folder sistem. Windows dapat
+meminta konfirmasi UAC. Koneksi internet dan release GitHub yang berhasil
+diterbitkan diperlukan. Update otomatis tersedia untuk macOS dan Windows.
+
+Aplikasi membacakan “Mohon tunggu. Proses generate file recon sedang berjalan.”
+saat Generate dimulai dan membacakan pemberitahuan sukses setelah file selesai
+dibuat. Suara menggunakan layanan text-to-speech bawaan sistem operasi.
+
+Ikon Recon Builder disertakan dalam aplikasi macOS dan installer Windows, lalu
+ikut diperbarui bersama versi aplikasi. Diagram alur tersedia sebagai PNG dan
+JPG pada dokumen ini dan sebagai aset pada GitHub Release.
+
+Setiap push ke `main` dengan versi baru di `src/version.py` membangun installer
+Windows dan mencatat Git tag `v<versi>` serta GitHub Release yang memuat DMG,
+installer Windows, diagram PNG/JPG, dan checksum. Karena itu, siapkan DMG
+berversi hasil build macOS di root repository sebelum push versi baru.
+
 ## Riwayat penggunaan dan audit
 
 Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, nama/ID yang

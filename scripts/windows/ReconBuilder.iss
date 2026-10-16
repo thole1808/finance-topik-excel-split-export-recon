@@ -17,6 +17,9 @@ OutputBaseFilename=ReconBuilder-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\..\assets\recon-builder.ico
+CloseApplications=yes
+RestartApplications=yes
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 

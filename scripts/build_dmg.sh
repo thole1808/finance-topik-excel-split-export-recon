@@ -34,6 +34,7 @@ mkdir -p dist
     --noconfirm \
     --windowed \
     --name "ReconBuilder" \
+    --icon "$PROJECT_ROOT/assets/recon-builder.icns" \
     --collect-all fastexcel \
     --hidden-import fastexcel \
     --paths "$PROJECT_ROOT" \
