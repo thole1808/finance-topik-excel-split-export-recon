@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.10**
+**Versi saat ini: 1.1.11**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -104,13 +104,26 @@ memodifikasi kode:
 - Formula LB/RB Current Day kini mereferensikan baris terkompaksi yang sesuai
   setelah transaksi terlambat dipisahkan.
 
+## Perbaikan versi 1.1.11
+
+- Menambahkan profil fee RB dari workbook acuan 15 Oktober 2026 untuk
+  AXD10H|66750, AXD2H|25650, dan AXBR8H|72105:
+  Total 1.500, Customer 750, LST 750, Margin 0.
+- Fee di recon referensi hanya ditampilkan sebagai preview; output tetap dibuat
+  ulang dari upload LB/RB. Sebelum profil tersebut ditambahkan, tiga kombinasi
+  belum terdaftar dan input RB tidak memiliki kolom fee, sehingga sel fee
+  output menjadi kosong.
+- Memperbarui diagram alur Finance untuk memuat jalur lookup fee, pemisahan
+  status/jam, empat sheet output, serta pemeriksaan data Finance.
+
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi yang sama, disediakan untuk
-kebutuhan dokumentasi/presentasi:
+Gambar berikut adalah diagram alur aplikasi versi 1.1.11, disediakan untuk
+kebutuhan dokumentasi/presentasi. Sumber vector ada di
+[`flow-recon-finance.svg`](flow-recon-finance.svg):
 
-- [`flow-recon-finance.png`](flow-recon-finance.png) — PNG 1800×1200.
-- [`flow-recon-finance.jpg`](flow-recon-finance.jpg) — JPEG 1800×1200.
+- [`flow-recon-finance.png`](flow-recon-finance.png) — PNG 1800×1800.
+- [`flow-recon-finance.jpg`](flow-recon-finance.jpg) — JPEG 1800×1800.
 
 Diagram menerangkan upload LB/RB/recon referensi → validasi → preview/edit →
 proses Polars → export XlsxWriter → sheet Summary/Records/LB/RB → pemeriksaan
@@ -120,6 +133,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.11 | Mengisi profil fee RB untuk tiga kombinasi kode/nominal dan memperjelas alur data/fee. |
 | 1.1.10 | Pisahkan data sumber RB Current Day dan For tomorrow berdasarkan jam 23:00. |
 | 1.1.9 | Warna SUCCESS/FAILED hanya pada nilai kolom Transaction Status di blok recon. |
 | 1.1.8 | Pindahkan transaksi 23:00–23:59 dari tampilan Current Day ke For tomorrow tanpa menghapus data sumber. |

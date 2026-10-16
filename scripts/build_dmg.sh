@@ -45,6 +45,14 @@ mkdir -p dist
     --workpath "$PROJECT_ROOT/build/pyinstaller" \
     "$PROJECT_ROOT/app.py"
 
+APP_VERSION="$("$PYTHON" -c "from src.version import __version__; print(__version__)")"
+/usr/libexec/PlistBuddy \
+    -c "Set :CFBundleShortVersionString $APP_VERSION" \
+    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+/usr/libexec/PlistBuddy \
+    -c "Add :CFBundleVersion string $APP_VERSION" \
+    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+
 hdiutil create \
     -ov \
     -format UDZO \

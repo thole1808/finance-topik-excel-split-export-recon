@@ -8,6 +8,7 @@ memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 ![Diagram alur Recon Builder untuk Finance](flow-recon-finance.png)
 
 Versi JPG tersedia di [flow-recon-finance.jpg](flow-recon-finance.jpg).
+File sumber diagram: [flow-recon-finance.svg](flow-recon-finance.svg).
 
 Alur singkat: **Upload LB + RB + file recon referensi → validasi → preview/
 koreksi → proses data → export Excel → periksa Summary, Records, LB, dan RB**.
@@ -79,6 +80,18 @@ tanggal, warna, serta lebar kolom mengikuti workbook acuan agar nilai mudah
 dibaca. Nominal transaksi tetap berasal dari input, sedangkan fee menggunakan
 profil kode produk dan nominal bila tersedia. Untuk kombinasi baru, aplikasi
 menggunakan tabel fee fallback, lalu field fee LB jika tersedia.
+Untuk transaksi RB pada acuan 15 Oktober 2026, AXD10H nominal 66.750,
+AXD2H nominal 25.650, dan AXBR8H nominal 72.105 menggunakan fee
+1.500 / 750 / 750 / 0 (Total / Customer / LST / Margin).
+Penyebab fee transaksi tersebut sebelumnya kosong adalah kombinasi kode produk
+dan nominalnya belum memiliki profil fee. File RB mentah hanya memiliki kolom
+nominal/status, bukan kolom fee; sementara workbook recon referensi hanya
+ditampilkan sebagai preview dan tidak disalin menjadi sumber data output.
+Karena itu nilai fee dari sheet `Records` referensi tidak otomatis masuk ke
+export baru. Sejak versi 1.1.11 ketiga kombinasi tersebut sudah tercatat di
+profil aplikasi. Untuk produk/nominal baru yang belum punya profil, jangan
+menganggap sel kosong berarti fee nol; minta Finance mengonfirmasi nilai dan
+tambahkan profil sebelum memakai hasil sebagai laporan final.
 
 Pada sheet `LB` dan `RB`, transaksi otomatis diurutkan: semua `SUCCESS` tampil
 lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Dalam setiap
