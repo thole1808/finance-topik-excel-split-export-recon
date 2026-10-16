@@ -833,6 +833,7 @@ def _write_status_total_row(
     group_rows: Sequence[Mapping[str, Any]],
     values_function: Any,
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
+    tomorrow_end_row: int | None = None,
 ) -> None:
     current_columns = (7, 8, 9, 10, 11)
     tomorrow_columns = (
@@ -868,12 +869,21 @@ def _write_status_total_row(
         tomorrow_letter = xlsxwriter.utility.xl_col_to_name(
             tomorrow_column - 1
         )
-        formula = (
-            f"=SUM({current_letter}{first_data_row}:"
-            f"{current_letter}{last_data_row})"
-            f"+SUM({tomorrow_letter}{first_data_row}:"
-            f"{tomorrow_letter}{last_data_row})"
-        )
+        if sheet == "LB" and tomorrow_end_row is not None:
+            status = _transaction_status(group_rows[0].get("status"))
+            formula = (
+                f"=SUM({current_letter}{first_data_row}:"
+                f"{current_letter}{last_data_row})"
+                f'+SUMIF($AY$4:$AY${tomorrow_end_row},"{status}",'
+                f"{tomorrow_letter}$4:{tomorrow_letter}${tomorrow_end_row})"
+            )
+        else:
+            formula = (
+                f"=SUM({current_letter}{first_data_row}:"
+                f"{current_letter}{last_data_row})"
+                f"+SUM({tomorrow_letter}{first_data_row}:"
+                f"{tomorrow_letter}{last_data_row})"
+            )
         _write_cell(
             worksheet, workbook, sheet, total_row - 1, current_column, 4,
             formula=formula,
@@ -925,9 +935,6 @@ def _write_wide_sheet(
         int, tuple[int, int, Sequence[Mapping[str, Any]]]
     ] = {}
     next_row = 4
-    period_orders = sorted({
-        row.get("_period_order", 0) for row in rows
-    }) or [0]
     for status in ("SUCCESS", "FAILED", "OTHER"):
         def matches_status(row: Mapping[str, Any]) -> bool:
             row_status = _transaction_status(row.get("status"))
@@ -939,34 +946,26 @@ def _write_wide_sheet(
 
         first_data_row = next_row
         status_rows: list[Mapping[str, Any]] = []
-        for period_order in period_orders:
-            period_rows = [
-                row for row in rows
-                if row.get("_period_order", 0) == period_order
-                and matches_status(row)
-            ]
-            current_status_rows = [
-                row for row in period_rows
-                if not _is_tomorrow_transaction(row)
-            ]
-            tomorrow_status_rows = [
-                row for row in period_rows
-                if _is_tomorrow_transaction(row)
-            ]
-            slot_count = max(
-                len(current_status_rows), len(tomorrow_status_rows)
-            )
-            status_rows.extend(current_status_rows)
-            status_rows.extend(tomorrow_status_rows)
-            for index in range(slot_count):
-                output_slots.append((
-                    next_row,
-                    current_status_rows[index]
-                    if index < len(current_status_rows) else None,
-                    tomorrow_status_rows[index]
-                    if index < len(tomorrow_status_rows) else None,
-                ))
-                next_row += 1
+        current_status_rows = [
+            row for row in rows
+            if matches_status(row) and not _is_tomorrow_transaction(row)
+        ]
+        tomorrow_status_rows = [
+            row for row in rows
+            if matches_status(row) and _is_tomorrow_transaction(row)
+        ]
+        status_rows.extend(current_status_rows)
+        status_rows.extend(tomorrow_status_rows)
+        slot_count = max(len(current_status_rows), len(tomorrow_status_rows))
+        for index in range(slot_count):
+            output_slots.append((
+                next_row,
+                current_status_rows[index]
+                if index < len(current_status_rows) else None,
+                tomorrow_status_rows[index]
+                if index < len(tomorrow_status_rows) else None,
+            ))
+            next_row += 1
         if not status_rows:
             continue
         last_data_row = next_row - 1
@@ -1008,14 +1007,48 @@ def _write_wide_sheet(
         formulas_by_row=formulas_by_row,
     )
 
-    tomorrow_start = 40 if sheet == "LB" else 50
-    tomorrow_end = 72 if sheet == "LB" else 63
     tomorrow_recon_start = 40 if sheet == "LB" else 50
     tomorrow_recon_end = 53 if sheet == "LB" else 63
+    tomorrow_rows = (
+        sorted(
+            (row for row in rows if _is_tomorrow_transaction(row)),
+            key=lambda row: (
+                _transaction_status_sort_key(row),
+                _as_datetime(row.get("tanggal")) or dt.datetime.min,
+            ),
+        )
+        if sheet == "LB" else []
+    )
+    tomorrow_end_row = 3 + len(tomorrow_rows)
 
-    for index, (excel_row, current_day_record, tomorrow_record) in enumerate(
-        output_slots
-    ):
+    current_records_by_row = {
+        excel_row: current_record
+        for excel_row, current_record, _ in output_slots
+    }
+    paired_tomorrow_by_row = {
+        excel_row: tomorrow_record
+        for excel_row, _, tomorrow_record in output_slots
+        if tomorrow_record is not None
+    }
+    subtotal_rows = {
+        output_slots[index][0] + 1: subtotal_data
+        for index, subtotal_data in subtotal_after_slot.items()
+    }
+    last_output_row = max(
+        [3 + len(tomorrow_rows), *current_records_by_row, *subtotal_rows],
+        default=3,
+    )
+
+    for excel_row in range(4, last_output_row + 1):
+        current_day_record = current_records_by_row.get(excel_row)
+        tomorrow_index = excel_row - 4
+        if sheet == "LB":
+            tomorrow_record = (
+                tomorrow_rows[tomorrow_index]
+                if tomorrow_index < len(tomorrow_rows) else None
+            )
+        else:
+            tomorrow_record = paired_tomorrow_by_row.get(excel_row)
         current_day_values = (
             values_function(current_day_record)
             if current_day_record is not None else {}
@@ -1157,12 +1190,13 @@ def _write_wide_sheet(
                     **(row_highlight or {}),
                 } or None,
             )
-        if index in subtotal_after_slot:
-            first_data_row, last_data_row, status_rows = subtotal_after_slot[index]
+        if excel_row in subtotal_rows:
+            first_data_row, last_data_row, status_rows = subtotal_rows[excel_row]
             _write_status_total_row(
-                worksheet, workbook, sheet, excel_row + 1,
+                worksheet, workbook, sheet, excel_row,
                 first_data_row, last_data_row, status_rows,
                 values_function, format_cache,
+                tomorrow_end_row if sheet == "LB" else None,
             )
 
     worksheet.autofilter(

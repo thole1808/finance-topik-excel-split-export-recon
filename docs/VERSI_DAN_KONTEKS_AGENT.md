@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.20**
+**Versi saat ini: 1.1.22**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -90,6 +90,23 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
   berada di BD:BT. Writer harus mengisi 14 kolom recon lengkap di AN:BA.
 - Uji export memverifikasi timestamp End Date pukul 23, seluruh kolom tabel
   recon, status, vendor, dan Recon Result.
+
+### Posisi baris For tomorrow LB — versi 1.1.21
+
+- Baris End Date pukul 23:00+ ditulis mulai baris 4 di blok For tomorrow,
+  terlepas dari banyaknya baris Current Day/Backdate.
+- Baris Current Day dan For tomorrow dijadwalkan bersama per status agar
+  workbook streaming tidak kehilangan penulisan ke baris yang sudah lewat.
+- Subtotal status memakai SUMIF pada status For tomorrow dan tetap mencakup
+  Backdate serta End Date.
+
+### Perataan baris For tomorrow LB — versi 1.1.22
+
+- Semua baris End Date pukul 23:00+ pada blok For tomorrow LB dimulai dari
+  baris 4 dan berlanjut rapat, dikelompokkan SUCCESS lalu FAILED/OTHER.
+- Writer streaming menulis tabel For tomorrow bersama baris Current Day dalam
+  urutan baris Excel, sehingga tidak mencoba kembali menulis baris yang telah
+  di-flush.
 
 ### Koreksi aturan jam 23 — versi 1.1.19
 
@@ -321,6 +338,8 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.22 | Tulis semua baris For tomorrow LB berurutan mulai dari baris 4. |
+| 1.1.21 | Mulai tabel For tomorrow LB tepat di bawah header meski ada banyak baris Current Day/Backdate. |
 | 1.1.20 | Lengkapi tabel recon For tomorrow LB di AN:BA untuk transaksi End Date jam 23. |
 | 1.1.19 | Kembalikan transaksi End Date jam 23 ke For tomorrow; Backdate tetap di blok utama. |
 | 1.1.18 | Percobaan menampilkan transaksi jam 23 End Date di blok Current Day. |

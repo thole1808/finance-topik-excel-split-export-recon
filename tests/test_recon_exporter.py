@@ -86,7 +86,10 @@ class ReconExporterBackdateTests(unittest.TestCase):
             if not address.startswith("G") or not address[1:].isdigit():
                 continue
             formula = cell.findtext(f"{MAIN_NS}f") or ""
-            if not formula.startswith("SUM(G") or f"SUM({tomorrow_amount_column}" not in formula:
+            if not formula.startswith("SUM(G") or (
+                f"SUM({tomorrow_amount_column}" not in formula
+                and f"{tomorrow_amount_column}$4:" not in formula
+            ):
                 continue
             cached_value = cell.findtext(f"{MAIN_NS}v")
             if cached_value is not None:
