@@ -21,11 +21,11 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 
 ## Menjalankan aplikasi
 
-1. Di macOS, buka DMG dan jalankan installer PKG. App dipasang sebagai
-   **Recon Builder.app** di `/Applications`; setelah selesai installer membuka
-   Finder dan menyorot app tersebut. Installer juga membuat shortcut
-   **Recon Builder.app** di Desktop akun Mac yang sedang login dan mendaftarkan
-   ikon ke Launchpad. Di Windows, jalankan
+1. Di macOS, buka DMG lalu seret **Recon Builder.app** ke shortcut
+   **Applications** pada jendela DMG. Setelah penyalinan selesai, buka Finder >
+   Applications dan jalankan **Recon Builder**. PKG terpisah juga tersedia;
+   installer PKG membuka Finder dan menyorot app setelah pemasangan. Di Windows,
+   jalankan
    `ReconBuilder-Setup.exe`; aplikasi dipasang ke Program Files dan shortcut
    tersedia di Start Menu (shortcut Desktop juga dibuat secara default).
    (Untuk source development, jalankan `python3 app.py`.)

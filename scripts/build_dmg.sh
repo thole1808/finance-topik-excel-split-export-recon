@@ -101,11 +101,22 @@ done
 DMG_STAGE="$PROJECT_ROOT/dist/macos-installer-stage"
 rm -rf "$DMG_STAGE"
 mkdir -p "$DMG_STAGE"
-cp "$PROJECT_ROOT/dist/$PKG_NAME" "$DMG_STAGE/$PKG_NAME"
+ditto --rsrc --extattr "$APP_BUNDLE" "$DMG_STAGE/Recon Builder.app"
+ln -s /Applications "$DMG_STAGE/Applications"
+cat > "$DMG_STAGE/CARA INSTALL.txt" <<'EOF'
+INSTALL RECON BUILDER DI MACOS
+
+1. Seret Recon Builder.app ke folder Applications pada jendela DMG ini.
+2. Tunggu penyalinan selesai.
+3. Buka Finder > Applications, lalu jalankan Recon Builder.
+
+Jangan menjalankan aplikasi langsung dari DMG. Jika macOS menampilkan
+peringatan keamanan, Control-klik aplikasi di Applications lalu pilih Open.
+EOF
 hdiutil create \
     -ov \
     -format UDZO \
-    -size 250m \
+    -size 600m \
     -volname "Recon Builder" \
     -srcfolder "$DMG_STAGE" \
     "$PROJECT_ROOT/dist/$DMG_NAME"

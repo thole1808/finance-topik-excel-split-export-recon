@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.11**
+**Versi saat ini: 1.2.12**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -178,6 +178,12 @@ pengguna meminta penerbitan release.
 - Postinstall mencatat hasil pemasangan, mendaftarkan app, membuat shortcut
   Desktop untuk pengguna aktif, lalu membuka Finder dengan app di-highlight
   pada `/Applications` agar lokasi pemasangan terlihat setelah installer selesai.
+
+## Implementasi 1.2.12 — DMG drag-to-Applications
+
+- DMG memuat bundle `Recon Builder.app` secara langsung, alias `Applications`,
+  serta instruksi instalasi; operator dapat menyeret app tanpa menjalankan PKG.
+- PKG tetap dibangun sebagai pilihan terpisah dan diunggah bersama DMG.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -482,7 +488,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.10, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.12, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -498,6 +504,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.12 | DMG memuat app langsung dan alias Applications agar pemasangan Mac dapat dilakukan dengan drag-and-drop; PKG tetap tersedia terpisah. |
 | 1.2.11 | Nama bundle dan executable Mac konsisten; postinstall mencatat hasil dan menampilkan app di `/Applications` setelah pemasangan. |
 | 1.2.10 | PKG menyalin app eksplisit ke Applications, membuat shortcut Desktop dan mendaftarkan Launchpad; updater memasang PKG. |
 | 1.2.9 | Mendaftarkan app Mac ke Launchpad; tab File Hasil, penyimpanan default lokal aplikasi, dan simpan salinan. |
