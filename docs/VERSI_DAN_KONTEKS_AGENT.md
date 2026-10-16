@@ -67,6 +67,9 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
   groups`). Belum ada perubahan source yang tertinggal untuk dipush.
 - DMG versi 1.1.13 tersedia di `dist/ReconBuilder.dmg` dan root
   `ReconBuilder.dmg`; keduanya identik. Root DMG disimpan untuk distribusi repo.
+- Saat sesi serah-terima pertama ditulis, GitHub Release masih sampai
+  `v1.1.10`. Perbaikan workflow terbaru menerbitkan Windows installer dan DMG
+  bersama-sama pada release tag.
 - `Archive.zip` dihapus setelah dipastikan hanya berisi salinan DMG lama dan
   flow PNG lama. Flow diagram yang digunakan dokumentasi berada di `docs/`.
 - Cache Python dan direktori PyInstaller `build/` yang bisa dibuat ulang
@@ -239,7 +242,8 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
 - Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.13`). Tag
-  menjalankan Windows build dan menerbitkan installer ke GitHub Release.
+  menjalankan Windows build dan menerbitkan installer Windows serta DMG ke
+  GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.
 - Jangan menambahkan workbook transaksi, data pelanggan, output, `.venv`,

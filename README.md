@@ -79,7 +79,7 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
 - Untuk installer rilis, push tag versi seperti `v1.1.13`. Workflow membuat
-  GitHub Release dengan `ReconBuilder-Setup.exe`.
+  GitHub Release berisi `ReconBuilder-Setup.exe` dan `ReconBuilder.dmg`.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
 
