@@ -127,7 +127,7 @@ class ReconApp(tk.Tk):
         self.after(1500, self._check_updates_silently)
 
     def _install_batik_watermark(self) -> None:
-        """Show a faint batik ornament in unused header space."""
+        """Tile batik image to fill the full header width as a background."""
         try:
             if self._header is None:
                 return
@@ -137,17 +137,52 @@ class ReconApp(tk.Tk):
                 asset = Path(__file__).resolve().parent.parent / "assets" / "batik-watermark.png"
             if not asset.is_file():
                 return
-            self._batik_image = tk.PhotoImage(file=str(asset)).subsample(6, 6)
-            watermark = tk.Label(
-                self._header, image=self._batik_image, borderwidth=0,
-                background="#102A43", highlightthickness=0,
+
+            from PIL import Image as _PILImage, ImageTk as _ImageTk
+
+            self._batik_pil_asset = str(asset)
+            self._batik_pil_cls = (_PILImage, _ImageTk)
+
+            canvas = tk.Canvas(
+                self._header, highlightthickness=0, bd=0,
+                background="#102A43",
             )
-            watermark.place(relx=0.65, rely=0.5, anchor="center")
-            watermark.lower()
-            self._header.bind(
-                "<Configure>", lambda _event: watermark.lower(), add="+"
-            )
-        except (OSError, tk.TclError):
+            canvas.place(x=0, y=0, relwidth=1.0, relheight=1.0)
+            canvas.lower()
+            self._batik_canvas = canvas
+            self._batik_photo: object = None
+
+            def _draw(event: tk.Event | None = None) -> None:
+                w = self._header.winfo_width()
+                h = self._header.winfo_height()
+                if w < 2 or h < 2:
+                    return
+                PILImage, ImageTk = self._batik_pil_cls  # type: ignore[attr-defined]
+                img = PILImage.open(self._batik_pil_asset).convert("RGBA")
+                # Hitung tinggi proporsional agar gambar pas penuh tinggi header
+                ratio = h / img.height
+                new_w = max(1, int(img.width * ratio))
+                # Tile gambar secara horizontal hingga memenuhi lebar header
+                tile_count = -(-w // new_w)  # ceiling division
+                resized = img.resize((new_w, h), PILImage.LANCZOS)
+                canvas_img = PILImage.new("RGBA", (new_w * tile_count, h))
+                for i in range(tile_count):
+                    canvas_img.paste(resized, (i * new_w, 0))
+                canvas_img = canvas_img.crop((0, 0, w, h))
+                # Overlay gelap agar teks di atas tetap terbaca
+                overlay = PILImage.new("RGBA", (w, h), (16, 42, 67, 200))
+                canvas_img = PILImage.alpha_composite(canvas_img, overlay)
+                self._batik_photo = ImageTk.PhotoImage(canvas_img)
+                canvas.config(width=w, height=h)
+                canvas.delete("bg")
+                canvas.create_image(0, 0, anchor="nw", image=self._batik_photo, tags="bg")
+                canvas.lower()
+
+            self._header.bind("<Configure>", lambda e: _draw(e), add="+")
+            # Gambar pertama kali setelah layout selesai
+            self._header.after(50, _draw)
+
+        except (OSError, tk.TclError, ImportError):
             return
 
     def _maximize_window(self) -> None:

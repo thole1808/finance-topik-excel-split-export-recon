@@ -41,6 +41,8 @@ APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
     --icon "$PROJECT_ROOT/assets/recon-builder.icns" \
     --collect-all fastexcel \
     --hidden-import fastexcel \
+    --collect-all PIL \
+    --hidden-import PIL \
     --paths "$PROJECT_ROOT" \
     --add-data "$PROJECT_ROOT/src/ref_styles.json:src" \
     --add-data "$PROJECT_ROOT/src/fee_tables.json:src" \

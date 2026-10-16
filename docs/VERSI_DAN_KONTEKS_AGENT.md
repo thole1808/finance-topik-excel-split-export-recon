@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.16**
+**Versi saat ini: 1.2.17**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -211,6 +211,25 @@ pengguna meminta penerbitan release.
 - Watermark sebelumnya ditempatkan di root window lalu diturunkan ke belakang
   panel konten yang menutupi gambar. Kini watermark berada di area kosong header,
   di bawah teks dan kontrol, dengan ukuran yang pas untuk tetap tampak samar.
+
+## Serah-terima sesi — 16 Oktober 2026 (sesi 2)
+
+### Perbaikan workflow: macOS DMG/PKG kini dibangun di CI
+
+**Masalah:** `updater.py` sudah lengkap (checksum SHA256, download, install DMG/PKG), tapi workflow lama hanya punya Windows runner. DMG dibangun lokal di macOS developer dan tidak pernah ter-upload ke GitHub Release. Akibatnya `latest_update()` melempar `UpdateError: "Rilis vX.X.X belum menyediakan updater untuk Darwin"`.
+
+**Solusi yang diterapkan** di `.github/workflows/windows-installer.yml`:
+- Tambah job `build-macos-dmg` yang jalan di `macos-latest` runner, menjalankan `scripts/build_dmg.sh`, lalu upload DMG dan PKG sebagai artifact dan ke GitHub Release.
+- Job `build-windows-installer` sekarang punya `needs: build-macos-dmg` — jalan setelah macOS job selesai.
+- Windows job download artifact DMG/PKG dari macOS job, lalu generate `SHA256SUMS.txt` dari **semua platform sekaligus** (EXE + DMG + PKG) sebelum upload ke release.
+- Urutan: macOS build → Windows build (download macOS artifact) → SHA256SUMS.txt final → upload semua ke release.
+
+**Aturan ke depan:**
+- Cukup push tag `vX.X.X` ke `main` — workflow otomatis build kedua platform dan publish release lengkap dengan `SHA256SUMS.txt`.
+- Tidak perlu lagi build DMG lokal untuk release; build lokal tetap bisa dipakai untuk testing sebelum push.
+- `SHA256SUMS.txt` selalu mencakup EXE + DMG + PKG sehingga `updater.py` bisa verifikasi checksum di semua platform.
+
+---
 
 ## Serah-terima sesi — 16 Oktober 2026
 
