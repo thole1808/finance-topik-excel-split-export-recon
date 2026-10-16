@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.14**
+**Versi saat ini: 1.1.15**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -29,25 +29,28 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Jangan ubah alur upload End Date/reguler yang sudah berfungsi. Tambahkan
   tepat **satu** field upload **File Backdate** pada form yang sama.
 - File Backdate adalah satu workbook Excel `.xlsx`, bukan tiga upload terpisah.
-  Workbook contoh `Backdate BILLER (1).xlsx` memiliki sheet `LB`, `RB`, dan
-  `RECON`.
-- Saat File Backdate diunggah, proses End Date/reguler tetap dijalankan seperti
-  biasa. Generate menghasilkan **satu workbook final** berisi hasil End Date
-  yang sudah ada dan data Backdate; hasil End Date tidak ditimpa atau diganti.
-- Pertahankan sheet End Date yang ada. Tambahkan sheet Backdate terpisah dalam
-  workbook final agar transaksi kedua periode tidak tercampur; nama yang
-  direncanakan `LB Backdate`, `RB Backdate`, dan `RECON Backdate`, berdasarkan
-  tiga sheet pada workbook Backdate.
+  File yang ditetapkan pengguna untuk dipakai adalah
+  `Backdate BILLER-new-14.xlsx` (tersedia lokal di folder Downloads per
+  16 Oktober 2026). Workbook telah diperiksa: `LB` 158 baris, `RB` kosong
+  (header tetap ada), dan `RECON` 158 baris.
+- Pengguna mengonfirmasi: unggah semua file End Date/reguler yang diwajibkan
+  serta satu file Backdate, lalu tekan **Generate**. Hanya saat itu kedua
+  periode diproses dan digabung dalam satu workbook.
+- Keputusan output final yang dikonfirmasi pengguna: tanpa Backdate, output
+  reguler tetap persis seperti sebelumnya. Jika Backdate disediakan, gabungkan
+  data ke sheet yang sama (`Records`, `LB`, `RB`), bukan sheet Backdate baru.
+  Baris `RECON` Backdate ditempatkan paling awal di `Records`, diurutkan
+  berdasarkan Datetime; setelahnya baris End Date. Di sheet `LB`/`RB`, gunakan
+  layout dan pembagian status yang sama, tampilkan periode Backdate sebelum End
+  Date, dan hitung subtotal gabungan per grup status/periode.
+- Data `RECON` Backdate dipetakan ke struktur/format standar sheet `Records`
+  dari aplikasi; tidak menyalin satu worksheet Excel mentah ke output.
 - Bila File Backdate tidak diunggah, aplikasi harus tetap menghasilkan output
   reguler seperti sekarang.
-- **Versi 1.1.14:** field upload Backdate `.xlsx` sudah ditambahkan ke form.
-  Ini baru field pemilihan file; belum ada preview, pembacaan sheet, atau
-  penggabungan output. Generate dengan file Backdate terpilih dihentikan dengan
-  pesan yang jelas supaya Backdate tidak terabaikan. Tanpa file Backdate,
-  jalur reguler tetap sama.
-- Sebelum implementasi pemrosesan, validasi struktur dan format kolom pada
-  workbook Backdate terhadap exporter/template yang ada, lalu uji output
-  gabungan dan jalur reguler tanpa Backdate.
+- **Versi 1.1.14:** field upload Backdate ditambahkan, belum diproses.
+- **Versi 1.1.15:** pemrosesan opsional ditambahkan. Validasi `LB`, `RB`,
+  `RECON` dan header wajib saat Generate; gabungkan periode. Output tanpa
+  Backdate tetap pada empat sheet seperti sebelumnya.
 
 ### Permintaan terakhir dan keputusan tata letak
 
@@ -87,13 +90,11 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 - Branch `main` sudah dipush ke repo pengguna:
   [finance-topik-excel-split-export-recon](https://github.com/thole1808/finance-topik-excel-split-export-recon).
-- Catatan rencana Backdate sudah dipush pada commit `e01fbc7` (`Record agreed
-  Backdate workflow plan`). Perubahan form versi 1.1.14 dicatat pada bagian
-  versi di bawah.
-- DMG versi 1.1.13 tersedia di `dist/ReconBuilder.dmg` dan root
-  `ReconBuilder.dmg`; keduanya identik. Root DMG disimpan untuk distribusi repo.
-- DMG/installer versi 1.1.14 belum dibangun; versi 1.1.14 saat ini hanya
-  mencakup penambahan field form dan dokumentasinya.
+- Versi 1.1.15 melanjutkan commit `89bbc42` (`Add optional Backdate upload
+  field`) dan memakai nomor versi berikutnya secara berurutan setelah 1.1.14.
+- DMG 1.1.15 sudah dibangun di `dist/ReconBuilder.dmg` dan disalin ke root
+  `ReconBuilder.dmg`. Versi bundle, signature, checksum, dan kesamaan kedua
+  salinan sudah diverifikasi.
 - Saat sesi serah-terima pertama ditulis, GitHub Release masih sampai
   `v1.1.10`. Perbaikan workflow terbaru menerbitkan Windows installer dan DMG
   bersama-sama pada release tag.
@@ -213,13 +214,27 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Memperbarui diagram alur Finance untuk memuat jalur lookup fee, pemisahan
   status/jam, empat sheet output, serta pemeriksaan data Finance.
 
+## Perubahan versi 1.1.15
+
+- Membaca dan memvalidasi sheet `LB`, `RB`, dan `RECON` dari satu workbook
+  Backdate opsional ketika pengguna menekan Generate.
+- Menggabungkan `RECON` Backdate di awal `Records` dalam urutan Datetime,
+  lalu mengikuti data End Date. Menggabungkan data LB/RB sumber di sheet
+  masing-masing dengan periode Backdate lebih dahulu dan subtotal sesuai
+  periode serta status.
+- Menghitung Summary dari transaksi Backdate dan End Date bersama-sama.
+- Mempertahankan output empat sheet reguler jika Backdate tidak dipilih.
+- Validasi runtime pada workbook `Backdate BILLER-new-14.xlsx`: LB=158,
+  RB=0, RECON=158; uji workbook sementara dengan dua baris End Date
+  memastikan semua 158 baris Backdate berada lebih dulu berdasarkan Datetime,
+  Summary mencakup 160 transaksi, serta output reguler tanpa Backdate tetap
+  berisi empat sheet.
+
 ## Perubahan versi 1.1.14
 
 - Menambahkan satu field upload opsional **File Backdate** untuk workbook
   `.xlsx` pada form desktop yang sama dengan alur End Date.
-- Pemrosesan workbook dan penggabungan output Backdate belum diaktifkan.
-  Generate dengan field Backdate terisi ditahan dengan pesan peringatan;
-  field kosong tetap memakai proses reguler yang sudah ada.
+- Pemrosesan workbook Backdate belum diaktifkan.
 - Memperbarui panduan Finance dan mencatat ulang keputusan Backdate yang sudah
   disepakati agar dapat dilanjutkan pada sesi berikutnya.
 
@@ -258,6 +273,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.15 | Menggabungkan Backdate opsional ke Summary/Records/LB/RB, dengan transaksi Backdate lebih dahulu; tanpa Backdate output reguler tetap sama. |
 | 1.1.14 | Menambahkan field upload Backdate opsional pada form; pemrosesan Backdate belum aktif. |
 | 1.1.13 | Menempatkan subtotal Amount dan empat fee setelah kelompok SUCCESS dan FAILED di sheet LB/RB. |
 | 1.1.12 | Memindahkan total Amount ke ringkasan SUCCESS/FAILED/Total, memperjelas edit preview, dan menyelaraskan versi installer. |
@@ -279,7 +295,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.14`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.15`). Tag
   menjalankan Windows build dan menerbitkan installer Windows serta DMG ke
   GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows

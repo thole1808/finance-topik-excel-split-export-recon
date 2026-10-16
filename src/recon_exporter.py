@@ -261,6 +261,68 @@ def read_recon_reference(path: Path) -> dict[str, pl.DataFrame]:
     return frames
 
 
+def read_backdate_workbook(path: Path) -> dict[str, pl.DataFrame]:
+    """Read and validate the LB, RB, and RECON sheets from a Backdate workbook."""
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"File Backdate tidak ditemukan: {path}")
+    if path.suffix.lower() != ".xlsx":
+        raise ValueError("File Backdate harus berformat .xlsx.")
+
+    try:
+        sheets = pl.read_excel(path, sheet_id=0, engine="calamine")
+    except Exception as exc:
+        raise ValueError(
+            f"Workbook Backdate tidak dapat dibaca: {path.name}: {exc}"
+        ) from exc
+
+    missing_sheets = {"LB", "RB", "RECON"}.difference(sheets)
+    if missing_sheets:
+        raise ValueError(
+            f"Sheet wajib tidak ditemukan pada {path.name}: "
+            f"{', '.join(sorted(missing_sheets))}"
+        )
+
+    def normalize_source(
+        sheet_name: str, column_map: Mapping[str, str]
+    ) -> pl.DataFrame:
+        frame = sheets[sheet_name]
+        rename_map = {
+            source: target for source, target in column_map.items()
+            if source in frame.columns
+        }
+        frame = frame.rename(rename_map)
+        missing_columns = sorted(
+            set(column_map.values()).difference(frame.columns)
+        )
+        if missing_columns:
+            raise ValueError(
+                f"Kolom wajib tidak ditemukan pada sheet {sheet_name} "
+                f"{path.name}: {', '.join(missing_columns)}"
+            )
+        if sheet_name == "RB":
+            frame = frame.filter(
+                pl.col("no").cast(pl.Float64, strict=False).is_not_null()
+            )
+        return frame.with_row_index("_row_idx")
+
+    recon = sheets["RECON"]
+    missing_recon_columns = sorted(
+        set(RECORDS_HEADERS).difference(recon.columns)
+    )
+    if missing_recon_columns:
+        raise ValueError(
+            f"Kolom wajib tidak ditemukan pada sheet RECON {path.name}: "
+            f"{', '.join(missing_recon_columns)}"
+        )
+
+    return {
+        "LB": normalize_source("LB", LB_COL_MAP),
+        "RB": normalize_source("RB", RB_COL_MAP),
+        "RECON": recon,
+    }
+
+
 def _number_key(value: Any) -> str:
     value = _clean(value)
     if isinstance(value, (int, float)) and float(value).is_integer():
@@ -352,6 +414,38 @@ def _records(
         )
     )
     return result
+
+
+def _records_from_recon(
+    frame: pl.DataFrame,
+) -> list[dict[str, Any]]:
+    """Map Backdate RECON rows to the generated Records schema."""
+    records: list[dict[str, Any]] = []
+    for row in _to_rows(frame):
+        records.append({
+            "datetime": _datetime_value(row.get("Datetime")),
+            "product": _clean(row.get("Product")),
+            "billing_number": _clean(row.get("Billing Number")),
+            "billing_name": _clean(row.get("Billing Name")),
+            "ref": _clean(row.get("Ref")),
+            "vendor_ref": _clean(row.get("Vendor Ref")),
+            "amount": _clean(row.get("Amount")),
+            "total_fee": _clean(row.get("Total Fee")),
+            "customer_fee": _clean(row.get("Customer Fee")),
+            "lst_fee": _clean(row.get("LST Fee")),
+            "margin_biller": _clean(row.get("Margin Biller")),
+            "transaction_status": _transaction_status(
+                row.get("Transaction Status")
+            ),
+            "vendor": _clean(row.get("Vendor")),
+            "recon_result": _clean(row.get("Recon Result")),
+        })
+    records.sort(
+        key=lambda record: (
+            _as_datetime(record["datetime"]) or dt.datetime.min
+        )
+    )
+    return records
 
 
 def _format_options(style: Mapping[str, Any]) -> dict[str, Any]:
@@ -832,13 +926,11 @@ def _write_wide_sheet(
     rows = sorted(
         rows,
         key=lambda row: (
+            row.get("_period_order", 0),
             _transaction_status_sort_key(row),
             _as_datetime(row.get("tanggal")) or dt.datetime.min,
         ),
     )
-    tomorrow_rows = [
-        record for record in rows if _is_tomorrow_transaction(record)
-    ]
     current_day_rows = [
         record for record in rows if not _is_tomorrow_transaction(record)
     ]
@@ -856,30 +948,9 @@ def _write_wide_sheet(
         _transaction_status(row.get("status")) for row in current_day_rows
     ]
     spacer_rows = 3
-    current_groups = {
-        status: [
-            row for row in current_day_rows
-            if (
-                _transaction_status(row.get("status")) == status
-                if status != "OTHER" else
-                _transaction_status(row.get("status"))
-                not in {"SUCCESS", "FAILED"}
-            )
-        ]
-        for status in ("SUCCESS", "FAILED", "OTHER")
-    }
-    tomorrow_groups = {
-        status: [
-            row for row in tomorrow_rows
-            if (
-                _transaction_status(row.get("status")) == status
-                if status != "OTHER" else
-                _transaction_status(row.get("status"))
-                not in {"SUCCESS", "FAILED"}
-            )
-        ]
-        for status in ("SUCCESS", "FAILED", "OTHER")
-    }
+    period_orders = sorted({
+        row.get("_period_order", 0) for row in rows
+    }) or [0]
     output_slots: list[
         tuple[int, Mapping[str, Any] | None, Mapping[str, Any] | None]
     ] = []
@@ -887,32 +958,57 @@ def _write_wide_sheet(
         int, tuple[int, int, Sequence[Mapping[str, Any]]]
     ] = {}
     next_row = 4
-    for status in ("SUCCESS", "FAILED", "OTHER"):
-        current_status_rows = current_groups[status]
-        tomorrow_status_rows = tomorrow_groups[status]
-        slot_count = max(
-            len(current_status_rows), len(tomorrow_status_rows)
-        )
-        if slot_count == 0:
-            continue
-        first_data_row = next_row
-        for index in range(slot_count):
-            output_slots.append((
-                next_row,
-                current_status_rows[index]
-                if index < len(current_status_rows) else None,
-                tomorrow_status_rows[index]
-                if index < len(tomorrow_status_rows) else None,
-            ))
-            next_row += 1
-        last_data_row = next_row - 1
-        if status in {"SUCCESS", "FAILED"}:
-            subtotal_after_slot[len(output_slots) - 1] = (
-                first_data_row,
-                last_data_row,
-                [*current_status_rows, *tomorrow_status_rows],
+    for period_order in period_orders:
+        period_rows = [
+            row for row in rows
+            if row.get("_period_order", 0) == period_order
+        ]
+        period_current_rows = [
+            row for row in period_rows
+            if not _is_tomorrow_transaction(row)
+        ]
+        period_tomorrow_rows = [
+            row for row in period_rows
+            if _is_tomorrow_transaction(row)
+        ]
+        for status in ("SUCCESS", "FAILED", "OTHER"):
+            def matches_status(row: Mapping[str, Any]) -> bool:
+                row_status = _transaction_status(row.get("status"))
+                return (
+                    row_status == status
+                    if status != "OTHER"
+                    else row_status not in {"SUCCESS", "FAILED"}
+                )
+
+            current_status_rows = [
+                row for row in period_current_rows if matches_status(row)
+            ]
+            tomorrow_status_rows = [
+                row for row in period_tomorrow_rows if matches_status(row)
+            ]
+            slot_count = max(
+                len(current_status_rows), len(tomorrow_status_rows)
             )
-            next_row += 1 + spacer_rows
+            if slot_count == 0:
+                continue
+            first_data_row = next_row
+            for index in range(slot_count):
+                output_slots.append((
+                    next_row,
+                    current_status_rows[index]
+                    if index < len(current_status_rows) else None,
+                    tomorrow_status_rows[index]
+                    if index < len(tomorrow_status_rows) else None,
+                ))
+                next_row += 1
+            last_data_row = next_row - 1
+            if status in {"SUCCESS", "FAILED"}:
+                subtotal_after_slot[len(output_slots) - 1] = (
+                    first_data_row,
+                    last_data_row,
+                    [*current_status_rows, *tomorrow_status_rows],
+                )
+                next_row += 1 + spacer_rows
     source_data_end_row = output_slots[-1][0] if output_slots else 3
     current_day_end_row = max(
         (excel_row for excel_row, current, _ in output_slots
@@ -1089,17 +1185,47 @@ def _write_wide_sheet(
 
 
 def build_recon_workbook(
-    lb_df: pl.DataFrame, rb_df: pl.DataFrame, output_path: Path
+    lb_df: pl.DataFrame,
+    rb_df: pl.DataFrame,
+    output_path: Path,
+    backdate_lb_df: pl.DataFrame | None = None,
+    backdate_rb_df: pl.DataFrame | None = None,
+    backdate_recon_df: pl.DataFrame | None = None,
 ) -> Path:
-    """Write Summary, Records, LB, and RB sheets based on the reference workbook."""
+    """Write a recon workbook, optionally merging Backdate rows before End Date."""
     output_path = Path(output_path).expanduser().resolve()
     if output_path.suffix.lower() != ".xlsx":
         raise ValueError("Path output harus berakhiran .xlsx.")
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    lb_rows = _to_rows(lb_df)
-    rb_rows = _to_rows(rb_df)
-    records = _records(lb_rows, rb_rows)
+    backdate_frames = (backdate_lb_df, backdate_rb_df, backdate_recon_df)
+    has_backdate = all(frame is not None for frame in backdate_frames)
+    if any(frame is not None for frame in backdate_frames) and not has_backdate:
+        raise ValueError(
+            "Data Backdate harus menyertakan sheet LB, RB, dan RECON."
+        )
+    lb_rows = (
+        [{**row, "_period_order": 0} for row in _to_rows(backdate_lb_df)]
+        if backdate_lb_df is not None else []
+    )
+    lb_rows.extend(
+        [{**row, "_period_order": 1} for row in _to_rows(lb_df)]
+        if has_backdate else _to_rows(lb_df)
+    )
+    rb_rows = (
+        [{**row, "_period_order": 0} for row in _to_rows(backdate_rb_df)]
+        if backdate_rb_df is not None else []
+    )
+    rb_rows.extend(
+        [{**row, "_period_order": 1} for row in _to_rows(rb_df)]
+        if has_backdate else _to_rows(rb_df)
+    )
+    records = _records(_to_rows(lb_df), _to_rows(rb_df))
+    if backdate_recon_df is not None:
+        records = [
+            *_records_from_recon(backdate_recon_df),
+            *records,
+        ]
     workbook = xlsxwriter.Workbook(
         str(output_path),
         {"constant_memory": True, "strings_to_formulas": False},
@@ -1171,5 +1297,5 @@ def build_recon_workbook(
 
 __all__ = [
     "LB_COL_MAP", "RB_COL_MAP", "build_recon_workbook", "read_raw_excel",
-    "read_recon_reference",
+    "read_backdate_workbook", "read_recon_reference",
 ]

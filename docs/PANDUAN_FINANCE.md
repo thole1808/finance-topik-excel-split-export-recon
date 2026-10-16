@@ -27,11 +27,9 @@ ulang dari upload LB/RB.
 4. Pada **Upload Recon**, pilih file recon `.xlsx` yang memiliki sheet
    **Summary** dan **Records**. Kedua sheet dimuat sebagai referensi dan dapat
    ditinjau melalui tab **Recon · Summary** dan **Recon · Records**.
-5. Field **File Backdate (opsional)** disediakan untuk rencana alur Backdate.
-   Pada versi 1.1.14, upload ini baru tersedia pada form dan belum diproses.
-   Jika Backdate dipilih, Generate akan dihentikan dengan pemberitahuan agar
-   file tersebut tidak terabaikan. Kosongkan field ini untuk melanjutkan proses
-   End Date/reguler.
+5. Jika ada data Backdate, pilih satu workbook `.xlsx` pada **File Backdate
+   (opsional)**. Workbook harus memiliki sheet `LB`, `RB`, dan `RECON` dengan
+   header yang cocok. Jika tidak ada Backdate, biarkan field ini kosong.
 6. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
    seluruh baris file: pilih jumlah baris per halaman lalu gunakan
    **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
@@ -43,9 +41,12 @@ ulang dari upload LB/RB.
    Preview recon bersifat referensi dan tidak dapat diedit.
 8. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
 9. Klik **Generate Recon** dan tunggu pesan sukses.
-10. Buka file output. Periksa sheet **Summary** dan **Records** yang dihitung
-   dari upload LB/RB, lalu telusuri data sumber dan formula recon pada sheet
-   **LB** dan **RB**.
+10. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
+    Dengan Backdate, transaksi dari sheet `RECON` Backdate muncul di bagian
+    awal `Records` berdasarkan Datetime, lalu diikuti hasil End Date. Data
+    sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
+    sebelum data End Date pada kelompok status masing-masing. `Summary`
+    menghitung gabungan Backdate dan End Date.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
 `.csv`, PDF, dan file selain Excel tidak didukung. Sheet pertama pada setiap
@@ -76,10 +77,10 @@ memiliki jumlah baris atau tanggal tertentu.
 
 | Sheet | Isi | Cara menggunakan |
 |---|---|---|
-| `Summary` | Ringkasan jumlah dan nominal transaksi per kategori/status, dihitung ulang dari upload LB/RB. | Gunakan untuk pemeriksaan awal, lalu telusuri transaksi di `Records`. |
-| `Records` | Daftar gabungan baris LB dan RB, diurutkan berdasarkan tanggal, dihitung ulang dari upload LB/RB. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
-| `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan. | Bandingkan kolom hasil recon dengan data sumber pada bagian LB. |
-| `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan. | Bandingkan kolom hasil recon dengan data sumber pada bagian RB. |
+| `Summary` | Ringkasan kategori/status. Tanpa Backdate dihitung dari upload LB/RB; dengan Backdate merangkum kedua periode. | Gunakan untuk pemeriksaan awal, lalu telusuri transaksi di `Records`. |
+| `Records` | Daftar transaksi gabungan. Jika Backdate ada, baris `RECON`-nya ditempatkan lebih dulu berdasarkan Datetime, kemudian baris End Date. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
+| `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. | Bandingkan kolom hasil recon dengan data sumber pada bagian LB. |
+| `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. | Bandingkan kolom hasil recon dengan data sumber pada bagian RB. |
 
 Header dibekukan ketika scroll; `Records` memiliki filter, dan format angka,
 tanggal, warna, serta lebar kolom mengikuti workbook acuan agar nilai mudah

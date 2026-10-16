@@ -18,6 +18,7 @@ from src.recon_exporter import (
     LB_COL_MAP,
     RB_COL_MAP,
     build_recon_workbook,
+    read_backdate_workbook,
     read_recon_reference,
     read_raw_excel,
 )
@@ -173,18 +174,18 @@ class ReconApp(tk.Tk):
         files.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         files.columnconfigure(1, weight=1)
         self._add_file_row(
-            files, 0, "Upload LB", self.lb_path, self._browse_lb
-        )
-        self._add_file_row(
-            files, 1, "Upload RB", self.rb_path, self._browse_rb
-        )
-        self._add_file_row(
-            files, 2, "Upload Recon",
-            self.recon_path, self._browse_recon,
-        )
-        self._add_file_row(
-            files, 3, "File Backdate (opsional)",
+            files, 0, "File Backdate (opsional)",
             self.backdate_path, self._browse_backdate,
+        )
+        self._add_file_row(
+            files, 1, "Upload LB", self.lb_path, self._browse_lb
+        )
+        self._add_file_row(
+            files, 2, "Upload RB", self.rb_path, self._browse_rb
+        )
+        self._add_file_row(
+            files, 3, "Upload Recon",
+            self.recon_path, self._browse_recon,
         )
         self._add_file_row(
             files, 4, "File output", self.out_path, self._browse_out
@@ -192,8 +193,8 @@ class ReconApp(tk.Tk):
         ttk.Label(
             files,
             text="LB = Loket Bayar · RB = Rajabiller · file recon referensi "
-            "wajib memiliki sheet Summary dan Records. Upload Backdate "
-            "tersedia, tetapi belum diproses pada versi ini.",
+            "wajib memiliki sheet Summary dan Records. Backdate opsional "
+            "digabung saat Generate.",
             foreground="#536273",
         ).grid(row=5, column=1, columnspan=2, sticky="w", pady=(2, 0))
 
@@ -900,6 +901,7 @@ class ReconApp(tk.Tk):
         backdate_value = self.backdate_path.get().strip()
         output = Path(self.out_path.get().strip()).expanduser()
 
+        backdate_path: Path | None = None
         if backdate_value:
             backdate_path = Path(backdate_value).expanduser()
             if backdate_path.suffix.lower() != ".xlsx":
@@ -914,14 +916,6 @@ class ReconApp(tk.Tk):
                     "File Backdate yang dipilih tidak ditemukan.",
                 )
                 return
-            messagebox.showwarning(
-                "Backdate belum diproses",
-                "Field upload Backdate sudah tersedia, tetapi penggabungan "
-                "belum diaktifkan. File Backdate tidak akan dimasukkan ke "
-                "output. Kosongkan field Backdate untuk membuat recon "
-                "End Date saja.",
-            )
-            return
 
         if self._frames["LB"] is None or not lb_path.is_file():
             messagebox.showerror(
@@ -947,7 +941,8 @@ class ReconApp(tk.Tk):
             messagebox.showerror("File output", "Tentukan lokasi file output.")
             return
         if output.resolve() in {
-            lb_path.resolve(), rb_path.resolve(), recon_path.resolve()
+            lb_path.resolve(), rb_path.resolve(), recon_path.resolve(),
+            *([backdate_path.resolve()] if backdate_path else []),
         }:
             messagebox.showerror(
                 "File output", "File output tidak boleh menimpa file upload."
@@ -962,21 +957,39 @@ class ReconApp(tk.Tk):
         self._busy = True
         self.generate_button.configure(state="disabled")
         self.progress.start(10)
-        self.status.set("Membuat file recon dari data yang sudah ditinjau…")
+        self.status.set(
+            "Membuat file recon gabungan Backdate dan End Date…"
+            if backdate_path else
+            "Membuat file recon dari data yang sudah ditinjau…"
+        )
         threading.Thread(
             target=self._export_worker,
-            args=(self._frames["LB"], self._frames["RB"], output),
+            args=(
+                self._frames["LB"], self._frames["RB"], output,
+                backdate_path,
+            ),
             daemon=True,
         ).start()
 
     def _export_worker(
         self, lb_frame: pl.DataFrame | None, rb_frame: pl.DataFrame | None,
-        output: Path,
+        output: Path, backdate_path: Path | None = None,
     ) -> None:
         try:
             if lb_frame is None or rb_frame is None:
                 raise ValueError("File LB dan RB harus dimuat sebelum export.")
-            result = build_recon_workbook(lb_frame, rb_frame, output)
+            backdate = (
+                read_backdate_workbook(backdate_path)
+                if backdate_path is not None else None
+            )
+            result = build_recon_workbook(
+                lb_frame,
+                rb_frame,
+                output,
+                backdate_lb_df=backdate["LB"] if backdate else None,
+                backdate_rb_df=backdate["RB"] if backdate else None,
+                backdate_recon_df=backdate["RECON"] if backdate else None,
+            )
             self.after(0, self._export_finished, result, None)
         except Exception as exc:
             self.after(0, self._export_finished, None, str(exc))
