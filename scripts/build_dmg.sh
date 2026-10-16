@@ -34,7 +34,6 @@ BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 BUILD_DIR="$PROJECT_ROOT/build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
 APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
 "$PYTHON" -m PyInstaller \
-    --clean \
     --noconfirm \
     --windowed \
     --name "Recon Builder" \

@@ -12,6 +12,7 @@ permissions:
   contents: write
 
 jobs:
+  # ── macOS: build DMG + PKG ──────────────────────────────────────────────────
   build-macos-dmg:
     runs-on: macos-latest
     steps:
@@ -25,15 +26,18 @@ jobs:
           cache: pip
 
       - name: Install project dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
+        run: python3 -m pip install -r requirements.txt
 
-      - name: Verify Excel engine
-        run: python3 -c "import fastexcel, polars, xlsxwriter; print('Excel engine ready:', fastexcel.__file__)"
+      - name: Cache PyInstaller build
+        uses: actions/cache@v4
+        with:
+          path: build/pyinstaller
+          key: pyinstaller-macos-${{ hashFiles('requirements.txt', 'src/**/*.py', 'app.py') }}
+          restore-keys: pyinstaller-macos-
 
       - name: Build DMG and PKG
         run: bash scripts/build_dmg.sh
+
       - name: Locate versioned artifacts
         id: artifacts
         run: |
@@ -50,7 +54,7 @@ jobs:
           name: ReconBuilder-macOS-DMG
           path: ${{ steps.artifacts.outputs.dmg }}
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Upload PKG artifact
         uses: actions/upload-artifact@v4
@@ -58,33 +62,11 @@ jobs:
           name: ReconBuilder-macOS-PKG
           path: ${{ steps.artifacts.outputs.pkg }}
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
-      - name: Publish macOS assets to release
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION="${{ steps.artifacts.outputs.version }}"
-          TAG="v${VERSION}"
-          DMG="${{ steps.artifacts.outputs.dmg }}"
-          PKG="${{ steps.artifacts.outputs.pkg }}"
-
-          # Buat release bila belum ada (Windows job mungkin belum selesai)
-          if ! gh release view "$TAG" --json tagName >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --target "$GITHUB_SHA" \
-              --title "Recon Builder $TAG" \
-              --generate-notes
-          fi
-
-          # Upload DMG + PKG; clobber jika sudah ada dari run sebelumnya
-          gh release upload "$TAG" "$DMG" "$PKG" \
-            --clobber
-
+  # ── Windows: build EXE ─────────────────────────────────────────────────────
   build-windows-installer:
     runs-on: windows-latest
-    needs: build-macos-dmg
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -96,19 +78,20 @@ jobs:
           cache: pip
 
       - name: Install project dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+        run: python -m pip install -r requirements.txt
 
-      - name: Verify Excel engine
-        run: python -c "import fastexcel, polars, xlsxwriter; print('Excel engine ready:', fastexcel.__file__)"
+      - name: Cache PyInstaller build
+        uses: actions/cache@v4
+        with:
+          path: build/pyinstaller
+          key: pyinstaller-windows-${{ hashFiles('requirements.txt', 'src/**/*.py', 'app.py') }}
+          restore-keys: pyinstaller-windows-
 
       - name: Build standalone Windows application
         shell: pwsh
         run: |
           $workspace = (Get-Location).Path
           python -m PyInstaller `
-            --clean `
             --noconfirm `
             --windowed `
             --onedir `
@@ -145,71 +128,69 @@ jobs:
           name: ReconBuilder-Windows-Setup
           path: dist/ReconBuilder-Setup.exe
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
-      - name: Download macOS artifacts
+  # ── Publish: tunggu kedua job, generate SHA256SUMS, upload release ──────────
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [build-macos-dmg, build-windows-installer]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ReconBuilder-macOS-DMG
-          path: dist/macos-artifacts
+          path: dist/artifacts
 
-      - name: Download macOS PKG artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ReconBuilder-macOS-PKG
-          path: dist/macos-artifacts
-
-      - name: Publish release with all assets and SHA256SUMS
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
+      - name: Generate SHA256SUMS and publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $version = python -c "from src.version import __version__; print(__version__)"
-          $tag = "v$version"
-          if ($env:GITHUB_REF.StartsWith("refs/tags/") -and $env:GITHUB_REF_NAME -ne $tag) {
-            throw "Git tag $env:GITHUB_REF_NAME does not match application version $tag"
-          }
+          VERSION=$(python3 -c "from src.version import __version__; print(__version__)")
+          TAG="v${VERSION}"
 
-          # Temukan DMG dan PKG yang sudah didownload dari macOS job
-          $dmg = Get-ChildItem -Path "dist\macos-artifacts" -Filter "*.dmg" -File |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if (-not $dmg) { throw "DMG untuk $version tidak ditemukan di artifact macOS." }
-          $pkg = Get-ChildItem -Path "dist\macos-artifacts" -Filter "*.pkg" -File |
-            Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if (-not $pkg) { throw "PKG untuk $version tidak ditemukan di artifact macOS." }
+          # Pastikan tag sesuai versi jika dipush via tag
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$TAG" ]]; then
+            echo "Git tag $GITHUB_REF_NAME does not match app version $TAG" >&2
+            exit 1
+          fi
 
-          # Kumpulkan semua file untuk checksum
-          $releaseAssets = @(
-            "dist\ReconBuilder-Setup.exe",
-            $dmg.FullName,
-            $pkg.FullName,
-            "docs\flow-recon-finance.png",
-            "docs\flow-recon-finance.jpg"
-          )
+          # Temukan semua artifact
+          EXE=$(find dist/artifacts/ReconBuilder-Windows-Setup -name "*.exe" | head -1)
+          DMG=$(find dist/artifacts/ReconBuilder-macOS-DMG -name "*.dmg" | head -1)
+          PKG=$(find dist/artifacts/ReconBuilder-macOS-PKG -name "*.pkg" | head -1)
 
-          # Generate SHA256SUMS.txt dari semua platform sekaligus
-          $checksums = foreach ($file in $releaseAssets) {
-            $hash = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLowerInvariant()
-            "$hash  $([System.IO.Path]::GetFileName($file))"
-          }
-          [System.IO.File]::WriteAllLines(
-            "dist\SHA256SUMS.txt", $checksums, [System.Text.Encoding]::ASCII
-          )
+          for f in "$EXE" "$DMG" "$PKG"; do
+            [[ -f "$f" ]] || { echo "Artifact tidak ditemukan: $f" >&2; exit 1; }
+          done
+
+          # Generate SHA256SUMS.txt
+          sha256sum "$EXE" "$DMG" "$PKG" \
+            docs/flow-recon-finance.png \
+            docs/flow-recon-finance.jpg \
+            | sed 's|dist/artifacts/[^/]*/||g; s|docs/||g' \
+            > dist/SHA256SUMS.txt
+          echo "=== SHA256SUMS.txt ===" && cat dist/SHA256SUMS.txt
 
           # Buat release jika belum ada
-          gh release view $tag --json tagName 2>$null | Out-Null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag `
-              --target "$env:GITHUB_SHA" `
-              --title "Recon Builder $tag" `
+          if ! gh release view "$TAG" --json tagName >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --target "$GITHUB_SHA" \
+              --title "Recon Builder $TAG" \
               --generate-notes
-            if ($LASTEXITCODE -ne 0) { throw "Gagal membuat release $tag" }
-          }
+          fi
 
-          # Upload semua asset sekaligus termasuk SHA256SUMS.txt
-          $uploadArgs = @("release", "upload", $tag) + $releaseAssets + @(
-            "dist\SHA256SUMS.txt", "--clobber"
-          )
-          & gh @uploadArgs
-          if ($LASTEXITCODE -ne 0) { throw "Gagal upload asset ke release $tag" }
+          # Upload semua asset sekaligus
+          gh release upload "$TAG" \
+            "$EXE" "$DMG" "$PKG" \
+            docs/flow-recon-finance.png \
+            docs/flow-recon-finance.jpg \
+            dist/SHA256SUMS.txt \
+            --clobber

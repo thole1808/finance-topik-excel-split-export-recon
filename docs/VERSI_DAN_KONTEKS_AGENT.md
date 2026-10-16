@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.17**
+**Versi saat ini: 1.2.18**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
