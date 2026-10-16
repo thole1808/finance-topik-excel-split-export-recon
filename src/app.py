@@ -105,6 +105,7 @@ class ReconApp(tk.Tk):
         self._history_tree: ttk.Treeview | None = None
         self._generated_files_tree: ttk.Treeview | None = None
         self._generated_file_paths: dict[str, Path] = {}
+        self._header: ttk.Frame | None = None
         self._clock_var = tk.StringVar()
         self._release_status_var = tk.StringVar(
             value=f"APP v{__version__}  ·  RELEASE v{__version__}"
@@ -126,22 +127,26 @@ class ReconApp(tk.Tk):
         self.after(1500, self._check_updates_silently)
 
     def _install_batik_watermark(self) -> None:
-        """Show a faint batik ornament at the unused lower-right edge."""
+        """Show a faint batik ornament in unused header space."""
         try:
+            if self._header is None:
+                return
             if getattr(sys, "frozen", False):
                 asset = Path(sys._MEIPASS) / "assets" / "batik-watermark.png"
             else:
                 asset = Path(__file__).resolve().parent.parent / "assets" / "batik-watermark.png"
             if not asset.is_file():
                 return
-            self._batik_image = tk.PhotoImage(file=str(asset)).subsample(4, 4)
+            self._batik_image = tk.PhotoImage(file=str(asset)).subsample(6, 6)
             watermark = tk.Label(
-                self, image=self._batik_image, borderwidth=0,
-                background="#F1F5F9", highlightthickness=0,
+                self._header, image=self._batik_image, borderwidth=0,
+                background="#102A43", highlightthickness=0,
             )
-            watermark.place(relx=1.0, rely=1.0, x=-12, y=-8, anchor="se")
+            watermark.place(relx=0.65, rely=0.5, anchor="center")
             watermark.lower()
-            self.bind("<Configure>", lambda _event: watermark.lower(), add="+")
+            self._header.bind(
+                "<Configure>", lambda _event: watermark.lower(), add="+"
+            )
         except (OSError, tk.TclError):
             return
 
@@ -237,6 +242,7 @@ class ReconApp(tk.Tk):
         self.rowconfigure(1, weight=1)
 
         header = ttk.Frame(self, padding=(28, 19, 28, 16), style="Header.TFrame")
+        self._header = header
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
         ttk.Label(

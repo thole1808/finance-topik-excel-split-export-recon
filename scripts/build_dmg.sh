@@ -116,7 +116,7 @@ chmod 644 "$DMG_STAGE/CARA INSTALL.txt"
 hdiutil create \
     -ov \
     -format UDZO \
-    -size 600m \
+    -size 800m \
     -srcowners off \
     -volname "Recon Builder" \
     -srcfolder "$DMG_STAGE" \
