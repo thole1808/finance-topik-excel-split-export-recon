@@ -33,6 +33,8 @@ APP_VERSION="$($PYTHON -c "from src.version import __version__; print(__version_
 BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 BUILD_DIR="$PROJECT_ROOT/build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
 APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
+
+# ── 1. PyInstaller ─────────────────────────────────────────────────────────
 "$PYTHON" -m PyInstaller \
     --noconfirm \
     --windowed \
@@ -54,76 +56,64 @@ APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
 
 DMG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.dmg"
 PKG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.pkg"
+
+# ── 2. Patch Info.plist ────────────────────────────────────────────────────
 /usr/libexec/PlistBuddy \
     -c "Set :CFBundleShortVersionString $APP_VERSION" \
-    "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy \
     -c "Set :CFBundleName Recon Builder" \
-    "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy \
     -c "Set :CFBundleDisplayName Recon Builder" \
-    "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy \
     -c "Set :CFBundleIdentifier com.devops.reconbuilder" \
     "$APP_BUNDLE/Contents/Info.plist"
-/usr/libexec/PlistBuddy \
-    -c "Add :CFBundleVersion string $APP_VERSION" \
+# Add CFBundleVersion hanya jika belum ada
+/usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $APP_VERSION" \
+    "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || \
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_VERSION" \
     "$APP_BUNDLE/Contents/Info.plist"
+
 codesign --force --deep --sign - "$APP_BUNDLE"
-PKG_ROOT="$BUILD_DIR/pkgroot"
-mkdir -p "$PKG_ROOT/Applications"
-ditto --rsrc --extattr "$APP_BUNDLE" "$PKG_ROOT/Applications/Recon Builder.app"
-COMPONENT_PLIST="$BUILD_DIR/components.plist"
-pkgbuild --analyze --root "$PKG_ROOT" "$COMPONENT_PLIST"
-/usr/libexec/PlistBuddy \
-    -c 'Set :0:BundleIsRelocatable false' \
-    "$COMPONENT_PLIST"
-pkgbuild \
-    --root "$PKG_ROOT" \
-    --component-plist "$COMPONENT_PLIST" \
-    --scripts "$PROJECT_ROOT/scripts/macos" \
-    --install-location / \
-    --identifier com.devops.reconbuilder \
-    --version "$APP_VERSION" \
-    "$PROJECT_ROOT/dist/$PKG_NAME"
 
-for previous_dmg in \
+# ── 3. Hapus artefak lama ──────────────────────────────────────────────────
+for f in \
     "$PROJECT_ROOT"/ReconBuilder-v*.dmg \
-    "$PROJECT_ROOT/dist"/ReconBuilder-v*.dmg; do
-    if [[ -f "$previous_dmg" ]]; then
-        rm -f "$previous_dmg"
-    fi
-done
-for previous_pkg in \
     "$PROJECT_ROOT"/ReconBuilder-v*.pkg \
+    "$PROJECT_ROOT/dist"/ReconBuilder-v*.dmg \
     "$PROJECT_ROOT/dist"/ReconBuilder-v*.pkg; do
-    if [[ -f "$previous_pkg" ]]; then
-        if [[ "$previous_pkg" == "$PROJECT_ROOT/dist/$PKG_NAME" ]]; then
-            continue
-        fi
-        rm -f "$previous_pkg"
-    fi
+    [[ -f "$f" ]] && rm -f "$f"
 done
 
+# ── 4. DMG (ULFO = lzfse, jauh lebih cepat dari UDZO di Apple runner) ─────
 DMG_STAGE="$PROJECT_ROOT/dist/macos-installer-stage"
 rm -rf "$DMG_STAGE"
 mkdir -p "$DMG_STAGE"
 ditto --rsrc --extattr "$APP_BUNDLE" "$DMG_STAGE/Recon Builder.app"
 ln -s /Applications "$DMG_STAGE/Applications"
-cat > "$DMG_STAGE/CARA INSTALL.txt" <<'EOF'
-Buka DMG, lalu seret Recon Builder.app ke Applications. Selesai.
-EOF
-chmod 644 "$DMG_STAGE/CARA INSTALL.txt"
+printf 'Buka DMG, lalu seret Recon Builder.app ke Applications. Selesai.\n' \
+    > "$DMG_STAGE/CARA INSTALL.txt"
+
 hdiutil create \
     -ov \
-    -format UDZO \
-    -size 800m \
+    -format ULFO \
     -srcowners off \
     -volname "Recon Builder" \
     -srcfolder "$DMG_STAGE" \
     "$PROJECT_ROOT/dist/$DMG_NAME"
 rm -rf "$DMG_STAGE"
 
+# ── 5. PKG (pkgbuild langsung tanpa --analyze pass) ───────────────────────
+PKG_ROOT="$BUILD_DIR/pkgroot"
+mkdir -p "$PKG_ROOT/Applications"
+# Reuse bundle yang sudah ada di BUILD_DIR, tidak perlu ditto ulang
+cp -a "$APP_BUNDLE" "$PKG_ROOT/Applications/Recon Builder.app"
+
+pkgbuild \
+    --root "$PKG_ROOT" \
+    --scripts "$PROJECT_ROOT/scripts/macos" \
+    --install-location / \
+    --identifier com.devops.reconbuilder \
+    --version "$APP_VERSION" \
+    "$PROJECT_ROOT/dist/$PKG_NAME"
+
+# Salin ke root untuk backward compat
 cp "$PROJECT_ROOT/dist/$DMG_NAME" "$PROJECT_ROOT/$DMG_NAME"
 cp "$PROJECT_ROOT/dist/$PKG_NAME" "$PROJECT_ROOT/$PKG_NAME"
 rm -f "$PROJECT_ROOT/ReconBuilder.dmg"
