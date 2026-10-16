@@ -49,9 +49,9 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
     LB/RB. Data
     sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
     sebelum data End Date pada kelompok status masing-masing. `Summary`
-    menghitung gabungan Backdate dan End Date. Transaksi End Date
-    pukul 23:00 atau lebih kini juga ditampilkan di blok Current Day, seperti
-    Backdate; tidak dipindahkan ke blok For tomorrow.
+    menghitung gabungan Backdate dan End Date. Transaksi End Date pukul
+    23:00–23:59 ditampilkan di bagian **For tomorrow because different time**;
+    transaksi Backdate pukul 23:00 atau lebih tetap terlihat di blok utama.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
 `.csv`, PDF, dan file selain Excel tidak didukung. Sheet pertama pada setiap
@@ -128,19 +128,19 @@ recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
 tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
-membatasi jumlah hari. Transaksi End Date maupun Backdate pukul 23:00–23:59
-ditampilkan di blok recon dan data sumber **Current Day**, serta tetap ada di
-`Records`. Data tidak dialihkan ke blok **For tomorrow because different
-time**. Baris total per status mencakup semua transaksi sumber.
+membatasi jumlah hari. Transaksi End Date pukul 23:00–23:59 ditampilkan di
+blok recon dan data sumber **For tomorrow because different time**, serta tetap
+ada di `Records`. Transaksi Backdate pukul 23:00 atau lebih tetap di blok
+utama. Baris total per status mencakup semua transaksi sumber.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
 23.59, filter tanggal hari ini dan batas waktu **23:00:00–23:59:59**. Nilai
 timestamp tetap menyertakan jam, menit, dan detik.
 
-Bagian **For tomorrow because different time** tetap tersedia pada template
-sheet `LB`/`RB`, tetapi transaksi pukul 23:00 atau lebih tidak ditempatkan di
-sana; transaksi tersebut berada di blok **Current Day**.
+Bagian **For tomorrow because different time** pada sheet `LB`/`RB` memuat
+transaksi End Date mulai pukul **23:00:00**. Transaksi Backdate pukul 23 atau
+lebih tetap ditampilkan di blok utama.
 
 File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`

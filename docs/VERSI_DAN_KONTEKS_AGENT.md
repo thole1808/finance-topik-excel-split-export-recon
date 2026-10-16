@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.18**
+**Versi saat ini: 1.1.19**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -84,16 +84,13 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
   Pada output yang diperiksa, 15 Oktober 2026 memiliki 187 transaksi pukul
   23:xx di Records (186 LB, 1 RB); LB memuat 186 pada blok For tomorrow.
 
-### Koreksi tampilan jam 23 — versi 1.1.18
+### Koreksi aturan jam 23 — versi 1.1.19
 
-- Pengguna mengonfirmasi bahwa transaksi End Date pukul 23:00 harus masuk ke
-  blok **Current Day**, bukan hanya muncul di `Records`/For tomorrow.
-- Aturan pengalihan timestamp >=23:00 dinonaktifkan untuk LB dan RB. Data
-  sumber dan recon untuk Backdate maupun End Date kini tampil di area Current
-  Day; kolom For tomorrow pada template dibiarkan tanpa baris jam 23.
-- Output 1.1.17 yang diperiksa memang memiliki 187 transaksi End Date pukul
-  23:xx di `Records` (186 LB dan 1 RB), namun 186 LB dan 1 RB tersebut berada
-  di blok For tomorrow. Ini yang membuatnya tampak hilang dari blok Current Day.
+- Pengguna mengonfirmasi transaksi End Date pukul 23:00 harus masuk ke blok
+  **For tomorrow because different time**. Backdate pukul 23:00 atau lebih
+  tetap berada di blok utama.
+- Pemisahan timestamp >=23:00 kembali aktif untuk baris End Date pada LB/RB;
+  baris Backdate dikecualikan dari pemisahan.
 - Uji regresi harus mencakup output dengan dan tanpa Backdate, serta memastikan
   timestamp 23:xx ditulis ke kolom Current Day baik di data sumber maupun
   tabel recon.
@@ -317,7 +314,8 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
-| 1.1.18 | Tampilkan transaksi jam 23 End Date di blok Current Day, bukan For tomorrow. |
+| 1.1.19 | Kembalikan transaksi End Date jam 23 ke For tomorrow; Backdate tetap di blok utama. |
+| 1.1.18 | Percobaan menampilkan transaksi jam 23 End Date di blok Current Day. |
 | 1.1.17 | Gabungkan subtotal Backdate+End Date per status dan pertahankan Ref/Vendor Ref Backdate dari sumber LB/RB. |
 | 1.1.16 | Tampilkan transaksi Backdate pukul 23:00+ di blok utama LB/RB; transaksi End Date tetap mengikuti aturan For tomorrow. |
 | 1.1.15 | Menggabungkan Backdate opsional ke Summary/Records/LB/RB, dengan transaksi Backdate lebih dahulu; tanpa Backdate output reguler tetap sama. |

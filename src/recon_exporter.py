@@ -153,6 +153,13 @@ def _datetime_value(value: Any) -> Any:
     return parsed if parsed is not None else _clean(value)
 
 
+def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
+    if row.get("_period_order") == 0:
+        return False
+    timestamp = _as_datetime(row.get("tanggal"))
+    return timestamp is not None and timestamp.time() >= dt.time(23, 0)
+
+
 def _transaction_status_sort_key(row: Mapping[str, Any]) -> int:
     status = _transaction_status(row.get("status"))
     return {"SUCCESS": 0, "FAILED": 1}.get(status, 2)
@@ -894,7 +901,9 @@ def _write_wide_sheet(
             _as_datetime(row.get("tanggal")) or dt.datetime.min,
         ),
     )
-    current_day_rows = rows
+    current_day_rows = [
+        record for record in rows if not _is_tomorrow_transaction(record)
+    ]
     title_columns = (
         (1, "Current Day from bo biller recon"),
         (21 if sheet == "LB" else 19, "Current Day from bo biller apps"),
@@ -938,8 +947,12 @@ def _write_wide_sheet(
             ]
             current_status_rows = [
                 row for row in period_rows
+                if not _is_tomorrow_transaction(row)
             ]
-            tomorrow_status_rows: list[Mapping[str, Any]] = []
+            tomorrow_status_rows = [
+                row for row in period_rows
+                if _is_tomorrow_transaction(row)
+            ]
             slot_count = max(
                 len(current_status_rows), len(tomorrow_status_rows)
             )

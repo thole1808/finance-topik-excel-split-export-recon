@@ -186,32 +186,32 @@ class ReconExporterBackdateTests(unittest.TestCase):
                 [120.0, 140.0],
             )
 
-            self.assertTrue(
+            self.assertFalse(
                 self._has_date(
                     output, 3, "A", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
-            self.assertTrue(
+            self.assertFalse(
                 self._has_date(
                     output, 3, "U", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
-            self.assertTrue(
+            self.assertFalse(
                 self._has_date(
                     output, 4, "A", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
-            self.assertTrue(
+            self.assertFalse(
                 self._has_date(
                     output, 4, "T", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
-            self.assertFalse(
+            self.assertTrue(
                 self._has_date(
                     output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
-            self.assertFalse(
+            self.assertTrue(
                 self._has_date(
                     output, 4, "AX", dt.datetime(2026, 10, 15, 23, 30)
                 )
@@ -236,17 +236,17 @@ class ReconExporterBackdateTests(unittest.TestCase):
             self.assertEqual(records["Ref"].to_list(), ["LB-END-SOURCE"])
             self.assertTrue(
                 self._has_date(
-                    output, 3, "A", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            self.assertTrue(
-                self._has_date(
-                    output, 3, "U", dt.datetime(2026, 10, 15, 23, 30)
+                    output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
             self.assertFalse(
                 self._has_date(
-                    output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
+                    output, 3, "A", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertFalse(
+                self._has_date(
+                    output, 3, "U", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
 
