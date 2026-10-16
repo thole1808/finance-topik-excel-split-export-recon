@@ -40,6 +40,7 @@ REFERENCE_DATA = _load_json("reference_data.json")
 SUMMARY_HEADERS = (
     "Category", "Count", "Amount", "Amount Success", "Amount Failed",
 )
+DATETIME_NUMBER_FORMAT = "yyyy-mm-dd hh:mm:ss"
 RECORDS_HEADERS = (
     "Datetime", "Product", "Billing Number", "Billing Name", "Ref",
     "Vendor Ref", "Amount", "Total Fee", "Customer Fee", "LST Fee",
@@ -147,12 +148,9 @@ def _as_datetime(value: Any) -> dt.datetime | None:
     return None
 
 
-def _datetime_text(value: Any) -> str | None:
+def _datetime_value(value: Any) -> Any:
     parsed = _as_datetime(value)
-    if parsed is not None:
-        return parsed.strftime("%Y-%m-%d %H:%M:%S")
-    cleaned = _clean(value)
-    return str(cleaned) if cleaned is not None else None
+    return parsed if parsed is not None else _clean(value)
 
 
 def _status_text(value: Any) -> str:
@@ -285,7 +283,7 @@ def _records(
         fees = _fees("lb", row, row.get("produk"), row.get("tagihan"))
         status = _transaction_status(row.get("status"))
         result.append({
-            "datetime": _datetime_text(row.get("tanggal")),
+            "datetime": _datetime_value(row.get("tanggal")),
             "product": _product_name("lb", row.get("produk")),
             "billing_number": _clean(row.get("idpel")),
             "billing_name": _clean(row.get("nama")),
@@ -304,7 +302,7 @@ def _records(
         fees = _fees("rb", row, row.get("kode_produk"), row.get("nominal"))
         status = _transaction_status(row.get("status"))
         result.append({
-            "datetime": _datetime_text(row.get("tanggal")),
+            "datetime": _datetime_value(row.get("tanggal")),
             "product": _product_name("rb", row.get("kode_produk")),
             "billing_number": _clean(row.get("pelanggan_1")),
             "billing_name": None,
@@ -448,18 +446,26 @@ def _write_template_rows(
     max_column: int,
     values_by_row: Mapping[int, Mapping[int, Any]],
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
+    formulas_by_row: Mapping[
+        int, Mapping[int, tuple[str, Any]]
+    ] | None = None,
 ) -> None:
     for row_number in (1, 2, 3):
         row_values = values_by_row.get(row_number, {})
+        row_formulas = (
+            formulas_by_row.get(row_number, {})
+            if formulas_by_row is not None else {}
+        )
         template_row = row_number
         for column in range(1, max_column + 1):
+            formula_data = row_formulas.get(column)
             _write_cell(
                 worksheet, workbook, sheet, row_number - 1, column,
                 template_row, row_values.get(column),
+                formula=formula_data[0] if formula_data else None,
+                cached_value=formula_data[1] if formula_data else None,
                 format_cache=format_cache,
             )
-
-
 def _set_widths(
     worksheet: xlsxwriter.worksheet.Worksheet, sheet: str
 ) -> None:
@@ -663,12 +669,12 @@ def _to_rows(frame: pl.DataFrame) -> list[dict[str, Any]]:
 
 def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
     fees = _fees("lb", row, row.get("produk"), row.get("tagihan"))
-    date_value = _datetime_text(row.get("tanggal"))
+    date_value = _datetime_value(row.get("tanggal"))
     status = _transaction_status(row.get("status"))
     result = _recon_result(row.get("status"))
     product = _product_name("lb", row.get("produk"))
     raw = {
-        21: row.get("tanggal"), 22: row.get("operator"), 23: row.get("nama"),
+        21: date_value, 22: row.get("operator"), 23: row.get("nama"),
         24: row.get("idpel"), 25: row.get("produk"),
         26: row.get("periode"), 27: row.get("status"),
         28: row.get("ref_id"), 29: row.get("lembar"),
@@ -689,7 +695,7 @@ def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
         53: result,
     }
     raw_next = {
-        56: row.get("tanggal"), 57: row.get("operator"),
+        56: date_value, 57: row.get("operator"),
         58: row.get("nama"), 59: row.get("idpel"),
         60: row.get("produk"), 61: row.get("periode"),
         62: row.get("status"), 63: row.get("ref"), 64: row.get("lembar"),
@@ -703,19 +709,19 @@ def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
 
 def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
     fees = _fees("rb", row, row.get("kode_produk"), row.get("nominal"))
-    date_value = _datetime_text(row.get("tanggal"))
+    date_value = _datetime_value(row.get("tanggal"))
     status = _transaction_status(row.get("status"))
     result = _recon_result(row.get("status"))
     product = _product_name("rb", row.get("kode_produk"))
     raw = {
         18: row.get("no"), 19: row.get("id_trx"),
-        20: _datetime_text(row.get("tanggal")),
+        20: date_value,
         21: row.get("kode_produk"), 22: row.get("pelanggan_1"),
         23: row.get("pelanggan_2"), 24: row.get("pelanggan_3"),
         25: row.get("pelanggan_4"), 26: row.get("via"), 27: row.get("sn"),
         28: row.get("ref"), 29: row.get("status"), 30: row.get("nominal"),
         34: row.get("no"), 35: row.get("id_trx"),
-        36: _datetime_text(row.get("tanggal")),
+        36: date_value,
         37: row.get("kode_produk"), 38: row.get("pelanggan_1"),
         39: row.get("pelanggan_2"), 40: row.get("pelanggan_3"),
         41: row.get("pelanggan_4"), 42: row.get("via"), 43: row.get("sn"),
@@ -752,13 +758,35 @@ def _write_wide_sheet(
     )
     values_by_row: dict[int, dict[int, Any]] = {
         1: {column: text for column, text in title_columns},
-        2: {},
+        2: {1: "SUCCESS", 3: "FAILED"},
         3: {},
+    }
+    normalized_statuses = [
+        _transaction_status(row.get("status")) for row in rows
+    ]
+    data_end_row = max(4, len(rows) + 3)
+    formulas_by_row = {
+        2: {
+            2: (
+                f'=COUNTIF($L$4:$L${data_end_row},"SUCCESS")',
+                normalized_statuses.count("SUCCESS"),
+            ),
+            4: (
+                f'=COUNTIF($L$4:$L${data_end_row},"FAILED")',
+                normalized_statuses.count("FAILED"),
+            ),
+        }
     }
     for section in ("A", "B", "C"):
         values_by_row[3].update(layout[section])
     _write_template_rows(
-        worksheet, workbook, sheet, max_column, values_by_row, format_cache
+        worksheet,
+        workbook,
+        sheet,
+        max_column,
+        values_by_row,
+        format_cache,
+        formulas_by_row=formulas_by_row,
     )
 
     for index, record in enumerate(rows):
@@ -810,6 +838,14 @@ def _write_wide_sheet(
 
         for column in range(1, max_column + 1):
             formula_data = formulas.get(column)
+            date_columns = (
+                {1, 21, 40, 56} if sheet == "LB"
+                else {1, 20, 36, 50}
+            )
+            cell_overrides = (
+                {"num_format": DATETIME_NUMBER_FORMAT}
+                if column in date_columns else None
+            )
             template_row = (
                 5 if sheet == "RB" and 34 <= column <= 46
                 and excel_row % 2 == 1 else 4
@@ -821,11 +857,14 @@ def _write_wide_sheet(
                 formula=formula_data[0] if formula_data else None,
                 cached_value=formula_data[1] if formula_data else None,
                 format_cache=format_cache,
-                format_overrides=_semantic_highlight(
-                    sheet,
-                    column,
-                    formula_data[1] if formula_data else values.get(column),
-                ),
+                format_overrides={
+                    **(cell_overrides or {}),
+                    **(_semantic_highlight(
+                        sheet,
+                        column,
+                        formula_data[1] if formula_data else values.get(column),
+                    ) or {}),
+                } or None,
             )
 
     # Match the reference workbook's fee/amount total formulas below each data block.
@@ -858,6 +897,7 @@ def _write_wide_sheet(
             cached_value=formula_data[1] if formula_data else None,
             format_cache=format_cache,
         )
+    worksheet.autofilter(2, 0, max(2, len(rows) + 2), 13)
 
 
 def build_recon_workbook(
@@ -907,12 +947,18 @@ def build_recon_workbook(
             "vendor_ref", "amount", "total_fee", "customer_fee", "lst_fee",
             "margin_biller", "transaction_status", "vendor", "recon_result",
         ), start=1):
+            format_overrides = _semantic_highlight(
+                "Records", column, record.get(key)
+            )
+            if column == 1:
+                format_overrides = {
+                    **(format_overrides or {}),
+                    "num_format": DATETIME_NUMBER_FORMAT,
+                }
             _write_cell(
                 ws_records, workbook, "Records", index, column, 2,
                 record.get(key), format_cache=format_cache,
-                format_overrides=_semantic_highlight(
-                    "Records", column, record.get(key)
-                ),
+                format_overrides=format_overrides,
             )
     ws_records.autofilter(0, 0, len(records), len(RECORDS_HEADERS) - 1)
 

@@ -80,6 +80,16 @@ dibaca. Nominal transaksi tetap berasal dari input, sedangkan fee menggunakan
 profil kode produk dan nominal bila tersedia. Untuk kombinasi baru, aplikasi
 menggunakan tabel fee fallback, lalu field fee LB jika tersedia.
 
+Pada sheet `LB` dan `RB`, baris kedua menampilkan jumlah status `SUCCESS` dan
+`FAILED`. Gunakan dropdown filter di header kolom `Transaction Status` pada
+tabel recon pertama untuk menampilkan salah satu status; dropdown
+`Recon Result` juga dapat dipakai untuk memeriksa hasil klasifikasi.
+
+Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
+waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
+23.59, filter tanggal hari ini dan batas waktu **23:00:00–23:59:59**. Nilai
+timestamp tetap menyertakan jam, menit, dan detik.
+
 File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`
 pada output selalu dihitung ulang menggunakan upload LB/RB yang sedang diproses.
