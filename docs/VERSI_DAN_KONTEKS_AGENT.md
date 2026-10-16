@@ -24,6 +24,27 @@ memodifikasi kode:
 
 Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
+### Rencana Backdate yang sudah disepakati (belum diimplementasikan)
+
+- Jangan ubah alur upload End Date/reguler yang sudah berfungsi. Tambahkan
+  tepat **satu** field upload **File Backdate** pada form yang sama.
+- File Backdate adalah satu workbook Excel `.xlsx`, bukan tiga upload terpisah.
+  Workbook contoh `Backdate BILLER (1).xlsx` memiliki sheet `LB`, `RB`, dan
+  `RECON`.
+- Saat File Backdate diunggah, proses End Date/reguler tetap dijalankan seperti
+  biasa. Generate menghasilkan **satu workbook final** berisi hasil End Date
+  yang sudah ada dan data Backdate; hasil End Date tidak ditimpa atau diganti.
+- Pertahankan sheet End Date yang ada. Tambahkan sheet Backdate terpisah dalam
+  workbook final agar transaksi kedua periode tidak tercampur; nama yang
+  direncanakan `LB Backdate`, `RB Backdate`, dan `RECON Backdate`, berdasarkan
+  tiga sheet pada workbook Backdate.
+- Bila File Backdate tidak diunggah, aplikasi harus tetap menghasilkan output
+  reguler seperti sekarang.
+- Ini baru rencana yang pengguna setujui. **Belum ada perubahan kode atau
+  migrasi template/output untuk Backdate.** Sebelum implementasi, validasi
+  struktur dan format kolom pada workbook Backdate terhadap exporter/template
+  yang ada, lalu uji output gabungan dan jalur reguler tanpa Backdate.
+
 ### Permintaan terakhir dan keputusan tata letak
 
 - Pengguna mengoreksi ringkasan yang sebelumnya diletakkan di sisi kanan:
