@@ -158,6 +158,11 @@ def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
     return timestamp is not None and timestamp.time() >= dt.time(23, 0)
 
 
+def _transaction_status_sort_key(row: Mapping[str, Any]) -> int:
+    status = _transaction_status(row.get("status"))
+    return {"SUCCESS": 0, "FAILED": 1}.get(status, 2)
+
+
 def _status_text(value: Any) -> str:
     cleaned = _clean(value)
     return str(cleaned).strip().upper() if cleaned is not None else ""
@@ -756,6 +761,7 @@ def _write_wide_sheet(
     max_column: int,
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
 ) -> None:
+    rows = sorted(rows, key=_transaction_status_sort_key)
     title_columns = (
         (1, "Current Day from bo biller recon"),
         (21 if sheet == "LB" else 19, "Current Day from bo biller apps"),
