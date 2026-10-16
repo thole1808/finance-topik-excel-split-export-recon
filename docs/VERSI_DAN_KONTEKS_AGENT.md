@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.7**
+**Versi saat ini: 1.2.8**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -145,6 +145,13 @@ pengguna meminta penerbitan release.
 - Watermark generik diganti dengan stilisasi motif Kawung dan aksen alur
   diagonal Parang dalam SVG/PNG transparan. Motif tetap berada di latar
   kanan bawah dan dibuat samar agar tidak menutupi teks maupun tabel.
+
+## Implementasi 1.2.8 — motif batik floral Indonesia
+
+- Watermark menggunakan aset batik floral Indonesia yang tersedia di
+  `assets/batik.png`, diolah menjadi `assets/batik-watermark.png` transparan
+  berwarna teal. Pola ditempatkan kecil di kanan bawah agar tidak menghalangi
+  teks atau tabel, dan dibundel pada installer Mac/Windows.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -449,7 +456,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.7, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.8, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -465,6 +472,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.8 | Watermark menggunakan pola batik floral Indonesia transparan. |
 | 1.2.7 | Watermark motif Kawung dan Parang khas batik Indonesia, transparan. |
 | 1.2.6 | Installer macOS ke Applications dan shortcut Start Menu/Desktop Windows. |
 | 1.2.5 | Akun PC otomatis, updater menutup/memasang/membuka kembali, waktu riwayat lokal Indonesia, tes suara sekali. |
