@@ -31,9 +31,10 @@ ulang dari upload LB/RB.
    seluruh baris file: pilih jumlah baris per halaman lalu gunakan
    **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
    nilai di semua kolom, termasuk transaksi pada halaman lain.
-6. Untuk koreksi LB/RB, klik ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah
-   fokus untuk menerapkan; **Esc** membatalkan. Perubahan pada baris preview
-   ikut diterapkan ke export. Baris lain tetap berasal dari file upload.
+6. Untuk koreksi LB/RB, pilih sel lalu klik **Edit sel terpilih**, atau klik
+   ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah fokus untuk
+   menerapkan; **Esc** membatalkan. Perubahan pada baris preview ikut
+   diterapkan ke export. Baris lain tetap berasal dari file upload.
    Preview recon bersifat referensi dan tidak dapat diedit.
 7. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
 8. Klik **Generate Recon** dan tunggu pesan sukses.
@@ -93,23 +94,31 @@ profil aplikasi. Untuk produk/nominal baru yang belum punya profil, jangan
 menganggap sel kosong berarti fee nol; minta Finance mengonfirmasi nilai dan
 tambahkan profil sebelum memakai hasil sebagai laporan final.
 
+Pada sheet `LB` dan `RB`, tidak ada lagi baris auto-SUM di bawah data Amount
+dan empat kolom fee. Sebagai gantinya, blok **TOTAL AUTO SUM (AMOUNT)** di
+sisi kanan sheet menampilkan jumlah Amount untuk SUCCESS, FAILED, dan total
+seluruh transaksi (termasuk For tomorrow). Ringkasan status mengikuti
+transaksi setelah pengurutan; kolom Amount/Fee per baris tetap tidak berubah.
+
 Pada sheet `LB` dan `RB`, transaksi otomatis diurutkan: semua `SUCCESS` tampil
 lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Dalam setiap
 kelompok status, tanggal/waktu diurutkan dari yang paling awal. Baris total
-diletakkan setelah seluruh transaksi dan menjumlahkan semua status. Baris kedua
-menampilkan jumlah `SUCCESS` dan `FAILED` untuk tabel Current Day; dropdown
-filter di header `Transaction Status` atau `Recon Result` dapat digunakan
-untuk pemeriksaan lebih lanjut. Warna hijau untuk `SUCCESS` dan merah untuk
-`FAILED` hanya diterapkan pada nilai di kolom `Transaction Status` pada blok
-recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
-tidak diberi warna.
+tidak ditambahkan di bawah tabel. Blok **TOTAL AUTO SUM (AMOUNT)** di sisi
+kanan sheet menampilkan jumlah Amount `SUCCESS`, `FAILED`, dan seluruh
+transaksi. Ringkasan ini mencakup Current Day dan For tomorrow. Baris kedua
+tetap menampilkan jumlah transaksi `SUCCESS` dan `FAILED` untuk tabel Current
+Day; dropdown filter di header `Transaction Status` atau `Recon Result` dapat
+digunakan untuk pemeriksaan lebih lanjut. Warna hijau untuk `SUCCESS` dan
+merah untuk `FAILED` hanya diterapkan pada nilai di kolom `Transaction Status`
+pada blok recon Current Day dan For tomorrow; kolom status mentah sumber serta
+sel lain tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
 membatasi jumlah hari. Transaksi pukul 23:00–23:59 tidak ditampilkan di tabel
 recon dan blok data sumber **Current Day**. Transaksi tersebut ditampilkan pada
 bagian recon dan data sumber **For tomorrow because different time**.
 Jadi yang dipindahkan adalah tampilannya di tabel recon, bukan penghapusan
-transaksi dari data sumber. Baris total di bagian bawah tetap mencakup seluruh
+transaksi dari data sumber. Ringkasan Amount di sisi kanan mencakup seluruh
 transaksi sumber, termasuk transaksi pada bagian For tomorrow.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/

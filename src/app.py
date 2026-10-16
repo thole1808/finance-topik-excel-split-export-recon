@@ -35,8 +35,8 @@ class ReconApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title(f"Recon Builder | Finance v{__version__}")
-        self.geometry("1180x760")
-        self.minsize(850, 580)
+        self.geometry("1280x820")
+        self.minsize(900, 620)
 
         self.lb_path = tk.StringVar()
         self.rb_path = tk.StringVar()
@@ -58,6 +58,9 @@ class ReconApp(tk.Tk):
         self._search_vars: dict[str, tk.StringVar] = {}
         self._page_vars: dict[str, tk.StringVar] = {}
         self._page_size_vars: dict[str, tk.StringVar] = {}
+        self._selected_cells: dict[str, tuple[int, str] | None] = {
+            side: None for side in self._frames
+        }
         self._filtered_indices: dict[str, list[int]] = {
             side: [] for side in self._frames
         }
@@ -79,34 +82,72 @@ class ReconApp(tk.Tk):
         if "clam" in style.theme_names():
             style.theme_use("clam")
         style.configure("TFrame", background="#F4F7FB")
-        style.configure("TLabelframe", background="#F4F7FB")
+        style.configure("Header.TFrame", background="#FFFFFF")
+        style.configure("TLabelframe", background="#F4F7FB", borderwidth=1)
         style.configure("TLabelframe.Label", background="#F4F7FB",
                         foreground="#12233F", font=("Helvetica", 11, "bold"))
         style.configure("TLabel", background="#F4F7FB")
+        style.configure(
+            "Header.TLabel", background="#FFFFFF", foreground="#142B49",
+            font=("Helvetica", 23, "bold"),
+        )
+        style.configure(
+            "Subtitle.TLabel", background="#FFFFFF", foreground="#61748B",
+            font=("Helvetica", 10),
+        )
         style.configure("TNotebook", background="#F4F7FB", borderwidth=0)
-        style.configure("TNotebook.Tab", padding=(14, 8))
-        style.configure("Treeview", rowheight=27, font=("Helvetica", 10))
+        style.configure(
+            "TNotebook.Tab", padding=(16, 10),
+            font=("Helvetica", 10, "bold"), background="#E6EDF5",
+            foreground="#455A72",
+        )
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", "#FFFFFF")],
+            foreground=[("selected", "#1F6EAA")],
+        )
+        style.configure(
+            "Treeview", rowheight=30, font=("Helvetica", 10),
+            background="#FFFFFF", fieldbackground="#FFFFFF",
+            borderwidth=0, relief="flat",
+        )
+        style.map(
+            "Treeview",
+            background=[("selected", "#D7EAFE")],
+            foreground=[("selected", "#142B49")],
+        )
         style.configure(
             "Treeview.Heading", font=("Helvetica", 10, "bold"),
-            foreground="#12233F",
+            foreground="#263D56", background="#EAF0F6",
+            padding=(8, 7), relief="flat",
         )
         style.configure(
             "Accent.TButton", font=("Helvetica", 10, "bold"),
-            foreground="#FFFFFF", background="#2878C7", padding=(12, 8),
+            foreground="#FFFFFF", background="#1F6EAA", padding=(14, 9),
         )
         style.map(
             "Accent.TButton",
-            background=[("active", "#1D5E9E"), ("disabled", "#94A3B8")],
+            background=[("active", "#185A8C"), ("disabled", "#94A3B8")],
             foreground=[("disabled", "#E2E8F0")],
+        )
+        style.configure(
+            "TButton", font=("Helvetica", 10), padding=(10, 7),
+            background="#FFFFFF", foreground="#263D56",
+        )
+        style.map("TButton", background=[("active", "#E8F1FA")])
+        style.configure(
+            "TEntry", padding=(8, 6), fieldbackground="#FFFFFF",
         )
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
-        header = ttk.Frame(self, padding=(20, 16, 20, 8))
+        header = ttk.Frame(
+            self, padding=(24, 18, 24, 14), style="Header.TFrame"
+        )
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
         ttk.Label(
-            header, text="Recon Builder", font=("Helvetica", 22, "bold")
+            header, text="Recon Builder", style="Header.TLabel"
         ).grid(row=0, column=0, sticky="w")
         ttk.Label(
             header,
@@ -114,13 +155,15 @@ class ReconApp(tk.Tk):
                 "Upload, cari, tinjau, dan koreksi data sebelum "
                 "membuat workbook recon."
             ),
-            foreground="#536273",
+            style="Subtitle.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
         ttk.Label(
-            header, text=f"Finance · v{__version__}", foreground="#2878C7"
+            header, text=f"FINANCE  ·  v{__version__}",
+            background="#FFFFFF", foreground="#1F6EAA",
+            font=("Helvetica", 10, "bold"),
         ).grid(row=0, column=1, sticky="e", padx=(10, 0))
 
-        content = ttk.Frame(self, padding=(20, 8, 20, 8))
+        content = ttk.Frame(self, padding=(24, 12, 24, 8))
         content.grid(row=1, column=0, sticky="nsew")
         content.columnconfigure(0, weight=1)
         content.rowconfigure(1, weight=1)
@@ -265,15 +308,41 @@ class ReconApp(tk.Tk):
         tree.configure(
             yscrollcommand=vertical.set, xscrollcommand=horizontal.set
         )
+        tree.tag_configure("even", background="#FFFFFF")
+        tree.tag_configure("odd", background="#F5F8FC")
         tree.grid(row=2, column=0, sticky="nsew")
         vertical.grid(row=2, column=1, sticky="ns")
         horizontal.grid(row=3, column=0, sticky="ew")
+        tree.bind(
+            "<ButtonRelease-1>",
+            lambda event, current=side: self._select_preview_cell(
+                current, event
+            ),
+        )
         tree.bind("<Double-1>", lambda event, current=side: self._begin_edit(
             current, event
         ))
         if not editable:
             tree.unbind("<Double-1>")
         self._preview_widgets[side] = tree
+        if editable:
+            edit_bar = ttk.Frame(frame)
+            edit_bar.grid(
+                row=1, column=0, columnspan=2, sticky="ew", pady=(0, 5)
+            )
+            ttk.Button(
+                edit_bar,
+                text="Edit sel terpilih",
+                command=lambda current=side: self._edit_selected_cell(
+                    current
+                ),
+            ).pack(side="left")
+            ttk.Label(
+                edit_bar,
+                text="Pilih sel lalu klik Edit, atau klik ganda sel. "
+                "Perubahan akan masuk ke hasil generate.",
+                foreground="#61748B",
+            ).pack(side="left", padx=(10, 0))
         navigation = ttk.Frame(frame)
         navigation.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(6, 0))
         navigation.columnconfigure(1, weight=1)
@@ -345,6 +414,7 @@ class ReconApp(tk.Tk):
         self._frames[side] = None
         self._filtered_indices[side] = []
         self._page_index[side] = 0
+        self._selected_cells[side] = None
         self._search_vars[side].set("")
         self._edit_counts[side].clear()
         self._invalid_edits = {
@@ -387,6 +457,7 @@ class ReconApp(tk.Tk):
             self._frames[side] = None
             self._filtered_indices[side] = []
             self._page_index[side] = 0
+            self._selected_cells[side] = None
             self._search_vars[side].set("")
             self._clear_preview(side)
             self._row_labels[side].set(f"Membaca {path.name}…")
@@ -499,7 +570,10 @@ class ReconApp(tk.Tk):
         page = frame[page_indices].iter_rows(named=True)
         for index, row in zip(page_indices, page):
             values = [self._display_value(row.get(column)) for column in columns]
-            tree.insert("", "end", iid=str(index), values=values)
+            row_tag = "odd" if index % 2 else "even"
+            tree.insert(
+                "", "end", iid=str(index), values=values, tags=(row_tag,)
+            )
 
         edited = len(self._edit_counts[side])
         suffix = f" · {edited} sel diedit" if edited else ""
@@ -570,11 +644,6 @@ class ReconApp(tk.Tk):
     def _begin_edit(self, side: str, event: tk.Event) -> None:
         if side not in {"LB", "RB"}:
             return
-        if self._busy or side in self._loading:
-            return
-        if self._editor is not None and self._editor_target is not None:
-            if not self._commit_edit(*self._editor_target, self._editor):
-                return
         tree = self._preview_widgets[side]
         item = tree.identify_row(event.y)
         column_id = tree.identify_column(event.x)
@@ -587,10 +656,52 @@ class ReconApp(tk.Tk):
             return
         if column_index >= len(columns):
             return
+        self._selected_cells[side] = (index, columns[column_index])
+        self._open_cell_editor(side, index, columns[column_index])
+
+    def _select_preview_cell(self, side: str, event: tk.Event) -> None:
+        if side not in {"LB", "RB"}:
+            return
+        tree = self._preview_widgets[side]
+        item = tree.identify_row(event.y)
+        column_id = tree.identify_column(event.x)
+        if not item or not column_id:
+            return
+        columns = list(tree["columns"])
+        column_index = int(column_id[1:]) - 1
+        if column_index < len(columns):
+            self._selected_cells[side] = (
+                int(item), columns[column_index]
+            )
+
+    def _edit_selected_cell(self, side: str) -> None:
+        target = self._selected_cells.get(side)
+        if target is None:
+            self.status.set(f"Pilih sel pada tab Preview {side} yang ingin diedit.")
+            return
+        self._open_cell_editor(side, *target)
+
+    def _open_cell_editor(
+        self, side: str, index: int, column: str
+    ) -> None:
+        if side not in {"LB", "RB"} or self._busy or side in self._loading:
+            return
+        if self._editor is not None and self._editor_target is not None:
+            if not self._commit_edit(*self._editor_target, self._editor):
+                return
+        frame = self._frames[side]
+        if frame is None or index >= frame.height:
+            return
+        tree = self._preview_widgets[side]
+        columns = list(tree["columns"])
+        if column not in columns:
+            return
+        item = str(index)
+        column_index = columns.index(column)
+        column_id = f"#{column_index + 1}"
         box = tree.bbox(item, column_id)
         if not box:
             return
-
         if self._editor is not None:
             self._editor.destroy()
         editor = tk.Entry(tree)

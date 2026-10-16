@@ -460,6 +460,9 @@ def _write_template_rows(
     formulas_by_row: Mapping[
         int, Mapping[int, tuple[str, Any]]
     ] | None = None,
+    format_overrides_by_row: Mapping[
+        int, Mapping[int, Mapping[str, Any]]
+    ] | None = None,
 ) -> None:
     for row_number in (1, 2, 3):
         row_values = values_by_row.get(row_number, {})
@@ -476,6 +479,10 @@ def _write_template_rows(
                 formula=formula_data[0] if formula_data else None,
                 cached_value=formula_data[1] if formula_data else None,
                 format_cache=format_cache,
+                format_overrides=(
+                    format_overrides_by_row.get(row_number, {}).get(column)
+                    if format_overrides_by_row is not None else None
+                ),
             )
 def _set_widths(
     worksheet: xlsxwriter.worksheet.Worksheet, sheet: str
@@ -790,6 +797,73 @@ def _write_wide_sheet(
     ]
     current_day_end_row = max(4, len(current_day_rows) + 3)
     source_data_end_row = max(4, len(rows) + 3)
+    summary_start = max_column + 2
+    summary_end = summary_start + 2
+    amount_column = 7
+    status_column = 12
+    tomorrow_amount_column = 46 if sheet == "LB" else 56
+    tomorrow_status_column = 51 if sheet == "LB" else 61
+    last_data_row = max(4, len(rows) + 3)
+    amount_letter = xlsxwriter.utility.xl_col_to_name(amount_column - 1)
+    status_letter = xlsxwriter.utility.xl_col_to_name(status_column - 1)
+    tomorrow_amount_letter = xlsxwriter.utility.xl_col_to_name(
+        tomorrow_amount_column - 1
+    )
+    tomorrow_status_letter = xlsxwriter.utility.xl_col_to_name(
+        tomorrow_status_column - 1
+    )
+    summary_labels = ("SUCCESS", "FAILED", "TOTAL AUTO SUM")
+    status_sums = {"SUCCESS": 0.0, "FAILED": 0.0}
+    total_amount = 0.0
+    for record in rows:
+        amount = _clean(record.get(
+            "tagihan" if sheet == "LB" else "nominal"
+        ))
+        if isinstance(amount, (int, float)):
+            total_amount += float(amount)
+            status = _transaction_status(record.get("status"))
+            if status in status_sums:
+                status_sums[status] += float(amount)
+
+    values_by_row[1][summary_start] = "TOTAL AUTO SUM (AMOUNT)"
+    values_by_row[2].update({
+        summary_start + offset: label
+        for offset, label in enumerate(summary_labels)
+    })
+    summary_formulas = {}
+    for offset, label in enumerate(summary_labels):
+        column = summary_start + offset
+        if label == "TOTAL AUTO SUM":
+            formula = (
+                f"=SUM({amount_letter}4:{amount_letter}{last_data_row})"
+                f"+SUM({tomorrow_amount_letter}4:"
+                f"{tomorrow_amount_letter}{last_data_row})"
+            )
+            cached_value = total_amount
+        else:
+            formula = (
+                f'=SUMIF(${status_letter}$4:${status_letter}${last_data_row},'
+                f'"{label}",${amount_letter}$4:${amount_letter}${last_data_row})'
+                f'+SUMIF(${tomorrow_status_letter}$4:'
+                f'${tomorrow_status_letter}${last_data_row},"{label}",'
+                f'${tomorrow_amount_letter}$4:'
+                f'${tomorrow_amount_letter}${last_data_row})'
+            )
+            cached_value = status_sums[label]
+        summary_formulas[column] = (formula, cached_value)
+    summary_title_options = {
+        "bold": True, "bg_color": "#D9EAF7", "font_color": "#17365D",
+        "border": 1,
+    }
+    summary_header_options = {
+        "bold": True, "bg_color": "#17365D", "font_color": "#FFFFFF",
+        "border": 1, "align": "center", "valign": "vcenter",
+    }
+    summary_value_options = {
+        "num_format": "#,##0.00", "bg_color": "#EAF1F8",
+        "font_color": "#17365D", "border": 1,
+    }
+    worksheet.set_column(summary_start - 1, summary_end - 1, 19)
     formulas_by_row = {
         2: {
             2: (
@@ -802,16 +876,28 @@ def _write_wide_sheet(
             ),
         }
     }
+    formulas_by_row[3] = summary_formulas
     for section in ("A", "B", "C"):
         values_by_row[3].update(layout[section])
     _write_template_rows(
         worksheet,
         workbook,
         sheet,
-        max_column,
+        summary_end,
         values_by_row,
         format_cache,
         formulas_by_row=formulas_by_row,
+        format_overrides_by_row={
+            1: {summary_start: summary_title_options},
+            2: {
+                summary_start + offset: summary_header_options
+                for offset in range(len(summary_labels))
+            },
+            3: {
+                summary_start + offset: summary_value_options
+                for offset in range(len(summary_labels))
+            },
+        },
     )
 
     tomorrow_start = 40 if sheet == "LB" else 50
@@ -953,36 +1039,6 @@ def _write_wide_sheet(
                 } or None,
             )
 
-    # Match the reference workbook's fee/amount total formulas below each data block.
-    total_row = len(rows) + 4
-    amount_key = "tagihan" if sheet == "LB" else "nominal"
-    code_key = "produk" if sheet == "LB" else "kode_produk"
-    side = "lb" if sheet == "LB" else "rb"
-    totals = [0.0, 0.0, 0.0, 0.0, 0.0]
-    for record in rows:
-        amount = _clean(record.get(amount_key))
-        if isinstance(amount, (int, float)):
-            totals[0] += float(amount)
-        profile = _fees(side, record, record.get(code_key), amount)
-        for index, fee in enumerate(profile, start=1):
-            if isinstance(fee, (int, float)):
-                totals[index] += float(fee)
-    formulas = {
-        6: (f"=G{total_row}+K{total_row}", totals[0] + totals[4]),
-        7: (f"=SUM(G4:G{total_row - 1})", totals[0]),
-        8: (f"=SUM(H4:H{total_row - 1})", totals[1]),
-        9: (f"=SUM(I4:I{total_row - 1})", totals[2]),
-        10: (f"=SUM(J4:J{total_row - 1})", totals[3]),
-        11: (f"=SUM(K4:K{total_row - 1})", totals[4]),
-    }
-    for column in range(1, max_column + 1):
-        formula_data = formulas.get(column)
-        _write_cell(
-            worksheet, workbook, sheet, total_row - 1, column, 4,
-            formula=formula_data[0] if formula_data else None,
-            cached_value=formula_data[1] if formula_data else None,
-            format_cache=format_cache,
-        )
     worksheet.autofilter(
         2, 0, max(2, len(current_day_rows) + 2), 13
     )

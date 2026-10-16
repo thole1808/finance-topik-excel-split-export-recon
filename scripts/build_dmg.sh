@@ -52,6 +52,7 @@ APP_VERSION="$("$PYTHON" -c "from src.version import __version__; print(__versio
 /usr/libexec/PlistBuddy \
     -c "Add :CFBundleVersion string $APP_VERSION" \
     "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+codesign --force --deep --sign - "$PROJECT_ROOT/dist/ReconBuilder.app"
 
 hdiutil create \
     -ov \
