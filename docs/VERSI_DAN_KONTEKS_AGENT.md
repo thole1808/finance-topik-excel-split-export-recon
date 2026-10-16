@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.13**
+**Versi saat ini: 1.1.14**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -24,7 +24,7 @@ memodifikasi kode:
 
 Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
-### Rencana Backdate yang sudah disepakati (belum diimplementasikan)
+### Backdate — keputusan tetap dan status implementasi
 
 - Jangan ubah alur upload End Date/reguler yang sudah berfungsi. Tambahkan
   tepat **satu** field upload **File Backdate** pada form yang sama.
@@ -40,10 +40,14 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
   tiga sheet pada workbook Backdate.
 - Bila File Backdate tidak diunggah, aplikasi harus tetap menghasilkan output
   reguler seperti sekarang.
-- Ini baru rencana yang pengguna setujui. **Belum ada perubahan kode atau
-  migrasi template/output untuk Backdate.** Sebelum implementasi, validasi
-  struktur dan format kolom pada workbook Backdate terhadap exporter/template
-  yang ada, lalu uji output gabungan dan jalur reguler tanpa Backdate.
+- **Versi 1.1.14:** field upload Backdate `.xlsx` sudah ditambahkan ke form.
+  Ini baru field pemilihan file; belum ada preview, pembacaan sheet, atau
+  penggabungan output. Generate dengan file Backdate terpilih dihentikan dengan
+  pesan yang jelas supaya Backdate tidak terabaikan. Tanpa file Backdate,
+  jalur reguler tetap sama.
+- Sebelum implementasi pemrosesan, validasi struktur dan format kolom pada
+  workbook Backdate terhadap exporter/template yang ada, lalu uji output
+  gabungan dan jalur reguler tanpa Backdate.
 
 ### Permintaan terakhir dan keputusan tata letak
 
@@ -83,11 +87,13 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 - Branch `main` sudah dipush ke repo pengguna:
   [finance-topik-excel-split-export-recon](https://github.com/thole1808/finance-topik-excel-split-export-recon).
-- Commit terbaru saat catatan ini dibuat: `89c8ee6` (`Document subtotal
-  column layout`), setelah `e43dfa4` (`Place status totals below LB and RB
-  groups`). Belum ada perubahan source yang tertinggal untuk dipush.
+- Catatan rencana Backdate sudah dipush pada commit `e01fbc7` (`Record agreed
+  Backdate workflow plan`). Perubahan form versi 1.1.14 dicatat pada bagian
+  versi di bawah.
 - DMG versi 1.1.13 tersedia di `dist/ReconBuilder.dmg` dan root
   `ReconBuilder.dmg`; keduanya identik. Root DMG disimpan untuk distribusi repo.
+- DMG/installer versi 1.1.14 belum dibangun; versi 1.1.14 saat ini hanya
+  mencakup penambahan field form dan dokumentasinya.
 - Saat sesi serah-terima pertama ditulis, GitHub Release masih sampai
   `v1.1.10`. Perbaikan workflow terbaru menerbitkan Windows installer dan DMG
   bersama-sama pada release tag.
@@ -207,6 +213,16 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Memperbarui diagram alur Finance untuk memuat jalur lookup fee, pemisahan
   status/jam, empat sheet output, serta pemeriksaan data Finance.
 
+## Perubahan versi 1.1.14
+
+- Menambahkan satu field upload opsional **File Backdate** untuk workbook
+  `.xlsx` pada form desktop yang sama dengan alur End Date.
+- Pemrosesan workbook dan penggabungan output Backdate belum diaktifkan.
+  Generate dengan field Backdate terisi ditahan dengan pesan peringatan;
+  field kosong tetap memakai proses reguler yang sudah ada.
+- Memperbarui panduan Finance dan mencatat ulang keputusan Backdate yang sudah
+  disepakati agar dapat dilanjutkan pada sesi berikutnya.
+
 ## Perbaikan versi 1.1.13
 
 - Menempatkan subtotal SUCCESS dan FAILED setelah kelompok transaksinya di
@@ -242,6 +258,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.14 | Menambahkan field upload Backdate opsional pada form; pemrosesan Backdate belum aktif. |
 | 1.1.13 | Menempatkan subtotal Amount dan empat fee setelah kelompok SUCCESS dan FAILED di sheet LB/RB. |
 | 1.1.12 | Memindahkan total Amount ke ringkasan SUCCESS/FAILED/Total, memperjelas edit preview, dan menyelaraskan versi installer. |
 | 1.1.11 | Mengisi profil fee RB untuk tiga kombinasi kode/nominal dan memperjelas alur data/fee. |
@@ -262,7 +279,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.13`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.14`). Tag
   menjalankan Windows build dan menerbitkan installer Windows serta DMG ke
   GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows

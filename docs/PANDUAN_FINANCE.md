@@ -27,18 +27,23 @@ ulang dari upload LB/RB.
 4. Pada **Upload Recon**, pilih file recon `.xlsx` yang memiliki sheet
    **Summary** dan **Records**. Kedua sheet dimuat sebagai referensi dan dapat
    ditinjau melalui tab **Recon · Summary** dan **Recon · Records**.
-5. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
+5. Field **File Backdate (opsional)** disediakan untuk rencana alur Backdate.
+   Pada versi 1.1.14, upload ini baru tersedia pada form dan belum diproses.
+   Jika Backdate dipilih, Generate akan dihentikan dengan pemberitahuan agar
+   file tersebut tidak terabaikan. Kosongkan field ini untuk melanjutkan proses
+   End Date/reguler.
+6. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
    seluruh baris file: pilih jumlah baris per halaman lalu gunakan
    **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
    nilai di semua kolom, termasuk transaksi pada halaman lain.
-6. Untuk koreksi LB/RB, pilih sel lalu klik **Edit sel terpilih**, atau klik
+7. Untuk koreksi LB/RB, pilih sel lalu klik **Edit sel terpilih**, atau klik
    ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah fokus untuk
    menerapkan; **Esc** membatalkan. Perubahan pada baris preview ikut
    diterapkan ke export. Baris lain tetap berasal dari file upload.
    Preview recon bersifat referensi dan tidak dapat diedit.
-7. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
-8. Klik **Generate Recon** dan tunggu pesan sukses.
-9. Buka file output. Periksa sheet **Summary** dan **Records** yang dihitung
+8. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
+9. Klik **Generate Recon** dan tunggu pesan sukses.
+10. Buka file output. Periksa sheet **Summary** dan **Records** yang dihitung
    dari upload LB/RB, lalu telusuri data sumber dan formula recon pada sheet
    **LB** dan **RB**.
 

@@ -41,6 +41,7 @@ class ReconApp(tk.Tk):
         self.lb_path = tk.StringVar()
         self.rb_path = tk.StringVar()
         self.recon_path = tk.StringVar()
+        self.backdate_path = tk.StringVar()
         self.out_path = tk.StringVar(
             value=str(Path.home() / "Desktop" / "recon-output.xlsx")
         )
@@ -182,14 +183,19 @@ class ReconApp(tk.Tk):
             self.recon_path, self._browse_recon,
         )
         self._add_file_row(
-            files, 3, "File output", self.out_path, self._browse_out
+            files, 3, "File Backdate (opsional)",
+            self.backdate_path, self._browse_backdate,
+        )
+        self._add_file_row(
+            files, 4, "File output", self.out_path, self._browse_out
         )
         ttk.Label(
             files,
             text="LB = Loket Bayar · RB = Rajabiller · file recon referensi "
-            "wajib memiliki sheet Summary dan Records.",
+            "wajib memiliki sheet Summary dan Records. Upload Backdate "
+            "tersedia, tetapi belum diproses pada versi ini.",
             foreground="#536273",
-        ).grid(row=4, column=1, columnspan=2, sticky="w", pady=(2, 0))
+        ).grid(row=5, column=1, columnspan=2, sticky="w", pady=(2, 0))
 
         preview = ttk.LabelFrame(
             content,
@@ -381,6 +387,19 @@ class ReconApp(tk.Tk):
         )
         if selected:
             self._load_recon_source(Path(selected))
+
+    def _browse_backdate(self) -> None:
+        selected = self._pick_xlsx("Upload File Backdate (.xlsx)")
+        if not selected:
+            return
+        path = Path(selected)
+        if path.suffix.lower() != ".xlsx":
+            messagebox.showerror(
+                "Format tidak didukung",
+                "File Backdate harus berformat Excel .xlsx.",
+            )
+            return
+        self.backdate_path.set(str(path))
 
     def _browse_out(self) -> None:
         selected = filedialog.asksaveasfilename(
@@ -878,7 +897,31 @@ class ReconApp(tk.Tk):
         lb_path = Path(self.lb_path.get().strip()).expanduser()
         rb_path = Path(self.rb_path.get().strip()).expanduser()
         recon_path = Path(self.recon_path.get().strip()).expanduser()
+        backdate_value = self.backdate_path.get().strip()
         output = Path(self.out_path.get().strip()).expanduser()
+
+        if backdate_value:
+            backdate_path = Path(backdate_value).expanduser()
+            if backdate_path.suffix.lower() != ".xlsx":
+                messagebox.showerror(
+                    "Format tidak didukung",
+                    "File Backdate harus berformat Excel .xlsx.",
+                )
+                return
+            if not backdate_path.is_file():
+                messagebox.showerror(
+                    "File Backdate",
+                    "File Backdate yang dipilih tidak ditemukan.",
+                )
+                return
+            messagebox.showwarning(
+                "Backdate belum diproses",
+                "Field upload Backdate sudah tersedia, tetapi penggabungan "
+                "belum diaktifkan. File Backdate tidak akan dimasukkan ke "
+                "output. Kosongkan field Backdate untuk membuat recon "
+                "End Date saja.",
+            )
+            return
 
         if self._frames["LB"] is None or not lb_path.is_file():
             messagebox.showerror(
