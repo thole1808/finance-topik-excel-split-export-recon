@@ -43,7 +43,8 @@ export.
 Pada sheet LB/RB, subtotal Amount dan empat kolom fee muncul setelah kelompok
 SUCCESS dan FAILED. Ada tiga baris kosong setelah subtotal SUCCESS; transaksi
 For tomorrow juga ikut dijumlahkan. Tata letak mengikuti baris total pada file
-acuan.
+acuan: kolom F adalah Amount + Margin Biller, lalu kolom G-K berisi Amount,
+Total Fee, Customer Fee, LST Fee, dan Margin Biller.
 
 Untuk command line:
 
