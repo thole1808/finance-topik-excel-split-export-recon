@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.0** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.1** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -82,7 +82,9 @@ Jalankan perintah ini di macOS setelah memasang dependencies:
 Hasilnya:
 
 - `dist/ReconBuilder.app`
-- `dist/ReconBuilder.dmg`
+- `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.dmg`
+
+Script juga menyalin DMG bernama sama ke root repository untuk workflow release.
 
 DMG berisi aplikasi desktop mandiri; spreadsheet LB/RB dipilih saat aplikasi
 dijalankan dan tidak dibundel bersama aplikasi. Engine Excel Polars
@@ -97,8 +99,8 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
-- Untuk installer rilis, push tag versi seperti `v1.2.0`. Workflow membuat
-  GitHub Release berisi `ReconBuilder-Setup.exe` dan `ReconBuilder.dmg`.
+- Untuk installer rilis, push tag versi seperti `v1.2.1`. Workflow membuat
+  GitHub Release berisi `ReconBuilder-Setup.exe` dan DMG bernama versi/waktu.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
 

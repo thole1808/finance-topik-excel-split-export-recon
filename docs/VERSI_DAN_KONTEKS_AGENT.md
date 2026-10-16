@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.0**
+**Versi saat ini: 1.2.1**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -51,6 +51,14 @@ Perbarui versi di `src/version.py`, build aplikasi macOS melalui
 `scripts/build_dmg.sh`, dan push commit source/docs ke `main`. Windows installer
 dibangun oleh GitHub Actions saat push. Tag release perlu dibuat terpisah jika
 pengguna meminta penerbitan release.
+
+## Perubahan 1.2.1 — nama artefak DMG
+
+- DMG memakai pola `ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.dmg`, dengan waktu
+  build lokal 24 jam. Contoh: `ReconBuilder-v1.2.1-20261017_234755.dmg`.
+- Script menyimpan hasil di `dist/` dan menyalin artefak bernama sama ke root
+  untuk workflow release. GitHub Actions memilih DMG untuk versi source yang
+  sama saat membuat release.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -355,7 +363,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.0, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.1, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -371,6 +379,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.1 | Nama DMG mencantumkan versi aplikasi dan waktu build. |
 | 1.2.0 | Tab tiap sheet Backdate, preview Semua, output bertimestamp, UI maximize/clock/terminal, dan audit SQLite lokal. |
 | 1.1.22 | Tulis semua baris For tomorrow LB berurutan mulai dari baris 4. |
 | 1.1.21 | Mulai tabel For tomorrow LB tepat di bawah header meski ada banyak baris Current Day/Backdate. |
