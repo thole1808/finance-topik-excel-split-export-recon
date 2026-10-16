@@ -118,72 +118,12 @@ class ReconApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.deiconify()
         self.after(100, self._maximize_window)
-        self._install_batik_watermark()
         self._update_clock()
         self.audit.record(self.operator, "audit_chain_check", **{
             "valid": self.audit.verify_chain()[0]
         })
         self._refresh_history()
         self.after(1500, self._check_updates_silently)
-
-    def _install_batik_watermark(self) -> None:
-        """Tile batik image to fill the full header width as a background."""
-        try:
-            if self._header is None:
-                return
-            if getattr(sys, "frozen", False):
-                asset = Path(sys._MEIPASS) / "assets" / "batik-watermark.png"
-            else:
-                asset = Path(__file__).resolve().parent.parent / "assets" / "batik-watermark.png"
-            if not asset.is_file():
-                return
-
-            from PIL import Image as _PILImage, ImageTk as _ImageTk
-
-            self._batik_pil_asset = str(asset)
-            self._batik_pil_cls = (_PILImage, _ImageTk)
-
-            canvas = tk.Canvas(
-                self._header, highlightthickness=0, bd=0,
-                background="#102A43",
-            )
-            canvas.place(x=0, y=0, relwidth=1.0, relheight=1.0)
-            canvas.lower()
-            self._batik_canvas = canvas
-            self._batik_photo: object = None
-
-            def _draw(event: tk.Event | None = None) -> None:
-                w = self._header.winfo_width()
-                h = self._header.winfo_height()
-                if w < 2 or h < 2:
-                    return
-                PILImage, ImageTk = self._batik_pil_cls  # type: ignore[attr-defined]
-                img = PILImage.open(self._batik_pil_asset).convert("RGBA")
-                # Hitung tinggi proporsional agar gambar pas penuh tinggi header
-                ratio = h / img.height
-                new_w = max(1, int(img.width * ratio))
-                # Tile gambar secara horizontal hingga memenuhi lebar header
-                tile_count = -(-w // new_w)  # ceiling division
-                resized = img.resize((new_w, h), PILImage.LANCZOS)
-                canvas_img = PILImage.new("RGBA", (new_w * tile_count, h))
-                for i in range(tile_count):
-                    canvas_img.paste(resized, (i * new_w, 0))
-                canvas_img = canvas_img.crop((0, 0, w, h))
-                # Overlay gelap agar teks di atas tetap terbaca
-                overlay = PILImage.new("RGBA", (w, h), (16, 42, 67, 170))
-                canvas_img = PILImage.alpha_composite(canvas_img, overlay)
-                self._batik_photo = ImageTk.PhotoImage(canvas_img)
-                canvas.config(width=w, height=h)
-                canvas.delete("bg")
-                canvas.create_image(0, 0, anchor="nw", image=self._batik_photo, tags="bg")
-                canvas.lower()
-
-            self._header.bind("<Configure>", lambda e: _draw(e), add="+")
-            # Gambar pertama kali setelah layout selesai
-            self._header.after(50, _draw)
-
-        except (OSError, tk.TclError, ImportError):
-            return
 
     def _maximize_window(self) -> None:
         try:
@@ -280,40 +220,35 @@ class ReconApp(tk.Tk):
         self._header = header
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
-        tk.Label(
-            header, text="Recon Builder",
-            background="#102A43", foreground="#FFFFFF",
-            font=("Helvetica", 23, "bold"),
+        ttk.Label(
+            header, text="Recon Builder", style="Header.TLabel"
         ).grid(row=0, column=0, sticky="w")
-        tk.Label(
+        ttk.Label(
             header,
             text=(
                 "Upload, cari, tinjau, dan koreksi data sebelum "
                 "membuat workbook recon."
             ),
-            background="#102A43", foreground="#C7D8E7",
-            font=("Helvetica", 10),
+            style="Subtitle.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
-        self._release_status_label = tk.Label(
+        self._release_status_label = ttk.Label(
             header, textvariable=self._release_status_var,
             background="#102A43", foreground="#55D6BE",
             font=("Helvetica", 9, "bold"),
         )
         self._release_status_label.grid(row=2, column=0, sticky="w", pady=(8, 0))
-        tk.Label(
-            header, text="Powered By DevOps",
-            background="#102A43", foreground="#C7D8E7",
-            font=("Helvetica", 10, "bold"),
+        ttk.Label(
+            header, text="Powered By DevOps", background="#102A43",
+            foreground="#C7D8E7", font=("Helvetica", 10, "bold"),
         ).grid(row=2, column=2, sticky="e", pady=(8, 0))
         self._update_button = ttk.Button(
             header, text="Periksa Update", command=self._on_update_button,
             style="Header.TButton",
         )
         self._update_button.grid(row=0, column=2, rowspan=2, sticky="e", padx=(24, 0))
-        tk.Label(
-            header, textvariable=self._clock_var,
-            background="#102A43", foreground="#FFFFFF",
-            font=("Helvetica", 10),
+        ttk.Label(
+            header, textvariable=self._clock_var, background="#102A43",
+            foreground="#FFFFFF", font=("Helvetica", 10),
         ).grid(row=0, column=1, rowspan=2, sticky="e", padx=(24, 0))
 
         content = ttk.Frame(self, padding=(24, 12, 24, 8))
@@ -404,7 +339,7 @@ class ReconApp(tk.Tk):
             )
             self._voice_test_button.pack(side="left", padx=(8, 0))
         ttk.Label(
-            footer, textvariable=self.status, foreground="#1A3050"
+            footer, textvariable=self.status, foreground="#35465a"
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
         ttk.Label(
             footer, text="Terminal proses Generate", foreground="#123B5D",
