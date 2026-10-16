@@ -814,26 +814,17 @@ def _write_wide_sheet(
         formulas_by_row=formulas_by_row,
     )
 
-    source_row_by_id = {
-        id(record): index + 4 for index, record in enumerate(rows)
-    }
     tomorrow_start = 40 if sheet == "LB" else 50
     tomorrow_end = 72 if sheet == "LB" else 63
 
     for index in range(len(rows)):
         excel_row = index + 4
-        record = rows[index]
-        source_values = values_function(record)
         current_day_record = (
             current_day_rows[index] if index < len(current_day_rows) else None
         )
         current_day_values = (
             values_function(current_day_record)
             if current_day_record is not None else {}
-        )
-        current_day_source_row = (
-            source_row_by_id[id(current_day_record)]
-            if current_day_record is not None else None
         )
         tomorrow_values = (
             values_function(tomorrow_rows[index])
@@ -842,7 +833,6 @@ def _write_wide_sheet(
         formulas: dict[int, tuple[str, Any]] = {}
         if sheet == "LB" and current_day_record is not None:
             formula_row = excel_row
-            source_formula_row = current_day_source_row
             amount = _clean(current_day_record.get("tagihan"))
             fees = _fees(
                 "lb", current_day_record,
@@ -866,18 +856,18 @@ def _write_wide_sheet(
             )
             formulas = {
                 16: (
-                    f"=(AG{source_formula_row}-AD{source_formula_row})"
+                    f"=(AG{formula_row}-AD{formula_row})"
                     f"-K{formula_row}",
                     p_value,
                 ),
                 17: (
-                    f"=(G{source_formula_row}+K{formula_row})"
-                    f"-AG{source_formula_row}",
+                    f"=(G{formula_row}+K{formula_row})"
+                    f"-AG{formula_row}",
                     q_value,
                 ),
                 18: (
                     f'=OR(L{formula_row}="SUCCESS",'
-                    f'AA{source_formula_row}="SUKSES")',
+                    f'AA{formula_row}="SUKSES")',
                     _transaction_status(current_day_record.get("status"))
                     == "SUCCESS",
                 ),
@@ -896,7 +886,7 @@ def _write_wide_sheet(
             formulas = {
                 16: (
                     f'=OR(L{row_number}="SUCCESS",'
-                    f'AC{current_day_source_row}="BERHASIL")',
+                    f'AC{row_number}="BERHASIL")',
                     _transaction_status(current_day_record.get("status"))
                     == "SUCCESS",
                 ),
@@ -909,15 +899,14 @@ def _write_wide_sheet(
             )
             if sheet == "LB":
                 is_main_column = 1 <= column <= 19
-                is_source_column = 21 <= column <= 37
+                is_current_source_column = 21 <= column <= 37
+                is_tomorrow_source_column = 56 <= column <= 72
             else:
                 is_main_column = 1 <= column <= 16
-                is_source_column = 18 <= column <= 30 or 34 <= column <= 46
+                is_current_source_column = 18 <= column <= 30
+                is_tomorrow_source_column = 34 <= column <= 46
             is_tomorrow_column = tomorrow_start <= column <= tomorrow_end
-            is_tomorrow_source_column = (
-                sheet == "LB" and 56 <= column <= 72
-            )
-            if is_main_column:
+            if is_main_column or is_current_source_column:
                 value = current_day_values.get(column)
                 status_row = current_day_record
                 has_status_row = status_row is not None
@@ -929,10 +918,6 @@ def _write_wide_sheet(
                 )
                 status_row = tomorrow_record
                 has_status_row = status_row is not None
-            elif is_source_column:
-                value = source_values.get(column)
-                status_row = record
-                has_status_row = True
             else:
                 value = None
                 status_row = None

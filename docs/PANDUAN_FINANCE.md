@@ -93,8 +93,8 @@ tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
 membatasi jumlah hari. Transaksi pukul 23:00–23:59 tidak ditampilkan di tabel
-recon **Current Day**. Transaksi tersebut tetap ada pada blok data sumber
-upload dan ditampilkan pada bagian **For tomorrow because different time**.
+recon dan blok data sumber **Current Day**. Transaksi tersebut ditampilkan pada
+bagian recon dan data sumber **For tomorrow because different time**.
 Jadi yang dipindahkan adalah tampilannya di tabel recon, bukan penghapusan
 transaksi dari data sumber. Baris total di bagian bawah tetap mencakup seluruh
 transaksi sumber, termasuk transaksi pada bagian For tomorrow.
