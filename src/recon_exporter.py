@@ -904,8 +904,8 @@ def _write_wide_sheet(
 
         for column in range(1, max_column + 1):
             status_columns = (
-                {12, 27, 51, 62} if sheet == "LB"
-                else {12, 29, 45, 61}
+                {12, 51} if sheet == "LB"
+                else {12, 61}
             )
             if sheet == "LB":
                 is_main_column = 1 <= column <= 19

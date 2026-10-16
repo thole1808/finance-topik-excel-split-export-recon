@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.8**
+**Versi saat ini: 1.1.9**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -90,6 +90,12 @@ memodifikasi kode:
 - Menjaga referensi formula Current Day tetap menunjuk ke baris data sumber
   yang tepat setelah baris terlambat dipisahkan.
 
+## Perbaikan versi 1.1.9
+
+- Latar hijau SUCCESS dan merah FAILED hanya diterapkan pada sel nilai kolom
+  `Transaction Status` di blok recon Current Day/For tomorrow; sel status
+  sumber dan kolom lainnya tidak diberi warna.
+
 ## Gambar yang tersedia
 
 Gambar berikut adalah diagram alur aplikasi yang sama, disediakan untuk
@@ -106,6 +112,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.9 | Warna SUCCESS/FAILED hanya pada nilai kolom Transaction Status di blok recon. |
 | 1.1.8 | Pindahkan transaksi 23:00–23:59 dari tampilan Current Day ke For tomorrow tanpa menghapus data sumber. |
 | 1.1.7 | Pertahankan transaksi jam 23 di data utama, dukung semua tanggal otomatis, dan warnai sel status saja. |
 | 1.1.6 | Mengurutkan SUCCESS di atas FAILED dan memberi warna hijau/merah pada baris transaksi. |
@@ -121,7 +128,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.8`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.9`). Tag
   menjalankan Windows build dan menerbitkan installer ke GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.

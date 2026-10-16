@@ -87,7 +87,9 @@ diletakkan setelah seluruh transaksi dan menjumlahkan semua status. Baris kedua
 menampilkan jumlah `SUCCESS` dan `FAILED` untuk tabel Current Day; dropdown
 filter di header `Transaction Status` atau `Recon Result` dapat digunakan
 untuk pemeriksaan lebih lanjut. Warna hijau untuk `SUCCESS` dan merah untuk
-`FAILED` hanya diterapkan pada sel status, bukan seluruh baris.
+`FAILED` hanya diterapkan pada nilai di kolom `Transaction Status` pada blok
+recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
+tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
 membatasi jumlah hari. Transaksi pukul 23:00–23:59 tidak ditampilkan di tabel
