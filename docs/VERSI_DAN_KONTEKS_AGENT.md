@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.17**
+**Versi saat ini: 1.1.18**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -83,6 +83,20 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - End Date pukul 23:00 tetap ditempatkan di blok For tomorrow dan Records.
   Pada output yang diperiksa, 15 Oktober 2026 memiliki 187 transaksi pukul
   23:xx di Records (186 LB, 1 RB); LB memuat 186 pada blok For tomorrow.
+
+### Koreksi tampilan jam 23 — versi 1.1.18
+
+- Pengguna mengonfirmasi bahwa transaksi End Date pukul 23:00 harus masuk ke
+  blok **Current Day**, bukan hanya muncul di `Records`/For tomorrow.
+- Aturan pengalihan timestamp >=23:00 dinonaktifkan untuk LB dan RB. Data
+  sumber dan recon untuk Backdate maupun End Date kini tampil di area Current
+  Day; kolom For tomorrow pada template dibiarkan tanpa baris jam 23.
+- Output 1.1.17 yang diperiksa memang memiliki 187 transaksi End Date pukul
+  23:xx di `Records` (186 LB dan 1 RB), namun 186 LB dan 1 RB tersebut berada
+  di blok For tomorrow. Ini yang membuatnya tampak hilang dari blok Current Day.
+- Uji regresi harus mencakup output dengan dan tanpa Backdate, serta memastikan
+  timestamp 23:xx ditulis ke kolom Current Day baik di data sumber maupun
+  tabel recon.
 
 ### Implementasi yang sudah ada
 
@@ -303,6 +317,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.18 | Tampilkan transaksi jam 23 End Date di blok Current Day, bukan For tomorrow. |
 | 1.1.17 | Gabungkan subtotal Backdate+End Date per status dan pertahankan Ref/Vendor Ref Backdate dari sumber LB/RB. |
 | 1.1.16 | Tampilkan transaksi Backdate pukul 23:00+ di blok utama LB/RB; transaksi End Date tetap mengikuti aturan For tomorrow. |
 | 1.1.15 | Menggabungkan Backdate opsional ke Summary/Records/LB/RB, dengan transaksi Backdate lebih dahulu; tanpa Backdate output reguler tetap sama. |

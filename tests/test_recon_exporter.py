@@ -100,7 +100,7 @@ class ReconExporterBackdateTests(unittest.TestCase):
             timestamp - dt.datetime(1899, 12, 30)
         ).total_seconds() / 86400
         for address, cell in self._sheet_cells(path, sheet_number).items():
-            if not address.startswith(column) or not address[len(column):].isdigit():
+            if not address.rstrip("0123456789") == column:
                 continue
             value = cell.findtext(f"{MAIN_NS}v")
             if value is not None and math.isclose(
@@ -188,22 +188,32 @@ class ReconExporterBackdateTests(unittest.TestCase):
 
             self.assertTrue(
                 self._has_date(
+                    output, 3, "A", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertTrue(
+                self._has_date(
+                    output, 3, "U", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertTrue(
+                self._has_date(
+                    output, 4, "A", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertTrue(
+                self._has_date(
+                    output, 4, "T", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertFalse(
+                self._has_date(
                     output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
-            self.assertTrue(
-                self._has_date(
-                    output, 3, "BD", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            self.assertTrue(
+            self.assertFalse(
                 self._has_date(
                     output, 4, "AX", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            self.assertTrue(
-                self._has_date(
-                    output, 4, "AJ", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
 
@@ -225,6 +235,16 @@ class ReconExporterBackdateTests(unittest.TestCase):
             self.assertEqual(records.height, 1)
             self.assertEqual(records["Ref"].to_list(), ["LB-END-SOURCE"])
             self.assertTrue(
+                self._has_date(
+                    output, 3, "A", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertTrue(
+                self._has_date(
+                    output, 3, "U", dt.datetime(2026, 10, 15, 23, 30)
+                )
+            )
+            self.assertFalse(
                 self._has_date(
                     output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
                 )

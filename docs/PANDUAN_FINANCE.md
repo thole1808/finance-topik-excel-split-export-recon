@@ -49,9 +49,9 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
     LB/RB. Data
     sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
     sebelum data End Date pada kelompok status masing-masing. `Summary`
-    menghitung gabungan Backdate dan End Date. Timestamp Backdate pukul 23:00
-    atau lebih tetap ditampilkan di blok utama Backdate agar urutannya terlihat;
-    pemindahan ke blok For tomorrow tetap berlaku untuk End Date reguler.
+    menghitung gabungan Backdate dan End Date. Transaksi End Date
+    pukul 23:00 atau lebih kini juga ditampilkan di blok Current Day, seperti
+    Backdate; tidak dipindahkan ke blok For tomorrow.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
 `.csv`, PDF, dan file selain Excel tidak didukung. Sheet pertama pada setiap
@@ -128,22 +128,19 @@ recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
 tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
-membatasi jumlah hari. Untuk End Date reguler, transaksi pukul 23:00–23:59
-ditampilkan pada bagian recon dan data sumber **For tomorrow because
-different time**, dan tetap ada di `Records`. Untuk Backdate, transaksi
-pukul 23:00 atau lebih tetap ditampilkan di blok utama. Jadi yang berubah
-hanya lokasi tampilnya transaksi pada sheet LB/RB, bukan penghapusan transaksi
-dari data sumber. Baris total per status mencakup seluruh transaksi sumber,
-termasuk transaksi pada bagian For tomorrow.
+membatasi jumlah hari. Transaksi End Date maupun Backdate pukul 23:00–23:59
+ditampilkan di blok recon dan data sumber **Current Day**, serta tetap ada di
+`Records`. Data tidak dialihkan ke blok **For tomorrow because different
+time**. Baris total per status mencakup semua transaksi sumber.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
 23.59, filter tanggal hari ini dan batas waktu **23:00:00–23:59:59**. Nilai
 timestamp tetap menyertakan jam, menit, dan detik.
 
-Bagian **For tomorrow because different time** pada sheet `LB`/`RB` menampilkan
-transaksi dari tanggal mana pun yang waktunya **23:00:00 atau lebih**. Data
-sebelum pukul 23.00, termasuk pukul 00.00, tidak dimasukkan ke bagian tersebut.
+Bagian **For tomorrow because different time** tetap tersedia pada template
+sheet `LB`/`RB`, tetapi transaksi pukul 23:00 atau lebih tidak ditempatkan di
+sana; transaksi tersebut berada di blok **Current Day**.
 
 File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`
