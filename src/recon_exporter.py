@@ -154,6 +154,8 @@ def _datetime_value(value: Any) -> Any:
 
 
 def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
+    if row.get("_period_order") == 0:
+        return False
     timestamp = _as_datetime(row.get("tanggal"))
     return timestamp is not None and timestamp.time() >= dt.time(23, 0)
 

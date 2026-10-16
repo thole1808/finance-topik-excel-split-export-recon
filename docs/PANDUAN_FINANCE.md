@@ -46,7 +46,9 @@ ulang dari upload LB/RB.
     awal `Records` berdasarkan Datetime, lalu diikuti hasil End Date. Data
     sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
     sebelum data End Date pada kelompok status masing-masing. `Summary`
-    menghitung gabungan Backdate dan End Date.
+    menghitung gabungan Backdate dan End Date. Timestamp Backdate pukul 23:00
+    atau lebih tetap ditampilkan di blok utama Backdate agar urutannya terlihat;
+    pemindahan ke blok For tomorrow tetap berlaku untuk End Date reguler.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
 `.csv`, PDF, dan file selain Excel tidak didukung. Sheet pertama pada setiap
@@ -79,8 +81,8 @@ memiliki jumlah baris atau tanggal tertentu.
 |---|---|---|
 | `Summary` | Ringkasan kategori/status. Tanpa Backdate dihitung dari upload LB/RB; dengan Backdate merangkum kedua periode. | Gunakan untuk pemeriksaan awal, lalu telusuri transaksi di `Records`. |
 | `Records` | Daftar transaksi gabungan. Jika Backdate ada, baris `RECON`-nya ditempatkan lebih dulu berdasarkan Datetime, kemudian baris End Date. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
-| `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. | Bandingkan kolom hasil recon dengan data sumber pada bagian LB. |
-| `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. | Bandingkan kolom hasil recon dengan data sumber pada bagian RB. |
+| `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. Waktu Backdate pukul 23:00 ke atas tetap terlihat di blok utama. | Bandingkan kolom hasil recon dengan data sumber pada bagian LB. |
+| `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. Jika sheet RB Backdate sumber kosong, tidak ada transaksi Backdate yang dapat ditambahkan. | Bandingkan kolom hasil recon dengan data sumber pada bagian RB. |
 
 Header dibekukan ketika scroll; `Records` memiliki filter, dan format angka,
 tanggal, warna, serta lebar kolom mengikuti workbook acuan agar nilai mudah

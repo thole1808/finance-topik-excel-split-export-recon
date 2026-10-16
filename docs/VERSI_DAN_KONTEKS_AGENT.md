@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.15**
+**Versi saat ini: 1.1.16**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -51,6 +51,12 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - **Versi 1.1.15:** pemrosesan opsional ditambahkan. Validasi `LB`, `RB`,
   `RECON` dan header wajib saat Generate; gabungkan periode. Output tanpa
   Backdate tetap pada empat sheet seperti sebelumnya.
+- **Versi 1.1.16:** perbaiki penempatan transaksi Backdate pukul 23:00 atau
+  lebih agar tampil di blok utama pada sheet LB/RB dan tidak terlihat kosong
+  di sisi Current Day. Aturan For tomorrow tetap berlaku pada transaksi End
+  Date reguler. Workbook Backdate yang diuji memiliki 158 baris LB, sheet RB
+  kosong, dan 158 baris RECON (semuanya Vendor Loket Bayar); jadi tidak ada
+  baris sumber RB Backdate untuk ditambahkan.
 
 ### Permintaan terakhir dan keputusan tata letak
 
@@ -90,9 +96,10 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 - Branch `main` sudah dipush ke repo pengguna:
   [finance-topik-excel-split-export-recon](https://github.com/thole1808/finance-topik-excel-split-export-recon).
-- Versi 1.1.15 melanjutkan commit `89bbc42` (`Add optional Backdate upload
-  field`) dan memakai nomor versi berikutnya secara berurutan setelah 1.1.14.
-- DMG 1.1.15 sudah dibangun di `dist/ReconBuilder.dmg` dan disalin ke root
+- Commit remote terakhir adalah `ce17a8c` (`Add Backdate and End Date workbook
+  merge`) dengan tag `v1.1.15`. Versi 1.1.16 berurutan setelahnya; perbaikan
+  source, dokumentasi, dan DMG sedang disiapkan untuk dipush dan ditag.
+- DMG 1.1.16 sudah dibangun di `dist/ReconBuilder.dmg` dan disalin ke root
   `ReconBuilder.dmg`. Versi bundle, signature, checksum, dan kesamaan kedua
   salinan sudah diverifikasi.
 - Saat sesi serah-terima pertama ditulis, GitHub Release masih sampai
@@ -214,6 +221,15 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Memperbarui diagram alur Finance untuk memuat jalur lookup fee, pemisahan
   status/jam, empat sheet output, serta pemeriksaan data Finance.
 
+## Perbaikan versi 1.1.16
+
+- Transaksi Backdate pada pukul 23:00 atau lebih kini tetap berada di blok
+  utama pada sheet LB/RB, supaya dapat dilihat bersama urutan Backdate sebelum
+  End Date. Pemisahan For tomorrow tetap berjalan untuk End Date reguler.
+- Memastikan hasil RB tidak mengarang baris Backdate: file sumber
+  `Backdate BILLER-new-14.xlsx` memiliki sheet RB kosong. Transaksi tanggal
+  15 dari file End Date tetap berasal dari input End Date.
+
 ## Perubahan versi 1.1.15
 
 - Membaca dan memvalidasi sheet `LB`, `RB`, dan `RECON` dari satu workbook
@@ -228,7 +244,8 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
   RB=0, RECON=158; uji workbook sementara dengan dua baris End Date
   memastikan semua 158 baris Backdate berada lebih dulu berdasarkan Datetime,
   Summary mencakup 160 transaksi, serta output reguler tanpa Backdate tetap
-  berisi empat sheet.
+  berisi empat sheet. Perbaikan penempatan data Backdate di blok LB/RB dicatat
+  sebagai 1.1.16.
 
 ## Perubahan versi 1.1.14
 
@@ -273,6 +290,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.16 | Tampilkan transaksi Backdate pukul 23:00+ di blok utama LB/RB; transaksi End Date tetap mengikuti aturan For tomorrow. |
 | 1.1.15 | Menggabungkan Backdate opsional ke Summary/Records/LB/RB, dengan transaksi Backdate lebih dahulu; tanpa Backdate output reguler tetap sama. |
 | 1.1.14 | Menambahkan field upload Backdate opsional pada form; pemrosesan Backdate belum aktif. |
 | 1.1.13 | Menempatkan subtotal Amount dan empat fee setelah kelompok SUCCESS dan FAILED di sheet LB/RB. |
@@ -295,7 +313,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.15`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.16`). Tag
   menjalankan Windows build dan menerbitkan installer Windows serta DMG ke
   GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
