@@ -15,7 +15,8 @@ koreksi → proses data → export Excel → periksa Summary, Records, LB, dan R
 Jumlah baris, tanggal, nominal, dan nilai lain diambil dari file yang diupload
 setiap kali proses berjalan. Data pada sheet Summary dan Records dari file recon
 referensi ditampilkan untuk ditinjau; Summary dan Records pada output dihitung
-ulang dari upload LB/RB.
+ulang dari upload LB/RB. Jika Backdate disertakan, sheet RECON Backdate
+divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 
 ## Menjalankan aplikasi
 
@@ -42,8 +43,10 @@ ulang dari upload LB/RB.
 8. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
 9. Klik **Generate Recon** dan tunggu pesan sukses.
 10. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
-    Dengan Backdate, transaksi dari sheet `RECON` Backdate muncul di bagian
-    awal `Records` berdasarkan Datetime, lalu diikuti hasil End Date. Data
+    Dengan Backdate, transaksi yang dibentuk dari sumber `LB`/`RB` Backdate
+    muncul di bagian awal `Records` berdasarkan Datetime, lalu diikuti hasil
+    End Date. Nilai `Ref` dan `Vendor Ref` tetap bersumber dari kolom asli
+    LB/RB. Data
     sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
     sebelum data End Date pada kelompok status masing-masing. `Summary`
     menghitung gabungan Backdate dan End Date. Timestamp Backdate pukul 23:00
@@ -80,7 +83,7 @@ memiliki jumlah baris atau tanggal tertentu.
 | Sheet | Isi | Cara menggunakan |
 |---|---|---|
 | `Summary` | Ringkasan kategori/status. Tanpa Backdate dihitung dari upload LB/RB; dengan Backdate merangkum kedua periode. | Gunakan untuk pemeriksaan awal, lalu telusuri transaksi di `Records`. |
-| `Records` | Daftar transaksi gabungan. Jika Backdate ada, baris `RECON`-nya ditempatkan lebih dulu berdasarkan Datetime, kemudian baris End Date. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
+| `Records` | Daftar transaksi gabungan. Jika Backdate ada, transaksi yang dibentuk dari sumber LB/RB ditempatkan lebih dulu berdasarkan Datetime, kemudian baris End Date. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
 | `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. Waktu Backdate pukul 23:00 ke atas tetap terlihat di blok utama. | Bandingkan kolom hasil recon dengan data sumber pada bagian LB. |
 | `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan; data Backdate digabung lebih dulu bila diupload. Jika sheet RB Backdate sumber kosong, tidak ada transaksi Backdate yang dapat ditambahkan. | Bandingkan kolom hasil recon dengan data sumber pada bagian RB. |
 
@@ -105,7 +108,8 @@ tambahkan profil sebelum memakai hasil sebagai laporan final.
 Pada sheet `LB` dan `RB`, baris total ditempatkan langsung setelah kelompok
 `SUCCESS` dan setelah kelompok `FAILED`, sejajar dengan kolom angka pada
 contoh recon. Tiga baris kosong memisahkan total SUCCESS dari transaksi
-FAILED. Amount dan empat kolom fee dijumlahkan masing-masing untuk statusnya;
+FAILED. Amount dan empat kolom fee dijumlahkan masing-masing untuk statusnya.
+Jika Backdate disertakan, subtotal SUCCESS/FAILED menggabungkan kedua periode;
 transaksi For tomorrow juga ikut dihitung. Baris total mengikuti contoh:
 kolom pertama menunjukkan Amount + Margin Biller, kemudian Amount, Total Fee,
 Customer Fee, LST Fee, dan Margin Biller. Nilai transaksi per baris tidak
@@ -124,12 +128,13 @@ recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
 tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
-membatasi jumlah hari. Transaksi pukul 23:00–23:59 tidak ditampilkan di tabel
-recon dan blok data sumber **Current Day**. Transaksi tersebut ditampilkan pada
-bagian recon dan data sumber **For tomorrow because different time**.
-Jadi yang dipindahkan adalah tampilannya di tabel recon, bukan penghapusan
-transaksi dari data sumber. Baris total per status mencakup seluruh transaksi
-sumber, termasuk transaksi pada bagian For tomorrow.
+membatasi jumlah hari. Untuk End Date reguler, transaksi pukul 23:00–23:59
+ditampilkan pada bagian recon dan data sumber **For tomorrow because
+different time**, dan tetap ada di `Records`. Untuk Backdate, transaksi
+pukul 23:00 atau lebih tetap ditampilkan di blok utama. Jadi yang berubah
+hanya lokasi tampilnya transaksi pada sheet LB/RB, bukan penghapusan transaksi
+dari data sumber. Baris total per status mencakup seluruh transaksi sumber,
+termasuk transaksi pada bagian For tomorrow.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai

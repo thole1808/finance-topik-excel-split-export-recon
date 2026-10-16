@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.16**
+**Versi saat ini: 1.1.17**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -39,12 +39,13 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Keputusan output final yang dikonfirmasi pengguna: tanpa Backdate, output
   reguler tetap persis seperti sebelumnya. Jika Backdate disediakan, gabungkan
   data ke sheet yang sama (`Records`, `LB`, `RB`), bukan sheet Backdate baru.
-  Baris `RECON` Backdate ditempatkan paling awal di `Records`, diurutkan
-  berdasarkan Datetime; setelahnya baris End Date. Di sheet `LB`/`RB`, gunakan
-  layout dan pembagian status yang sama, tampilkan periode Backdate sebelum End
-  Date, dan hitung subtotal gabungan per grup status/periode.
-- Data `RECON` Backdate dipetakan ke struktur/format standar sheet `Records`
-  dari aplikasi; tidak menyalin satu worksheet Excel mentah ke output.
+  Baris Backdate pada `Records` dibuat dari sumber LB/RB dan ditempatkan paling
+  awal berdasarkan Datetime, lalu diikuti baris End Date. Ref dan Vendor Ref
+  tidak boleh diganti nilai dari sheet RECON Backdate. Di sheet `LB`/`RB`,
+  tampilkan periode Backdate sebelum End Date di setiap grup status dan hitung
+  satu subtotal gabungan untuk setiap status.
+- Sheet `RECON` Backdate tetap divalidasi, tetapi data transaksi dan referensi
+  pada output berasal dari workbook LB/RB.
 - Bila File Backdate tidak diunggah, aplikasi harus tetap menghasilkan output
   reguler seperti sekarang.
 - **Versi 1.1.14:** field upload Backdate ditambahkan, belum diproses.
@@ -71,6 +72,17 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Subtotal status menjumlahkan transaksi Current Day dan For tomorrow.
   Nilai transaksi sumber/recon per baris tidak diubah. Footer SUM lama di
   bawah kolom nilai bukan lokasi subtotal.
+
+### Implementasi terbaru — versi 1.1.17
+
+- Subtotal SUCCESS dan FAILED di sheet LB/RB mencakup Backdate dan End Date
+  sekaligus; tidak ada subtotal terpisah per periode.
+- Sheet Records mengambil Ref dan Vendor Ref Backdate langsung dari sumber
+  LB/RB. Sheet RECON Backdate tetap divalidasi, tetapi nilainya tidak menimpa
+  referensi sumber.
+- End Date pukul 23:00 tetap ditempatkan di blok For tomorrow dan Records.
+  Pada output yang diperiksa, 15 Oktober 2026 memiliki 187 transaksi pukul
+  23:xx di Records (186 LB, 1 RB); LB memuat 186 pada blok For tomorrow.
 
 ### Implementasi yang sudah ada
 
@@ -291,6 +303,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.17 | Gabungkan subtotal Backdate+End Date per status dan pertahankan Ref/Vendor Ref Backdate dari sumber LB/RB. |
 | 1.1.16 | Tampilkan transaksi Backdate pukul 23:00+ di blok utama LB/RB; transaksi End Date tetap mengikuti aturan For tomorrow. |
 | 1.1.15 | Menggabungkan Backdate opsional ke Summary/Records/LB/RB, dengan transaksi Backdate lebih dahulu; tanpa Backdate output reguler tetap sama. |
 | 1.1.14 | Menambahkan field upload Backdate opsional pada form; pemrosesan Backdate belum aktif. |
