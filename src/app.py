@@ -6,6 +6,7 @@ import subprocess
 import threading
 import datetime as dt
 import os
+import sys
 import time
 import json
 import getpass
@@ -113,12 +114,33 @@ class ReconApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.deiconify()
         self.after(100, self._maximize_window)
+        self._install_batik_watermark()
         self._update_clock()
         self.audit.record(self.operator, "audit_chain_check", **{
             "valid": self.audit.verify_chain()[0]
         })
         self._refresh_history()
         self.after(1500, self._check_updates_silently)
+
+    def _install_batik_watermark(self) -> None:
+        """Show a faint batik ornament at the unused lower-right edge."""
+        try:
+            if getattr(sys, "frozen", False):
+                asset = Path(sys._MEIPASS) / "assets" / "batik-watermark.png"
+            else:
+                asset = Path(__file__).resolve().parent.parent / "assets" / "batik-watermark.png"
+            if not asset.is_file():
+                return
+            self._batik_image = tk.PhotoImage(file=str(asset)).subsample(4, 4)
+            watermark = tk.Label(
+                self, image=self._batik_image, borderwidth=0,
+                background="#F1F5F9", highlightthickness=0,
+            )
+            watermark.place(relx=1.0, rely=1.0, x=-12, y=-8, anchor="se")
+            watermark.lower()
+            self.bind("<Configure>", lambda _event: watermark.lower(), add="+")
+        except (OSError, tk.TclError):
+            return
 
     def _maximize_window(self) -> None:
         try:

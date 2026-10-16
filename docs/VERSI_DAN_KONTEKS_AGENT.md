@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.5**
+**Versi saat ini: 1.2.6**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -127,6 +127,18 @@ pengguna meminta penerbitan release.
   disembunyikan. Kalimat lebih percakapan dan voice id-ID dipilih bila tersedia.
   Voice sistem tetap sintesis suara; rekaman penutur manusia harus disediakan
   sebagai file audio.
+
+## Implementasi 1.2.6 — watermark batik dan installer OS
+
+- Latar aplikasi memakai ornamen batik transparan yang ditaruh di tepi kanan
+  bawah sebagai watermark dekoratif; panel dan teks berada di lapisan depan.
+- macOS build menghasilkan PKG yang memasang `Recon Builder.app` ke
+  `/Applications`, dibungkus di DMG bertimestamp agar mudah diunduh/dipasang.
+- Windows Inno Setup memasang aplikasi ke Program Files, membuat shortcut Start
+  Menu, dan memilih shortcut Desktop secara default. Installer menampilkan nama
+  **Recon Builder** di daftar aplikasi sistem.
+- PNG watermark dibundel ke aplikasi macOS/Windows. Build release menyertakan
+  installer PKG, DMG, dan installer Windows dengan manifest SHA-256.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -431,7 +443,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.5, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.6, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -447,6 +459,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.6 | Watermark batik transparan; installer macOS ke Applications dan shortcut Start Menu/Desktop Windows. |
 | 1.2.5 | Akun PC otomatis, updater menutup/memasang/membuka kembali, waktu riwayat lokal Indonesia, tes suara sekali. |
 | 1.2.4 | Waktu Bahasa Indonesia sesuai zona lokal, voice Indonesia, tombol tes suara, layout untuk laptop/layar lebar. |
 | 1.2.3 | Tombol update di header, label versi APP/RELEASE, UI dirapikan, IP/MAC masked di riwayat, rencana mobile. |

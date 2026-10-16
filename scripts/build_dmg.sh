@@ -41,6 +41,7 @@ mkdir -p dist
     --add-data "$PROJECT_ROOT/src/ref_styles.json:src" \
     --add-data "$PROJECT_ROOT/src/fee_tables.json:src" \
     --add-data "$PROJECT_ROOT/src/reference_data.json:src" \
+    --add-data "$PROJECT_ROOT/assets/batik-watermark.png:assets" \
     --distpath "$PROJECT_ROOT/dist" \
     --specpath "$PROJECT_ROOT/build" \
     --workpath "$PROJECT_ROOT/build/pyinstaller" \
@@ -49,13 +50,26 @@ mkdir -p dist
 APP_VERSION="$("$PYTHON" -c "from src.version import __version__; print(__version__)")"
 BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 DMG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.dmg"
+PKG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.pkg"
 /usr/libexec/PlistBuddy \
     -c "Set :CFBundleShortVersionString $APP_VERSION" \
+    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+/usr/libexec/PlistBuddy \
+    -c "Set :CFBundleName Recon Builder" \
+    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+/usr/libexec/PlistBuddy \
+    -c "Set :CFBundleDisplayName Recon Builder" \
     "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
 /usr/libexec/PlistBuddy \
     -c "Add :CFBundleVersion string $APP_VERSION" \
     "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
 codesign --force --deep --sign - "$PROJECT_ROOT/dist/ReconBuilder.app"
+pkgbuild \
+    --component "$PROJECT_ROOT/dist/ReconBuilder.app" \
+    --install-location /Applications \
+    --identifier com.devops.reconbuilder \
+    --version "$APP_VERSION" \
+    "$PROJECT_ROOT/dist/$PKG_NAME"
 
 for previous_dmg in \
     "$PROJECT_ROOT"/ReconBuilder-v*.dmg \
@@ -64,14 +78,31 @@ for previous_dmg in \
         rm -f "$previous_dmg"
     fi
 done
+for previous_pkg in \
+    "$PROJECT_ROOT"/ReconBuilder-v*.pkg \
+    "$PROJECT_ROOT/dist"/ReconBuilder-v*.pkg; do
+    if [[ -f "$previous_pkg" ]]; then
+        if [[ "$previous_pkg" == "$PROJECT_ROOT/dist/$PKG_NAME" ]]; then
+            continue
+        fi
+        rm -f "$previous_pkg"
+    fi
+done
 
+DMG_STAGE="$PROJECT_ROOT/dist/macos-installer-stage"
+rm -rf "$DMG_STAGE"
+mkdir -p "$DMG_STAGE"
+cp "$PROJECT_ROOT/dist/$PKG_NAME" "$DMG_STAGE/$PKG_NAME"
 hdiutil create \
     -ov \
     -format UDZO \
+    -size 250m \
     -volname "Recon Builder" \
-    -srcfolder "$PROJECT_ROOT/dist/ReconBuilder.app" \
+    -srcfolder "$DMG_STAGE" \
     "$PROJECT_ROOT/dist/$DMG_NAME"
+rm -rf "$DMG_STAGE"
 
 cp "$PROJECT_ROOT/dist/$DMG_NAME" "$PROJECT_ROOT/$DMG_NAME"
+cp "$PROJECT_ROOT/dist/$PKG_NAME" "$PROJECT_ROOT/$PKG_NAME"
 rm -f "$PROJECT_ROOT/ReconBuilder.dmg"
 echo "DMG berhasil dibuat: $PROJECT_ROOT/dist/$DMG_NAME"

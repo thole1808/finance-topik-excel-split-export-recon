@@ -49,6 +49,7 @@ jobs:
             --add-data "$workspace\src\ref_styles.json;src" `
             --add-data "$workspace\src\fee_tables.json;src" `
             --add-data "$workspace\src\reference_data.json;src" `
+            --add-data "$workspace\assets\batik-watermark.png;assets" `
             --distpath dist `
             --workpath build/pyinstaller `
             --specpath build `
@@ -88,9 +89,14 @@ jobs:
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
           if (-not $dmg) { throw "Versioned DMG for $version was not found" }
+          $pkg = Get-ChildItem -Path . -Filter "ReconBuilder-v$version-*.pkg" -File |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+          if (-not $pkg) { throw "Versioned macOS installer package for $version was not found" }
           $releaseAssets = @(
             "dist\ReconBuilder-Setup.exe",
             $dmg.FullName,
+            $pkg.FullName,
             "docs\flow-recon-finance.png",
             "docs\flow-recon-finance.jpg"
           )

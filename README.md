@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.5** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.6** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -78,7 +78,7 @@ Untuk command line:
 python3 recon_exporter.py LB.xlsx RB.xlsx -o recon-output.xlsx
 ```
 
-## Membuat aplikasi macOS dan DMG
+## Installer aplikasi macOS
 
 Jalankan perintah ini di macOS setelah memasang dependencies:
 
@@ -89,16 +89,20 @@ Jalankan perintah ini di macOS setelah memasang dependencies:
 Hasilnya:
 
 - `dist/ReconBuilder.app`
+- `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.pkg`
 - `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.dmg`
 
-Script juga menyalin DMG bernama sama ke root repository untuk workflow release.
+DMG memuat installer `.pkg`; buka DMG lalu jalankan paket untuk memasang
+**Recon Builder** ke `/Applications`, sehingga aplikasi muncul di Launchpad.
+Script menyalin DMG dan PKG bernama sama ke root repository untuk workflow release.
 Setiap push versi baru ke `main` membuat tag `v<versi>` dan GitHub Release
-berisi Windows installer, DMG, flowchart PNG/JPG, dan `SHA256SUMS.txt`.
+berisi installer Windows, installer PKG macOS, DMG, flowchart PNG/JPG, dan
+`SHA256SUMS.txt`.
 
-DMG berisi aplikasi desktop mandiri; spreadsheet LB/RB dipilih saat aplikasi
-dijalankan dan tidak dibundel bersama aplikasi. Engine Excel Polars
+Installer menghasilkan aplikasi desktop mandiri; spreadsheet LB/RB dipilih
+saat aplikasi dijalankan dan tidak dibundel bersama aplikasi. Engine Excel Polars
 (`fastexcel`/Calamine) dikemas eksplisit ke dalam aplikasi, sehingga pengguna
-DMG tidak perlu memasang paket Python secara terpisah. Script build memakai
+tidak perlu memasang paket Python secara terpisah. Script build memakai
 `.venv` proyek bila tersedia; interpreter lain dapat ditentukan lewat variabel
 `PYTHON`.
 
@@ -109,7 +113,8 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
 - Untuk installer rilis manual, push tag yang sama dengan versi source seperti
-  `v1.2.5`. Workflow mengisi release dengan installer, DMG, flowchart PNG/JPG,
+  `v1.2.6`. Workflow mengisi release dengan installer Windows, paket macOS,
+  DMG, flowchart PNG/JPG,
   dan checksum. Push versi baru ke `main` membuat tag/release secara otomatis.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.

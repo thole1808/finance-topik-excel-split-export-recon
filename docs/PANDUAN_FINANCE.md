@@ -21,7 +21,11 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 
 ## Menjalankan aplikasi
 
-1. Buka **ReconBuilder.app** (atau jalankan `python3 app.py` dari source).
+1. Di macOS, buka DMG dan jalankan installer PKG untuk memasang **Recon Builder**
+   ke folder Applications, lalu buka dari Launchpad. Di Windows, jalankan
+   `ReconBuilder-Setup.exe`; aplikasi dipasang ke Program Files dan shortcut
+   tersedia di Start Menu (shortcut Desktop juga dibuat secara default).
+   (Untuk source development, jalankan `python3 app.py`.)
    Aplikasi otomatis memakai nama akun PC/laptop yang sedang login untuk
    mencatat riwayat; tidak ada prompt operator. Jendela dimaksimalkan dan jam
    lokal tampil di header.
@@ -99,8 +103,8 @@ JPG pada dokumen ini dan sebagai aset pada GitHub Release.
 
 Setiap push ke `main` dengan versi baru di `src/version.py` membangun installer
 Windows dan mencatat Git tag `v<versi>` serta GitHub Release yang memuat DMG,
-installer Windows, diagram PNG/JPG, dan checksum. Karena itu, siapkan DMG
-berversi hasil build macOS di root repository sebelum push versi baru.
+installer PKG macOS, installer Windows, diagram PNG/JPG, dan checksum. Siapkan
+DMG dan PKG hasil build macOS di root repository sebelum push versi baru.
 
 ## Riwayat penggunaan dan audit
 
