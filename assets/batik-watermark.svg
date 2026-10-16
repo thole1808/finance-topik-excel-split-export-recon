@@ -1,15 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="680" height="680" viewBox="0 0 680 680">
-  <g fill="none" stroke="#0B7285" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.32">
+  <g fill="none" stroke="#087E8B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.31">
+    <!-- Kawung: four seed-shaped petals meeting at a shared center. -->
     <g transform="translate(340 340)">
-      <path d="M0-310 31-252 88-287 91-218 160-235 143-166 212-163 177-106 235-75 177-44 212 13 143 16 160 85 91 68 88 137 31 102 0 160-31 102-88 137-91 68-160 85-143 16-212 13-177-44-235-75-177-106-212-163-143-166-160-235-91-218-88-287-31-252Z"/>
-      <path d="M0-249 24-190 83-214 66-153 128-145 87-97 142-69 81-46 105 13 43-2 29 61 0 6-29 61-43-2-105 13-81-46-142-69-87-97-128-145-66-153-83-214-24-190Z"/>
-      <circle r="158"/><circle r="112"/><circle r="48"/>
-      <path d="M0-82 18-25 78-25 30 11 48 68 0 34-48 68-30 11-78-25-18-25Z"/>
-      <path d="M-300 0h600M0-300v600M-212-212l424 424M212-212l-424 424" opacity=".55"/>
-    </g>
-    <g transform="translate(340 340)" stroke-width="1.6">
-      <circle r="286" stroke-dasharray="2 16"/><circle r="270" stroke-dasharray="3 22"/>
-      <path d="M0-278l10 18-10 18-10-18zM278 0l-18 10-18-10 18-10zM0 278l-10-18 10-18 10 18zM-278 0l18-10 18 10-18 10z"/>
+      <circle r="290" stroke-width="2" stroke-dasharray="2 15"/>
+      <circle r="270" stroke-width="2"/>
+      <g stroke-width="3.4">
+        <path d="M0 0 C-38-37-34-103 0-132 C34-103 38-37 0 0Z"/>
+        <path d="M0 0 C37-38 103-34 132 0 C103 34 37 38 0 0Z"/>
+        <path d="M0 0 C38 37 34 103 0 132 C-34 103-38 37 0 0Z"/>
+        <path d="M0 0 C-37 38-103 34-132 0 C-103-34-37-38 0 0Z"/>
+        <path d="M0-15 C-25-40-20-82 0-101 C20-82 25-40 0-15Z" stroke-width="2"/>
+        <path d="M15 0 C40-25 82-20 101 0 C82 20 40 25 15 0Z" stroke-width="2"/>
+        <path d="M0 15 C25 40 20 82 0 101 C-20 82-25 40 0 15Z" stroke-width="2"/>
+        <path d="M-15 0 C-40 25-82 20-101 0 C-82-20-40-25-15 0Z" stroke-width="2"/>
+      </g>
+      <circle r="18" fill="#C18A3B" stroke="none"/>
+      <circle r="7" fill="#087E8B" stroke="none"/>
+      <!-- Parang-inspired diagonal flowing bands framing the Kawung. -->
+      <g stroke="#B17A32" stroke-width="2.2" opacity="0.75">
+        <path d="M-238-188 C-158-226-96-207-48-160 C1-112 62-95 126-122 C164-138 197-168 233-208"/>
+        <path d="M-258-144 C-177-182-116-164-68-117 C-19-69 42-52 106-79 C144-95 177-125 213-165"/>
+        <path d="M-278-100 C-197-138-136-120-88-73 C-39-25 22-8 86-35 C124-51 157-81 193-121"/>
+        <path d="M-233 203 C-174 147-115 130-53 151 C11 173 72 194 134 174 C170 162 202 138 238 104"/>
+        <path d="M-207 237 C-148 181-89 164-27 185 C37 207 98 228 160 208 C196 196 228 172 264 138"/>
+      </g>
+      <g fill="#087E8B" stroke="none">
+        <circle cx="0" cy="-154" r="5"/><circle cx="154" cy="0" r="5"/>
+        <circle cx="0" cy="154" r="5"/><circle cx="-154" cy="0" r="5"/>
+      </g>
     </g>
   </g>
 </svg>

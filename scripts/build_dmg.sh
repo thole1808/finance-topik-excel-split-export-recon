@@ -29,6 +29,10 @@ if ! "$PYTHON" -c "import fastexcel" >/dev/null 2>&1; then
 fi
 
 mkdir -p dist
+APP_VERSION="$($PYTHON -c "from src.version import __version__; print(__version__)")"
+BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
+BUILD_DIR="$PROJECT_ROOT/build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
+APP_BUNDLE="$BUILD_DIR/ReconBuilder.app"
 "$PYTHON" -m PyInstaller \
     --clean \
     --noconfirm \
@@ -42,30 +46,28 @@ mkdir -p dist
     --add-data "$PROJECT_ROOT/src/fee_tables.json:src" \
     --add-data "$PROJECT_ROOT/src/reference_data.json:src" \
     --add-data "$PROJECT_ROOT/assets/batik-watermark.png:assets" \
-    --distpath "$PROJECT_ROOT/dist" \
+    --distpath "$BUILD_DIR" \
     --specpath "$PROJECT_ROOT/build" \
     --workpath "$PROJECT_ROOT/build/pyinstaller" \
     "$PROJECT_ROOT/app.py"
 
-APP_VERSION="$("$PYTHON" -c "from src.version import __version__; print(__version__)")"
-BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 DMG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.dmg"
 PKG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.pkg"
 /usr/libexec/PlistBuddy \
     -c "Set :CFBundleShortVersionString $APP_VERSION" \
-    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+    "$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy \
     -c "Set :CFBundleName Recon Builder" \
-    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+    "$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy \
     -c "Set :CFBundleDisplayName Recon Builder" \
-    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
+    "$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy \
     -c "Add :CFBundleVersion string $APP_VERSION" \
-    "$PROJECT_ROOT/dist/ReconBuilder.app/Contents/Info.plist"
-codesign --force --deep --sign - "$PROJECT_ROOT/dist/ReconBuilder.app"
+    "$APP_BUNDLE/Contents/Info.plist"
+codesign --force --deep --sign - "$APP_BUNDLE"
 pkgbuild \
-    --component "$PROJECT_ROOT/dist/ReconBuilder.app" \
+    --component "$APP_BUNDLE" \
     --install-location /Applications \
     --identifier com.devops.reconbuilder \
     --version "$APP_VERSION" \

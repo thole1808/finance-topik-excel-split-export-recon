@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.6**
+**Versi saat ini: 1.2.7**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -139,6 +139,12 @@ pengguna meminta penerbitan release.
   **Recon Builder** di daftar aplikasi sistem.
 - PNG watermark dibundel ke aplikasi macOS/Windows. Build release menyertakan
   installer PKG, DMG, dan installer Windows dengan manifest SHA-256.
+
+## Implementasi 1.2.7 — motif batik Indonesia
+
+- Watermark generik diganti dengan stilisasi motif Kawung dan aksen alur
+  diagonal Parang dalam SVG/PNG transparan. Motif tetap berada di latar
+  kanan bawah dan dibuat samar agar tidak menutupi teks maupun tabel.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -443,7 +449,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.6, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.7, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -459,7 +465,8 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
-| 1.2.6 | Watermark batik transparan; installer macOS ke Applications dan shortcut Start Menu/Desktop Windows. |
+| 1.2.7 | Watermark motif Kawung dan Parang khas batik Indonesia, transparan. |
+| 1.2.6 | Installer macOS ke Applications dan shortcut Start Menu/Desktop Windows. |
 | 1.2.5 | Akun PC otomatis, updater menutup/memasang/membuka kembali, waktu riwayat lokal Indonesia, tes suara sekali. |
 | 1.2.4 | Waktu Bahasa Indonesia sesuai zona lokal, voice Indonesia, tombol tes suara, layout untuk laptop/layar lebar. |
 | 1.2.3 | Tombol update di header, label versi APP/RELEASE, UI dirapikan, IP/MAC masked di riwayat, rencana mobile. |
