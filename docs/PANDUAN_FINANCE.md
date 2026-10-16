@@ -81,21 +81,29 @@ profil kode produk dan nominal bila tersedia. Untuk kombinasi baru, aplikasi
 menggunakan tabel fee fallback, lalu field fee LB jika tersedia.
 
 Pada sheet `LB` dan `RB`, transaksi otomatis diurutkan: semua `SUCCESS` tampil
-lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Baris total
+lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Dalam setiap
+kelompok status, tanggal/waktu diurutkan dari yang paling awal. Baris total
 diletakkan setelah seluruh transaksi dan menjumlahkan semua status. Baris kedua
 tetap menampilkan jumlah `SUCCESS` dan `FAILED`; dropdown filter di header
 `Transaction Status` atau `Recon Result` dapat digunakan untuk pemeriksaan
-lebih lanjut. Baris `SUCCESS` diberi latar hijau, sedangkan baris `FAILED`
-diberi latar merah pada `Records` dan blok transaksi LB/RB.
+lebih lanjut. Warna hijau untuk `SUCCESS` dan merah untuk `FAILED` hanya
+diterapkan pada sel status, bukan seluruh baris.
+
+Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
+membatasi jumlah hari. Transaksi pukul 23:00–23:59 tetap tercatat di bagian
+utama/current day sesuai tanggal sumbernya dan juga disalin ke bagian **For
+tomorrow because different time**. Bagian For tomorrow adalah salinan, bukan
+pemindahan atau penghapusan dari data utama.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
 23.59, filter tanggal hari ini dan batas waktu **23:00:00–23:59:59**. Nilai
 timestamp tetap menyertakan jam, menit, dan detik.
 
-Bagian **For tomorrow because different time** pada sheet `LB`/`RB` hanya
-menampilkan transaksi dengan waktu **23:00:00 atau lebih**. Data sebelum pukul
-23.00, termasuk pukul 00.00, tidak dimasukkan ke bagian tersebut.
+Bagian **For tomorrow because different time** pada sheet `LB`/`RB` menampilkan
+salinan transaksi dari tanggal mana pun yang waktunya **23:00:00 atau lebih**.
+Data sebelum pukul 23.00, termasuk pukul 00.00, tidak dimasukkan ke bagian
+tersebut.
 
 File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`

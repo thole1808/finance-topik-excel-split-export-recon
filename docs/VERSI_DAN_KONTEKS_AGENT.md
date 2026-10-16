@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.6**
+**Versi saat ini: 1.1.7**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -28,7 +28,6 @@ memodifikasi kode:
   baris pada file aktif.
 - Edit nilai bertipe pada baris mana pun yang ditemukan; perubahan valid masuk
   ke export, dan file sumber tidak ditimpa.
-- `Recon Result = MATCHED` dan formula `Status = TRUE` memakai highlight hijau.
 - UI menampilkan nomor versi; versi yang sama tercatat di properti workbook.
 - Workflow Windows membangun installer Inno Setup; tag versi menghasilkan
   GitHub Release berisi installer.
@@ -71,9 +70,17 @@ memodifikasi kode:
 ## Perbaikan versi 1.1.6
 
 - Transaksi `SUCCESS` dan `FAILED` dikelompokkan dengan urutan SUCCESS dahulu,
-  FAILED di bawahnya, dan total akhir setelah transaksi.
-- Baris SUCCESS diberi latar hijau; baris FAILED diberi latar merah pada sheet
-  `Records`, `LB`, dan `RB`.
+  FAILED di bawahnya, dengan warna hijau/merah hanya pada sel status.
+
+## Perbaikan versi 1.1.7
+
+- Pukul 23:00–23:59 tetap dipertahankan pada data utama dan disalin ke bagian
+  `For tomorrow`; data tidak dipindahkan keluar dari current day.
+- Semua tanggal dalam file LB/RB diproses, diurutkan kronologis di dalam
+  kelompok SUCCESS/FAILED, dan tidak ada lagi batas tetap 50.000 baris pada
+  formula pencarian refund.
+- Warna hijau/merah dibatasi ke sel `Transaction Status` SUCCESS/FAILED saja;
+  sel lain dan seluruh baris tidak diberi warna status.
 
 ## Gambar yang tersedia
 
@@ -91,6 +98,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.7 | Pertahankan transaksi jam 23 di data utama, dukung semua tanggal otomatis, dan warnai sel status saja. |
 | 1.1.6 | Mengurutkan SUCCESS di atas FAILED dan memberi warna hijau/merah pada baris transaksi. |
 | 1.1.5 | Mengurutkan transaksi SUCCESS di atas FAILED pada sheet LB/RB. |
 | 1.1.4 | Bagian For tomorrow hanya memuat transaksi mulai jam 23:00. |
@@ -104,7 +112,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.6`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.7`). Tag
   menjalankan Windows build dan menerbitkan installer ke GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.

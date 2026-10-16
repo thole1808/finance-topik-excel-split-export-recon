@@ -409,26 +409,6 @@ def _format_for(
     return cache[key]
 
 
-def _semantic_highlight(
-    sheet: str, column: int, value: Any
-) -> dict[str, Any] | None:
-    recon_columns = {
-        "Records": {14},
-        "LB": {14, 53},
-        "RB": {14, 63},
-    }
-    status_columns = {"LB": {18}, "RB": {16}}
-    is_matched = column in recon_columns.get(sheet, set()) and value == "MATCHED"
-    is_success = column in status_columns.get(sheet, set()) and value is True
-    if is_matched or is_success:
-        return {
-            "bg_color": "#C6EFCE",
-            "font_color": "#006100",
-            "pattern": 1,
-        }
-    return None
-
-
 def _write_cell(
     worksheet: xlsxwriter.worksheet.Worksheet,
     workbook: xlsxwriter.Workbook,
@@ -782,7 +762,13 @@ def _write_wide_sheet(
     max_column: int,
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
 ) -> None:
-    rows = sorted(rows, key=_transaction_status_sort_key)
+    rows = sorted(
+        rows,
+        key=lambda row: (
+            _transaction_status_sort_key(row),
+            _as_datetime(row.get("tanggal")) or dt.datetime.min,
+        ),
+    )
     title_columns = (
         (1, "Current Day from bo biller recon"),
         (21 if sheet == "LB" else 19, "Current Day from bo biller apps"),
@@ -866,8 +852,8 @@ def _write_wide_sheet(
             }
             if index == 0:
                 formulas[19] = (
-                    '=_xlfn._xlws.FILTER(Z4:Z50001,Z4:Z50001="N/A",'
-                    '"Tidak ditemukan")',
+                    f'=_xlfn._xlws.FILTER(Z4:Z{data_end_row},'
+                    f'Z4:Z{data_end_row}="N/A","Tidak ditemukan")',
                     "Tidak ditemukan",
                 )
         else:
@@ -886,10 +872,9 @@ def _write_wide_sheet(
                 if is_tomorrow_column
                 else values.get(column)
             )
-            is_data_column = (
-                (1 <= column <= 19 or 21 <= column <= 37 or 40 <= column <= 72)
-                if sheet == "LB"
-                else (1 <= column <= 30 or 34 <= column <= 46 or 50 <= column <= 63)
+            status_columns = (
+                {12, 27, 51, 62} if sheet == "LB"
+                else {12, 29, 45, 61}
             )
             status_row = (
                 tomorrow_rows[index]
@@ -898,7 +883,7 @@ def _write_wide_sheet(
             )
             row_highlight = (
                 _status_highlight(status_row.get("status"))
-                if is_data_column and (
+                if column in status_columns and (
                     not is_tomorrow_column or index < len(tomorrow_rows)
                 )
                 else None
@@ -926,10 +911,6 @@ def _write_wide_sheet(
                 format_overrides={
                     **(cell_overrides or {}),
                     **(row_highlight or {}),
-                    **(_semantic_highlight(
-                        sheet, column,
-                        formula_data[1] if formula_data else value,
-                    ) or {}),
                 } or None,
             )
 
@@ -1013,11 +994,9 @@ def build_recon_workbook(
             "vendor_ref", "amount", "total_fee", "customer_fee", "lst_fee",
             "margin_biller", "transaction_status", "vendor", "recon_result",
         ), start=1):
-            format_overrides = _status_highlight(
-                record.get("transaction_status")
-            ) or {}
-            format_overrides.update(
-                _semantic_highlight("Records", column, record.get(key)) or {}
+            format_overrides = (
+                _status_highlight(record.get("transaction_status")) or {}
+                if key == "transaction_status" else {}
             )
             if column == 1:
                 format_overrides["num_format"] = DATETIME_NUMBER_FORMAT
