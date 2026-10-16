@@ -8,7 +8,7 @@ log() { /usr/bin/logger -t ReconBuilderInstaller "$*"; printf '%s %s\n' "$(/bin/
 
 if [[ ! -d "$APP_PATH/Contents" || ! -x "$APP_PATH/Contents/MacOS/Recon Builder" ]]; then
     log "ERROR app bundle missing or executable at expected path: $APP_PATH"
-    exit 0
+    exit 1
 fi
 
 CONSOLE_USER="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null || true)"

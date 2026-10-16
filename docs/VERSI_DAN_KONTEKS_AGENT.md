@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.12**
+**Versi saat ini: 1.2.13**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -184,6 +184,16 @@ pengguna meminta penerbitan release.
 - DMG memuat bundle `Recon Builder.app` secara langsung, alias `Applications`,
   serta instruksi instalasi; operator dapat menyeret app tanpa menjalankan PKG.
 - PKG tetap dibangun sebagai pilihan terpisah dan diunggah bersama DMG.
+
+## Implementasi 1.2.13 — instalasi PKG selalu ke Applications
+
+- Metadata component PKG sebelumnya menandai bundle sebagai relocatable, sehingga
+  Installer dapat mengikuti salinan bundle lama yang ditemukan pada lokasi lain.
+  Build baru mengatur `BundleIsRelocatable=false` agar payload hanya dipasang ke
+  `/Applications/Recon Builder.app`.
+- Postinstall sekarang mengembalikan status gagal jika app atau executable tidak
+  ada di lokasi tersebut, sehingga Installer tidak menyatakan sukses palsu.
+- Instruksi DMG dipersingkat menjadi: buka DMG, seret app ke Applications.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -488,7 +498,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.12, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.13, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -504,6 +514,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.13 | PKG tidak relocatable dan gagal secara nyata bila bundle tidak ada di `/Applications`; instruksi DMG dibuat singkat. |
 | 1.2.12 | DMG memuat app langsung dan alias Applications agar pemasangan Mac dapat dilakukan dengan drag-and-drop; PKG tetap tersedia terpisah. |
 | 1.2.11 | Nama bundle dan executable Mac konsisten; postinstall mencatat hasil dan menampilkan app di `/Applications` setelah pemasangan. |
 | 1.2.10 | PKG menyalin app eksplisit ke Applications, membuat shortcut Desktop dan mendaftarkan Launchpad; updater memasang PKG. |

@@ -72,8 +72,14 @@ codesign --force --deep --sign - "$APP_BUNDLE"
 PKG_ROOT="$BUILD_DIR/pkgroot"
 mkdir -p "$PKG_ROOT/Applications"
 ditto --rsrc --extattr "$APP_BUNDLE" "$PKG_ROOT/Applications/Recon Builder.app"
+COMPONENT_PLIST="$BUILD_DIR/components.plist"
+pkgbuild --analyze --root "$PKG_ROOT" "$COMPONENT_PLIST"
+/usr/libexec/PlistBuddy \
+    -c 'Set :0:BundleIsRelocatable false' \
+    "$COMPONENT_PLIST"
 pkgbuild \
     --root "$PKG_ROOT" \
+    --component-plist "$COMPONENT_PLIST" \
     --scripts "$PROJECT_ROOT/scripts/macos" \
     --install-location / \
     --identifier com.devops.reconbuilder \
@@ -104,14 +110,7 @@ mkdir -p "$DMG_STAGE"
 ditto --rsrc --extattr "$APP_BUNDLE" "$DMG_STAGE/Recon Builder.app"
 ln -s /Applications "$DMG_STAGE/Applications"
 cat > "$DMG_STAGE/CARA INSTALL.txt" <<'EOF'
-INSTALL RECON BUILDER DI MACOS
-
-1. Seret Recon Builder.app ke folder Applications pada jendela DMG ini.
-2. Tunggu penyalinan selesai.
-3. Buka Finder > Applications, lalu jalankan Recon Builder.
-
-Jangan menjalankan aplikasi langsung dari DMG. Jika macOS menampilkan
-peringatan keamanan, Control-klik aplikasi di Applications lalu pilih Open.
+Buka DMG, lalu seret Recon Builder.app ke Applications. Selesai.
 EOF
 hdiutil create \
     -ov \
