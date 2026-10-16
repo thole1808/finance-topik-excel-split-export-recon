@@ -18,6 +18,7 @@ from src.recon_exporter import (
     LB_COL_MAP,
     RB_COL_MAP,
     build_recon_workbook,
+    read_recon_reference,
     read_raw_excel,
 )
 from src.version import __version__
@@ -39,25 +40,32 @@ class ReconApp(tk.Tk):
 
         self.lb_path = tk.StringVar()
         self.rb_path = tk.StringVar()
+        self.recon_path = tk.StringVar()
         self.out_path = tk.StringVar(
             value=str(Path.home() / "Desktop" / "recon-output.xlsx")
         )
         self.status = tk.StringVar(
-            value="Pilih file Excel LB dan RB untuk memulai."
+            value="Upload file Excel LB, RB, dan recon untuk memulai."
         )
-        self._frames: dict[str, pl.DataFrame | None] = {"LB": None, "RB": None}
+        self._frames: dict[str, pl.DataFrame | None] = {
+            "LB": None,
+            "RB": None,
+            "Recon Summary": None,
+            "Recon Records": None,
+        }
         self._preview_widgets: dict[str, ttk.Treeview] = {}
         self._row_labels: dict[str, tk.StringVar] = {}
         self._search_vars: dict[str, tk.StringVar] = {}
         self._page_vars: dict[str, tk.StringVar] = {}
         self._page_size_vars: dict[str, tk.StringVar] = {}
-        self._filtered_indices: dict[str, list[int]] = {"LB": [], "RB": []}
-        self._page_index = {"LB": 0, "RB": 0}
-        self._edit_counts: dict[str, set[tuple[int, str]]] = {
-            "LB": set(),
-            "RB": set(),
+        self._filtered_indices: dict[str, list[int]] = {
+            side: [] for side in self._frames
         }
-        self._load_tokens = {"LB": 0, "RB": 0}
+        self._page_index = {side: 0 for side in self._frames}
+        self._edit_counts: dict[str, set[tuple[int, str]]] = {
+            side: set() for side in self._frames
+        }
+        self._load_tokens = {"LB": 0, "RB": 0, "Recon": 0}
         self._loading: set[str] = set()
         self._invalid_edits: set[tuple[str, int, str]] = set()
         self._busy = False
@@ -103,7 +111,7 @@ class ReconApp(tk.Tk):
         ttk.Label(
             header,
             text=(
-                "Pilih, cari, tinjau, dan koreksi seluruh data sebelum "
+                "Upload, cari, tinjau, dan koreksi data sebelum "
                 "membuat workbook recon."
             ),
             foreground="#536273",
@@ -117,22 +125,32 @@ class ReconApp(tk.Tk):
         content.columnconfigure(0, weight=1)
         content.rowconfigure(1, weight=1)
 
-        files = ttk.LabelFrame(content, text="1. File Excel", padding=12)
+        files = ttk.LabelFrame(content, text="1. Upload Excel", padding=12)
         files.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         files.columnconfigure(1, weight=1)
         self._add_file_row(
-            files, 0, "LB · Loket Bayar", self.lb_path, self._browse_lb
+            files, 0, "Upload LB", self.lb_path, self._browse_lb
         )
         self._add_file_row(
-            files, 1, "RB · Rajabiller", self.rb_path, self._browse_rb
+            files, 1, "Upload RB", self.rb_path, self._browse_rb
         )
         self._add_file_row(
-            files, 2, "File output", self.out_path, self._browse_out
+            files, 2, "Upload Recon",
+            self.recon_path, self._browse_recon,
         )
+        self._add_file_row(
+            files, 3, "File output", self.out_path, self._browse_out
+        )
+        ttk.Label(
+            files,
+            text="LB = Loket Bayar · RB = Rajabiller · file recon referensi "
+            "wajib memiliki sheet Summary dan Records.",
+            foreground="#536273",
+        ).grid(row=4, column=1, columnspan=2, sticky="w", pady=(2, 0))
 
         preview = ttk.LabelFrame(
             content,
-            text="2. Preview & edit — seluruh baris dapat ditinjau",
+            text="2. Preview — edit data LB/RB; recon sebagai referensi",
             padding=10,
         )
         preview.grid(row=1, column=0, sticky="nsew")
@@ -142,11 +160,17 @@ class ReconApp(tk.Tk):
         self.notebook.grid(row=0, column=0, sticky="nsew")
         self._add_preview_tab("LB", "Preview LB")
         self._add_preview_tab("RB", "Preview RB")
+        self._add_preview_tab(
+            "Recon Summary", "Recon · Summary", editable=False
+        )
+        self._add_preview_tab(
+            "Recon Records", "Recon · Records", editable=False
+        )
         ttk.Label(
             preview,
             text="Cari mencakup seluruh baris transaksi. Klik ganda sel untuk "
-            "mengedit; Enter/pindah sel menerapkan, Esc membatalkan. "
-            "Perubahan ikut diekspor.",
+            "mengedit LB/RB; Enter/pindah sel menerapkan, Esc membatalkan. "
+            "Summary/Records dari file recon hanya sebagai referensi.",
             foreground="#536273",
         ).grid(row=1, column=0, sticky="w", pady=(8, 0))
 
@@ -185,11 +209,13 @@ class ReconApp(tk.Tk):
         ttk.Entry(parent, textvariable=variable).grid(
             row=row, column=1, sticky="ew", pady=5
         )
-        ttk.Button(parent, text="Pilih .xlsx…", command=command).grid(
+        ttk.Button(parent, text="Upload .xlsx…", command=command).grid(
             row=row, column=2, padx=(10, 0), pady=5
         )
 
-    def _add_preview_tab(self, side: str, title: str) -> None:
+    def _add_preview_tab(
+        self, side: str, title: str, editable: bool = True
+    ) -> None:
         frame = ttk.Frame(self.notebook, padding=8)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(2, weight=1)
@@ -245,6 +271,8 @@ class ReconApp(tk.Tk):
         tree.bind("<Double-1>", lambda event, current=side: self._begin_edit(
             current, event
         ))
+        if not editable:
+            tree.unbind("<Double-1>")
         self._preview_widgets[side] = tree
         navigation = ttk.Frame(frame)
         navigation.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(6, 0))
@@ -269,14 +297,21 @@ class ReconApp(tk.Tk):
         )
 
     def _browse_lb(self) -> None:
-        selected = self._pick_xlsx("Pilih file LB (Loket Bayar)")
+        selected = self._pick_xlsx("Upload file LB (Loket Bayar)")
         if selected:
             self._load_source("LB", Path(selected))
 
     def _browse_rb(self) -> None:
-        selected = self._pick_xlsx("Pilih file RB (Rajabiller)")
+        selected = self._pick_xlsx("Upload file RB (Rajabiller)")
         if selected:
             self._load_source("RB", Path(selected))
+
+    def _browse_recon(self) -> None:
+        selected = self._pick_xlsx(
+            "Upload file recon (Summary dan Records)"
+        )
+        if selected:
+            self._load_recon_source(Path(selected))
 
     def _browse_out(self) -> None:
         selected = filedialog.asksaveasfilename(
@@ -290,7 +325,7 @@ class ReconApp(tk.Tk):
     def _load_source(self, side: str, path: Path) -> None:
         if path.suffix.lower() != ".xlsx":
             messagebox.showerror(
-                "Format tidak didukung", "Pilih file Excel berformat .xlsx."
+                "Format tidak didukung", "Upload file Excel berformat .xlsx."
             )
             return
         has_edits = bool(self._edit_counts[side]) or any(
@@ -338,6 +373,70 @@ class ReconApp(tk.Tk):
             error = str(exc)
         self.after(0, self._source_loaded, side, token, frame, error)
 
+    def _load_recon_source(self, path: Path) -> None:
+        if path.suffix.lower() != ".xlsx":
+            messagebox.showerror(
+                "Format tidak didukung", "Upload file Excel berformat .xlsx."
+            )
+            return
+        self.recon_path.set(str(path))
+        self._load_tokens["Recon"] += 1
+        token = self._load_tokens["Recon"]
+        self._loading.add("Recon")
+        for side in ("Recon Summary", "Recon Records"):
+            self._frames[side] = None
+            self._filtered_indices[side] = []
+            self._page_index[side] = 0
+            self._search_vars[side].set("")
+            self._clear_preview(side)
+            self._row_labels[side].set(f"Membaca {path.name}…")
+        self.status.set("Membaca sheet Summary dan Records dari file recon…")
+        threading.Thread(
+            target=self._recon_load_worker,
+            args=(path, token),
+            daemon=True,
+        ).start()
+
+    def _recon_load_worker(self, path: Path, token: int) -> None:
+        try:
+            frames = read_recon_reference(path)
+            error = None
+        except Exception as exc:
+            frames = None
+            error = str(exc)
+        self.after(0, self._recon_loaded, token, frames, error)
+
+    def _recon_loaded(
+        self,
+        token: int,
+        frames: dict[str, pl.DataFrame] | None,
+        error: str | None,
+    ) -> None:
+        if token != self._load_tokens["Recon"]:
+            return
+        self._loading.discard("Recon")
+        if error is not None or frames is None:
+            for side in ("Recon Summary", "Recon Records"):
+                self._frames[side] = None
+                self._row_labels[side].set("File gagal dibaca.")
+            self.status.set("Gagal membaca file recon.")
+            messagebox.showerror(
+                "Gagal membaca file recon", error or "Data kosong."
+            )
+            return
+
+        for side, frame in frames.items():
+            self._frames[side] = frame
+            self._filtered_indices[side] = list(range(frame.height))
+            self._page_index[side] = 0
+            self._render_preview(side)
+        summary_count = frames["Recon Summary"].height
+        record_count = frames["Recon Records"].height
+        self.status.set(
+            f"File recon siap sebagai referensi: {summary_count:,} baris "
+            f"Summary, {record_count:,} baris Records."
+        )
+
     def _source_loaded(
         self,
         side: str,
@@ -384,7 +483,7 @@ class ReconApp(tk.Tk):
         for column in columns:
             tree.heading(
                 column,
-                text=SOURCE_HEADERS[side].get(column, column),
+                text=SOURCE_HEADERS.get(side, {}).get(column, column),
                 anchor="w",
             )
             tree.column(column, width=145, minwidth=90, stretch=False)
@@ -469,6 +568,8 @@ class ReconApp(tk.Tk):
         self._apply_search(side)
 
     def _begin_edit(self, side: str, event: tk.Event) -> None:
+        if side not in {"LB", "RB"}:
+            return
         if self._busy or side in self._loading:
             return
         if self._editor is not None and self._editor_target is not None:
@@ -544,7 +645,7 @@ class ReconApp(tk.Tk):
             self._invalid_edits.add((side, row_index, column))
             messagebox.showerror(
                 "Nilai tidak valid",
-                f"Nilai untuk kolom {SOURCE_HEADERS[side].get(column, column)} "
+                f"Nilai untuk kolom {SOURCE_HEADERS.get(side, {}).get(column, column)} "
                 f"tidak sesuai tipe data.\n\n{exc}",
             )
             return "break" if event is not None else False
@@ -558,7 +659,7 @@ class ReconApp(tk.Tk):
             )
         self._render_preview(side)
         self.status.set(
-            f"Perubahan pada file {side} diterapkan dan akan ikut diekspor."
+            f"Perubahan pada upload {side} diterapkan dan akan ikut diekspor."
         )
         return "break" if event is not None else True
 
@@ -660,25 +761,42 @@ class ReconApp(tk.Tk):
         if self._loading:
             messagebox.showwarning(
                 "File sedang dibaca",
-                "Tunggu sampai pembacaan file LB/RB selesai.",
+                "Tunggu sampai pembacaan semua file selesai.",
             )
             return
         lb_path = Path(self.lb_path.get().strip()).expanduser()
         rb_path = Path(self.rb_path.get().strip()).expanduser()
+        recon_path = Path(self.recon_path.get().strip()).expanduser()
         output = Path(self.out_path.get().strip()).expanduser()
 
         if self._frames["LB"] is None or not lb_path.is_file():
-            messagebox.showerror("File LB", "Pilih dan muat file LB terlebih dahulu.")
+            messagebox.showerror(
+                "Upload LB", "Upload dan muat file LB terlebih dahulu."
+            )
             return
         if self._frames["RB"] is None or not rb_path.is_file():
-            messagebox.showerror("File RB", "Pilih dan muat file RB terlebih dahulu.")
+            messagebox.showerror(
+                "Upload RB", "Upload dan muat file RB terlebih dahulu."
+            )
+            return
+        if (
+            self._frames["Recon Summary"] is None
+            or self._frames["Recon Records"] is None
+            or not recon_path.is_file()
+        ):
+            messagebox.showerror(
+                "File recon",
+                "Upload file recon yang memiliki sheet Summary dan Records.",
+            )
             return
         if not self.out_path.get().strip():
             messagebox.showerror("File output", "Tentukan lokasi file output.")
             return
-        if output.resolve() in {lb_path.resolve(), rb_path.resolve()}:
+        if output.resolve() in {
+            lb_path.resolve(), rb_path.resolve(), recon_path.resolve()
+        }:
             messagebox.showerror(
-                "File output", "File output tidak boleh menimpa file input."
+                "File output", "File output tidak boleh menimpa file upload."
             )
             return
         if output.suffix.lower() != ".xlsx":

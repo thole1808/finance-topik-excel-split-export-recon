@@ -210,6 +210,33 @@ def read_raw_excel(
     return frame.with_row_index("_row_idx")
 
 
+def read_recon_reference(path: Path) -> dict[str, pl.DataFrame]:
+    """Read the Summary and Records sheets from an existing recon workbook."""
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"File tidak ditemukan: {path}")
+    if path.suffix.lower() != ".xlsx":
+        raise ValueError("File input harus berformat .xlsx.")
+
+    frames: dict[str, pl.DataFrame] = {}
+    for sheet_name in ("Summary", "Records"):
+        try:
+            frame = pl.read_excel(
+                path, sheet_name=sheet_name, engine="calamine"
+            )
+        except Exception as exc:
+            raise ValueError(
+                f"Sheet wajib '{sheet_name}' tidak dapat dibaca dari "
+                f"{path.name}: {exc}"
+            ) from exc
+        if not frame.columns:
+            raise ValueError(
+                f"Sheet '{sheet_name}' pada {path.name} tidak memiliki header."
+            )
+        frames[f"Recon {sheet_name}"] = frame.with_row_index("_row_idx")
+    return frames
+
+
 def _number_key(value: Any) -> str:
     value = _clean(value)
     if isinstance(value, (int, float)) and float(value).is_integer():
@@ -912,4 +939,5 @@ def build_recon_workbook(
 
 __all__ = [
     "LB_COL_MAP", "RB_COL_MAP", "build_recon_workbook", "read_raw_excel",
+    "read_recon_reference",
 ]

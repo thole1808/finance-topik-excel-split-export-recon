@@ -9,29 +9,36 @@ memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 
 Versi JPG tersedia di [flow-recon-finance.jpg](flow-recon-finance.jpg).
 
-Alur singkat: **Pilih LB + RB → validasi → preview/koreksi → proses data →
-export Excel → periksa Summary dan transaksi**. Jumlah baris, tanggal, nominal,
-dan nilai lain diambil dari file yang dipilih setiap kali proses berjalan.
-File contoh tidak menjadi sumber transaksi tetap.
+Alur singkat: **Upload LB + RB + file recon referensi → validasi → preview/
+koreksi → proses data → export Excel → periksa Summary, Records, LB, dan RB**.
+Jumlah baris, tanggal, nominal, dan nilai lain diambil dari file yang diupload
+setiap kali proses berjalan. Data pada sheet Summary dan Records dari file recon
+referensi ditampilkan untuk ditinjau; Summary dan Records pada output dihitung
+ulang dari upload LB/RB.
 
 ## Menjalankan aplikasi
 
 1. Buka **ReconBuilder.app** (atau jalankan `python3 app.py` dari source).
-2. Pada **File LB**, pilih workbook Loket Bayar berformat `.xlsx`; tunggu
+2. Pada **Upload LB**, pilih workbook Loket Bayar berformat `.xlsx`; tunggu
    preview selesai dimuat.
-3. Pada **File RB**, pilih workbook Rajabiller berformat `.xlsx`; tunggu
+3. Pada **Upload RB**, pilih workbook Rajabiller berformat `.xlsx`; tunggu
    preview selesai dimuat.
-4. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
+4. Pada **Upload Recon**, pilih file recon `.xlsx` yang memiliki sheet
+   **Summary** dan **Records**. Kedua sheet dimuat sebagai referensi dan dapat
+   ditinjau melalui tab **Recon · Summary** dan **Recon · Records**.
+5. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
    seluruh baris file: pilih jumlah baris per halaman lalu gunakan
    **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
    nilai di semua kolom, termasuk transaksi pada halaman lain.
-5. Untuk koreksi, klik ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah
+6. Untuk koreksi LB/RB, klik ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah
    fokus untuk menerapkan; **Esc** membatalkan. Perubahan pada baris preview
-   ikut diterapkan ke export. Baris lain tetap berasal dari file sumber.
-6. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
-7. Klik **Generate Recon** dan tunggu pesan sukses.
-8. Buka file output. Mulai pemeriksaan dari sheet **Summary**, lalu telusuri
-   detail pada **Records**, **LB**, dan **RB**.
+   ikut diterapkan ke export. Baris lain tetap berasal dari file upload.
+   Preview recon bersifat referensi dan tidak dapat diedit.
+7. Tentukan lokasi dan nama file output yang berakhiran `.xlsx`.
+8. Klik **Generate Recon** dan tunggu pesan sukses.
+9. Buka file output. Periksa sheet **Summary** dan **Records** yang dihitung
+   dari upload LB/RB, lalu telusuri data sumber dan formula recon pada sheet
+   **LB** dan **RB**.
 
 Dialog pemilihan file dibatasi ke workbook `.xlsx`. Format `.xls`, `.xlsm`,
 `.csv`, PDF, dan file selain Excel tidak didukung. Sheet pertama pada setiap
@@ -62,16 +69,20 @@ memiliki jumlah baris atau tanggal tertentu.
 
 | Sheet | Isi | Cara menggunakan |
 |---|---|---|
-| `Summary` | Ringkasan jumlah dan nominal transaksi per kategori/status. | Gunakan untuk pemeriksaan awal, lalu telusuri transaksi di `Records`. |
-| `Records` | Daftar gabungan baris LB dan RB, diurutkan berdasarkan tanggal. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
-| `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan. | Bandingkan kolom hasil recon dengan data sumber di bagian LB. |
-| `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan. | Bandingkan kolom hasil recon dengan data sumber di bagian RB. |
+| `Summary` | Ringkasan jumlah dan nominal transaksi per kategori/status, dihitung ulang dari upload LB/RB. | Gunakan untuk pemeriksaan awal, lalu telusuri transaksi di `Records`. |
+| `Records` | Daftar gabungan baris LB dan RB, diurutkan berdasarkan tanggal, dihitung ulang dari upload LB/RB. | Gunakan filter header untuk mencari produk, referensi, status, atau biller. |
+| `LB` | Data sumber LB dan kolom recon/formula sesuai layout acuan. | Bandingkan kolom hasil recon dengan data sumber pada bagian LB. |
+| `RB` | Data sumber RB dan kolom recon/formula sesuai layout acuan. | Bandingkan kolom hasil recon dengan data sumber pada bagian RB. |
 
 Header dibekukan ketika scroll; `Records` memiliki filter, dan format angka,
 tanggal, warna, serta lebar kolom mengikuti workbook acuan agar nilai mudah
 dibaca. Nominal transaksi tetap berasal dari input, sedangkan fee menggunakan
 profil kode produk dan nominal bila tersedia. Untuk kombinasi baru, aplikasi
 menggunakan tabel fee fallback, lalu field fee LB jika tersedia.
+
+File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
+serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`
+pada output selalu dihitung ulang menggunakan upload LB/RB yang sedang diproses.
 
 Preview menampilkan data dalam halaman agar file besar tetap mudah ditinjau.
 Pencarian mencakup semua baris, bukan hanya halaman aktif. Perubahan yang

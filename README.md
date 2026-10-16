@@ -1,11 +1,12 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.1.1** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.1.2** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
-lalu menghasilkan file recon dengan sheet **Summary**, **Records**, **LB**, dan
-**RB**. Layout, lebar kolom, format angka, warna, serta rumus mengacu pada
+meninjau sheet **Summary** dan **Records** dari file recon referensi, lalu
+menghasilkan recon dengan sheet **Summary**, **Records**, **LB**, dan **RB**.
+Layout, lebar kolom, format angka, warna, serta rumus mengacu pada
 `recon-2026-10-14-v1.xlsx`.
 
 Panduan pengguna Finance (alur, format input, isi output, dan pengecekan):
@@ -23,8 +24,12 @@ python3 -m pip install -r requirements.txt
 python3 app.py
 ```
 
-Pilih file LB dan RB berformat Excel `.xlsx`, tentukan nama output, lalu klik
-**Generate Recon**. Workbook ditulis menggunakan **Polars + XlsxWriter**.
+Pada aplikasi desktop, upload file LB, RB, dan file recon referensi berformat
+Excel `.xlsx`, tentukan nama output, lalu klik **Generate Recon**. Workbook
+ditulis menggunakan **Polars + XlsxWriter**. File recon referensi harus
+memiliki sheet `Summary` dan `Records`; kedua sheet dapat ditinjau, sedangkan
+Summary/Records output dihitung ulang dari upload LB/RB. Command line tetap
+menerima dua file LB/RB seperti contoh di bawah.
 Nilai dan jumlah transaksi dibaca ulang dari file yang dipilih setiap kali
 aplikasi dijalankan; tidak ada tanggal atau jumlah baris transaksi yang
 ditetapkan tetap.
@@ -66,7 +71,7 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
-- Untuk installer rilis, push tag versi seperti `v1.1.1`. Workflow membuat
+- Untuk installer rilis, push tag versi seperti `v1.1.2`. Workflow membuat
   GitHub Release dengan `ReconBuilder-Setup.exe`.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
