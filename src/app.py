@@ -7,6 +7,7 @@ import threading
 import datetime as dt
 import os
 import time
+import json
 from functools import partial
 from pathlib import Path
 import platform
@@ -108,6 +109,9 @@ class ReconApp(tk.Tk):
         self._terminal: tk.Text | None = None
         self._history_tree: ttk.Treeview | None = None
         self._clock_var = tk.StringVar()
+        self._release_status_var = tk.StringVar(
+            value=f"APP v{__version__}  ·  RELEASE v{__version__}"
+        )
         self._update_button: ttk.Button | None = None
         self._update_info: UpdateRelease | None = None
         self._update_checking = False
@@ -139,12 +143,16 @@ class ReconApp(tk.Tk):
         style = ttk.Style(self)
         if "clam" in style.theme_names():
             style.theme_use("clam")
-        style.configure("TFrame", background="#EDF3F8")
+        style.configure("TFrame", background="#F1F5F9")
         style.configure("Header.TFrame", background="#102A43")
-        style.configure("TLabelframe", background="#FFFFFF", borderwidth=1)
+        style.configure(
+            "TLabelframe", background="#FFFFFF", borderwidth=0,
+            relief="flat", padding=2,
+        )
         style.configure("TLabelframe.Label", background="#EDF3F8",
-                        foreground="#123B5D", font=("Helvetica", 11, "bold"))
-        style.configure("TLabel", background="#EDF3F8", foreground="#263D56")
+                        foreground="#123B5D", font=("Helvetica", 11, "bold"),
+                        padding=(2, 2))
+        style.configure("TLabel", background="#F1F5F9", foreground="#263D56")
         style.configure(
             "Header.TLabel", background="#102A43", foreground="#FFFFFF",
             font=("Helvetica", 23, "bold"),
@@ -194,14 +202,22 @@ class ReconApp(tk.Tk):
         )
         style.map("TButton", background=[("active", "#E8F1FA")])
         style.configure(
+            "Header.TButton", font=("Helvetica", 10, "bold"),
+            foreground="#FFFFFF", background="#087E8B", padding=(14, 9),
+            borderwidth=0,
+        )
+        style.map(
+            "Header.TButton",
+            background=[("active", "#0A929B"), ("disabled", "#536B80")],
+            foreground=[("disabled", "#DCE7F0")],
+        )
+        style.configure(
             "TEntry", padding=(8, 6), fieldbackground="#FFFFFF",
         )
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
-        header = ttk.Frame(
-            self, padding=(24, 18, 24, 14), style="Header.TFrame"
-        )
+        header = ttk.Frame(self, padding=(28, 19, 28, 16), style="Header.TFrame")
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
         ttk.Label(
@@ -216,18 +232,23 @@ class ReconApp(tk.Tk):
             style="Subtitle.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
         ttk.Label(
-            header, text=f"FINANCE  ·  v{__version__}",
+            header, textvariable=self._release_status_var,
             background="#102A43", foreground="#55D6BE",
-            font=("Helvetica", 10, "bold"),
-        ).grid(row=0, column=1, sticky="e", padx=(10, 0))
+            font=("Helvetica", 9, "bold"),
+        ).grid(row=0, column=1, sticky="e", padx=(20, 0))
         ttk.Label(
             header, text="Powered By DevOps", background="#102A43",
             foreground="#C7D8E7", font=("Helvetica", 10, "bold"),
         ).grid(row=1, column=1, sticky="e", padx=(10, 0))
+        self._update_button = ttk.Button(
+            header, text="Periksa Update", command=self._on_update_button,
+            style="Header.TButton",
+        )
+        self._update_button.grid(row=0, column=2, rowspan=2, sticky="e", padx=(24, 0))
         ttk.Label(
             header, textvariable=self._clock_var, background="#102A43",
             foreground="#FFFFFF", font=("Helvetica", 10),
-        ).grid(row=0, column=2, rowspan=2, sticky="e", padx=(24, 0))
+        ).grid(row=0, column=3, rowspan=2, sticky="e", padx=(24, 0))
 
         content = ttk.Frame(self, padding=(24, 12, 24, 8))
         content.grid(row=1, column=0, sticky="nsew")
@@ -310,10 +331,6 @@ class ReconApp(tk.Tk):
         ttk.Button(
             actions, text="Buka Folder Output", command=self._open_output_folder
         ).pack(side="left")
-        self._update_button = ttk.Button(
-            actions, text="Periksa Update", command=self._on_update_button
-        )
-        self._update_button.pack(side="left", padx=(8, 0))
         ttk.Label(
             footer, textvariable=self.status, foreground="#35465a"
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(8, 5))
@@ -476,12 +493,13 @@ class ReconApp(tk.Tk):
         ttk.Button(
             controls, text="Muat ulang", command=self._refresh_history
         ).pack(side="right")
-        columns = ("time", "operator", "action", "details", "host")
+        columns = ("time", "operator", "action", "details", "host", "ip", "mac")
         tree = ttk.Treeview(frame, columns=columns, show="headings")
         for key, title, width in (
             ("time", "Waktu", 190), ("operator", "Operator", 140),
             ("action", "Aktivitas", 180), ("details", "Rincian", 620),
-            ("host", "Perangkat", 170),
+            ("host", "Perangkat", 170), ("ip", "IP (masked)", 135),
+            ("mac", "MAC (masked)", 145),
         ):
             tree.heading(key, text=title, anchor="w")
             tree.column(key, width=width, minwidth=90, stretch=key == "details")
@@ -500,11 +518,13 @@ class ReconApp(tk.Tk):
             return
         tree.delete(*tree.get_children())
         for event in self.audit.recent_events(1000):
+            details = json.loads(event["details_json"])
             tree.insert(
                 "", "end",
                 values=(
                     event["occurred_at"], event["operator"], event["action"],
                     event["details_json"], event["host"],
+                    details.get("ip_masked", "—"), details.get("mac_masked", "—"),
                 ),
             )
 
@@ -1249,6 +1269,9 @@ class ReconApp(tk.Tk):
         )
         if self._update_button is not None:
             self._update_button.configure(state="disabled", text="Memeriksa…")
+        self._release_status_var.set(
+            f"APP v{__version__}  ·  RELEASE sedang diperiksa"
+        )
         threading.Thread(
             target=self._update_check_worker, args=(silent,), daemon=True
         ).start()
@@ -1272,6 +1295,9 @@ class ReconApp(tk.Tk):
             self._update_info = None
             if self._update_button is not None:
                 self._update_button.configure(text="Periksa Update")
+            self._release_status_var.set(
+                f"APP v{__version__}  ·  RELEASE belum dapat diperiksa"
+            )
             self.audit.record(self.operator, "update_check_failed", error=error)
             if not silent:
                 messagebox.showerror("Pemeriksaan update gagal", error)
@@ -1280,9 +1306,12 @@ class ReconApp(tk.Tk):
         if release is not None:
             if self._update_button is not None:
                 self._update_button.configure(
-                    text=f"Klik untuk Update · v{release.version}",
-                    style="Accent.TButton",
+                    text=f"Update v{release.version}",
+                    style="Header.TButton",
                 )
+            self._release_status_var.set(
+                f"APP v{__version__}  →  RELEASE v{release.version} tersedia"
+            )
             self.audit.record(
                 self.operator, "update_available", version=release.version,
                 release_url=release.html_url,
@@ -1299,9 +1328,12 @@ class ReconApp(tk.Tk):
             )
             if self._update_button is not None:
                 self._update_button.configure(
-                    text=f"Periksa Update · v{__version__}",
-                    style="TButton",
+                    text="Periksa Update",
+                    style="Header.TButton",
                 )
+            self._release_status_var.set(
+                f"APP v{__version__}  ·  RELEASE v{__version__} terbaru"
+            )
             if not silent:
                 messagebox.showinfo(
                     "Aplikasi terbaru",
@@ -1336,7 +1368,7 @@ class ReconApp(tk.Tk):
         if error:
             if self._update_button is not None:
                 self._update_button.configure(
-                    state="normal", text=f"Klik untuk Update · v{release.version}"
+                    state="normal", text=f"Update v{release.version}"
                 )
             self.audit.record(
                 self.operator, "update_failed", version=release.version,

@@ -64,13 +64,17 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 
 ## Update aplikasi dan notifikasi suara
 
-Saat aplikasi dibuka, **Periksa Update** memeriksa GitHub Release. Jika versi
-baru tersedia, tombol berubah menjadi **Klik untuk Update · v...**. Klik tombol
-tersebut untuk mengunduh installer sesuai sistem operasi; aplikasi memeriksa
+Tombol **Periksa Update** ada di kanan atas header aplikasi, di samping jam.
+Header menampilkan versi aplikasi dan versi release. Saat aplikasi dibuka,
+aplikasi memeriksa GitHub Release. Jika versi baru tersedia, tombol berubah
+menjadi **Update v...** dan header menampilkan versi release yang tersedia.
+Klik tombol tersebut untuk mengunduh installer sesuai sistem operasi; aplikasi memeriksa
 SHA-256 sebelum memasang dan membuka kembali aplikasi. macOS dapat meminta
 otorisasi administrator bila aplikasi berada di folder sistem. Windows dapat
 meminta konfirmasi UAC. Koneksi internet dan release GitHub yang berhasil
 diterbitkan diperlukan. Update otomatis tersedia untuk macOS dan Windows.
+Nomor versi pada aplikasi berasal dari `src/version.py`; release memakai tag
+`v<versi>` yang sama. Workflow menolak tag yang tidak cocok dengan versi source.
 
 Aplikasi membacakan “Mohon tunggu. Proses generate file recon sedang berjalan.”
 saat Generate dimulai dan membacakan pemberitahuan sukses setelah file selesai
@@ -88,7 +92,10 @@ berversi hasil build macOS di root repository sebelum push versi baru.
 ## Riwayat penggunaan dan audit
 
 Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, nama/ID yang
-dimasukkan, akun OS, perangkat, versi aplikasi, aksi, dan rinciannya. Aplikasi
+dimasukkan, akun OS, perangkat, versi aplikasi, IP lokal tersamarkan, MAC
+tersamarkan, aksi, dan rinciannya. IP disimpan sebagai tiga oktet pertama
+(misalnya `192.168.1.*`); MAC hanya menampilkan tiga oktet awal
+(misalnya `AA:BB:CC:**:**:**`). Alamat mentah tidak disimpan. Aplikasi
 mencatat pembukaan/penutupan, tab yang dibuka, file yang dipilih/dimuat, pencarian,
 perubahan sel (nilai lama dan baru), navigasi preview, proses generate (hasil,
 durasi, ukuran atau kegagalan), dan pembukaan lokasi output. Gunakan

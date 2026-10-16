@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.2**
+**Versi saat ini: 1.2.3**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -84,6 +84,21 @@ pengguna meminta penerbitan release.
   Bila jaringan tidak tersedia, aplikasi tetap dapat dipakai dan tombol bisa
   dicoba kembali. SHA-256 mendeteksi kerusakan/perubahan berkas terhadap
   manifest release; ia bukan tanda tangan publisher terpisah.
+
+## Implementasi 1.2.3 — update terlihat, UI dirapikan, identitas perangkat dimasking
+
+- Tombol update berada di kanan atas header agar mudah ditemukan. Header
+  membandingkan `APP v...` dengan versi GitHub `RELEASE v...`; saat ada versi
+  baru tombol menampilkan **Update v...**. Keduanya memakai satu sumber versi:
+  `src/version.py` dan tag `v<versi>`.
+- Perapian desktop: header/panel lebih tegas, jarak dan hierarki kontrol
+  diperjelas, status release berada dekat tombol update, dan tabel riwayat punya
+  kolom IP/MAC khusus.
+- Setiap event riwayat SQLite menyimpan IP lokal bertopeng (tiga oktet awal)
+  dan MAC bertopeng (tiga oktet awal). Nilai mentah tidak ditulis ke database
+  atau ekspor CSV. Alamat dibaca lokal; aplikasi tidak meminta layanan IP luar.
+- File `docs/ROADMAP_MOBILE.md` menjelaskan rencana porting Android/iOS. Tkinter
+  dan Python Polars tidak dapat langsung dibangun sebagai APK/IPA.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -388,7 +403,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.2, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.3, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -404,6 +419,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.3 | Tombol update di header, label versi APP/RELEASE, UI dirapikan, IP/MAC masked di riwayat, rencana mobile. |
 | 1.2.2 | Tag/release otomatis, suara status, updater checksum, ikon baru, flowchart PNG/JPG di release. |
 | 1.2.1 | Nama DMG mencantumkan versi aplikasi dan waktu build. |
 | 1.2.0 | Tab tiap sheet Backdate, preview Semua, output bertimestamp, UI maximize/clock/terminal, dan audit SQLite lokal. |

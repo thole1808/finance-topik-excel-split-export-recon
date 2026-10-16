@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from src.version import __version__
+from src.device_identity import masked_device_identity
 
 ZERO_HASH = "0" * 64
 
@@ -33,6 +34,7 @@ class AuditLog:
 
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or audit_directory() / "usage-history.sqlite3"
+        self.device_ip_masked, self.device_mac_masked = masked_device_identity()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
             connection.execute("PRAGMA journal_mode=DELETE")
@@ -89,6 +91,8 @@ class AuditLog:
 
     def record(self, operator: str, action: str, **details: Any) -> int:
         occurred_at = dt.datetime.now().astimezone().isoformat(timespec="seconds")
+        details["ip_masked"] = self.device_ip_masked
+        details["mac_masked"] = self.device_mac_masked
         details_json = self._canonical(details)
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
