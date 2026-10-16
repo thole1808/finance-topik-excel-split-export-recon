@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.12**
+**Versi saat ini: 1.1.13**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -116,12 +116,19 @@ memodifikasi kode:
 - Memperbarui diagram alur Finance untuk memuat jalur lookup fee, pemisahan
   status/jam, empat sheet output, serta pemeriksaan data Finance.
 
+## Perbaikan versi 1.1.13
+
+- Menempatkan subtotal SUCCESS dan FAILED setelah kelompok transaksinya di
+  sheet LB/RB, mengikuti baris total pada workbook recon contoh.
+- Menjumlahkan Amount dan empat kolom fee, termasuk transaksi For tomorrow;
+  menyisakan tiga baris pemisah setelah subtotal SUCCESS.
+
 ## Perbaikan versi 1.1.12
 
 - Menghapus baris footer auto-SUM dari kolom Amount, Total Fee, Customer Fee,
   LST Fee, dan Margin Biller pada sheet LB/RB.
-- Menambahkan blok tiga kolom **SUCCESS**, **FAILED**, dan **TOTAL AUTO SUM**
-  untuk jumlah Amount, mencakup transaksi Current Day serta For tomorrow.
+- Menambahkan blok SUCCESS/FAILED/TOTAL AUTO SUM untuk Amount, mencakup
+  transaksi Current Day serta For tomorrow.
 - Menambahkan tombol **Edit sel terpilih** pada preview LB/RB; double-click
   cell tetap tersedia sebagai cara cepat.
 - Memperbarui gaya UI desktop dan memastikan metadata versi DMG/Inno Setup
@@ -144,6 +151,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.13 | Menempatkan subtotal Amount dan empat fee setelah kelompok SUCCESS dan FAILED di sheet LB/RB. |
 | 1.1.12 | Memindahkan total Amount ke ringkasan SUCCESS/FAILED/Total, memperjelas edit preview, dan menyelaraskan versi installer. |
 | 1.1.11 | Mengisi profil fee RB untuk tiga kombinasi kode/nominal dan memperjelas alur data/fee. |
 | 1.1.10 | Pisahkan data sumber RB Current Day dan For tomorrow berdasarkan jam 23:00. |
@@ -163,7 +171,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.12`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.13`). Tag
   menjalankan Windows build dan menerbitkan installer ke GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.

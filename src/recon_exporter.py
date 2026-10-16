@@ -759,6 +759,66 @@ def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
     return {**raw, **recon}
 
 
+def _write_status_total_row(
+    worksheet: xlsxwriter.worksheet.Worksheet,
+    workbook: xlsxwriter.Workbook,
+    sheet: str,
+    total_row: int,
+    first_data_row: int,
+    last_data_row: int,
+    group_rows: Sequence[Mapping[str, Any]],
+    values_function: Any,
+    format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
+) -> None:
+    current_columns = (7, 8, 9, 10, 11)
+    tomorrow_columns = (
+        (46, 47, 48, 49, 50) if sheet == "LB"
+        else (56, 57, 58, 59, 60)
+    )
+    totals = [0.0] * len(current_columns)
+    for record in group_rows:
+        values = values_function(record)
+        for index, column in enumerate(current_columns):
+            value = _clean(values.get(column))
+            if isinstance(value, (int, float)):
+                totals[index] += float(value)
+
+    amount_style = (
+        REFERENCE_STYLES[sheet]["styles"].get("4", {}).get("7", {})
+    )
+    common_overrides: dict[str, Any] = {"bold": True, "top": 1}
+    if amount_style.get("numfmt"):
+        common_overrides["num_format"] = amount_style["numfmt"]
+    workbook_amount = totals[0] + totals[4]
+    _write_cell(
+        worksheet, workbook, sheet, total_row - 1, 6, 4,
+        formula=f"=G{total_row}+K{total_row}",
+        cached_value=workbook_amount,
+        format_cache=format_cache,
+        format_overrides=common_overrides,
+    )
+    for index, (current_column, tomorrow_column) in enumerate(
+        zip(current_columns, tomorrow_columns)
+    ):
+        current_letter = xlsxwriter.utility.xl_col_to_name(current_column - 1)
+        tomorrow_letter = xlsxwriter.utility.xl_col_to_name(
+            tomorrow_column - 1
+        )
+        formula = (
+            f"=SUM({current_letter}{first_data_row}:"
+            f"{current_letter}{last_data_row})"
+            f"+SUM({tomorrow_letter}{first_data_row}:"
+            f"{tomorrow_letter}{last_data_row})"
+        )
+        _write_cell(
+            worksheet, workbook, sheet, total_row - 1, current_column, 4,
+            formula=formula,
+            cached_value=totals[index],
+            format_cache=format_cache,
+            format_overrides=common_overrides,
+        )
+
+
 def _write_wide_sheet(
     worksheet: xlsxwriter.worksheet.Worksheet,
     workbook: xlsxwriter.Workbook,
@@ -795,75 +855,70 @@ def _write_wide_sheet(
     normalized_statuses = [
         _transaction_status(row.get("status")) for row in current_day_rows
     ]
-    current_day_end_row = max(4, len(current_day_rows) + 3)
-    source_data_end_row = max(4, len(rows) + 3)
-    summary_start = max_column + 2
-    summary_end = summary_start + 2
-    amount_column = 7
-    status_column = 12
-    tomorrow_amount_column = 46 if sheet == "LB" else 56
-    tomorrow_status_column = 51 if sheet == "LB" else 61
-    last_data_row = max(4, len(rows) + 3)
-    amount_letter = xlsxwriter.utility.xl_col_to_name(amount_column - 1)
-    status_letter = xlsxwriter.utility.xl_col_to_name(status_column - 1)
-    tomorrow_amount_letter = xlsxwriter.utility.xl_col_to_name(
-        tomorrow_amount_column - 1
-    )
-    tomorrow_status_letter = xlsxwriter.utility.xl_col_to_name(
-        tomorrow_status_column - 1
-    )
-    summary_labels = ("SUCCESS", "FAILED", "TOTAL AUTO SUM")
-    status_sums = {"SUCCESS": 0.0, "FAILED": 0.0}
-    total_amount = 0.0
-    for record in rows:
-        amount = _clean(record.get(
-            "tagihan" if sheet == "LB" else "nominal"
-        ))
-        if isinstance(amount, (int, float)):
-            total_amount += float(amount)
-            status = _transaction_status(record.get("status"))
-            if status in status_sums:
-                status_sums[status] += float(amount)
-
-    values_by_row[1][summary_start] = "TOTAL AUTO SUM (AMOUNT)"
-    values_by_row[2].update({
-        summary_start + offset: label
-        for offset, label in enumerate(summary_labels)
-    })
-    summary_formulas = {}
-    for offset, label in enumerate(summary_labels):
-        column = summary_start + offset
-        if label == "TOTAL AUTO SUM":
-            formula = (
-                f"=SUM({amount_letter}4:{amount_letter}{last_data_row})"
-                f"+SUM({tomorrow_amount_letter}4:"
-                f"{tomorrow_amount_letter}{last_data_row})"
+    spacer_rows = 3
+    current_groups = {
+        status: [
+            row for row in current_day_rows
+            if (
+                _transaction_status(row.get("status")) == status
+                if status != "OTHER" else
+                _transaction_status(row.get("status"))
+                not in {"SUCCESS", "FAILED"}
             )
-            cached_value = total_amount
-        else:
-            formula = (
-                f'=SUMIF(${status_letter}$4:${status_letter}${last_data_row},'
-                f'"{label}",${amount_letter}$4:${amount_letter}${last_data_row})'
-                f'+SUMIF(${tomorrow_status_letter}$4:'
-                f'${tomorrow_status_letter}${last_data_row},"{label}",'
-                f'${tomorrow_amount_letter}$4:'
-                f'${tomorrow_amount_letter}${last_data_row})'
+        ]
+        for status in ("SUCCESS", "FAILED", "OTHER")
+    }
+    tomorrow_groups = {
+        status: [
+            row for row in tomorrow_rows
+            if (
+                _transaction_status(row.get("status")) == status
+                if status != "OTHER" else
+                _transaction_status(row.get("status"))
+                not in {"SUCCESS", "FAILED"}
             )
-            cached_value = status_sums[label]
-        summary_formulas[column] = (formula, cached_value)
-    summary_title_options = {
-        "bold": True, "bg_color": "#D9EAF7", "font_color": "#17365D",
-        "border": 1,
+        ]
+        for status in ("SUCCESS", "FAILED", "OTHER")
     }
-    summary_header_options = {
-        "bold": True, "bg_color": "#17365D", "font_color": "#FFFFFF",
-        "border": 1, "align": "center", "valign": "vcenter",
-    }
-    summary_value_options = {
-        "num_format": "#,##0.00", "bg_color": "#EAF1F8",
-        "font_color": "#17365D", "border": 1,
-    }
-    worksheet.set_column(summary_start - 1, summary_end - 1, 19)
+    output_slots: list[
+        tuple[int, Mapping[str, Any] | None, Mapping[str, Any] | None]
+    ] = []
+    subtotal_after_slot: dict[
+        int, tuple[int, int, Sequence[Mapping[str, Any]]]
+    ] = {}
+    next_row = 4
+    for status in ("SUCCESS", "FAILED", "OTHER"):
+        current_status_rows = current_groups[status]
+        tomorrow_status_rows = tomorrow_groups[status]
+        slot_count = max(
+            len(current_status_rows), len(tomorrow_status_rows)
+        )
+        if slot_count == 0:
+            continue
+        first_data_row = next_row
+        for index in range(slot_count):
+            output_slots.append((
+                next_row,
+                current_status_rows[index]
+                if index < len(current_status_rows) else None,
+                tomorrow_status_rows[index]
+                if index < len(tomorrow_status_rows) else None,
+            ))
+            next_row += 1
+        last_data_row = next_row - 1
+        if status in {"SUCCESS", "FAILED"}:
+            subtotal_after_slot[len(output_slots) - 1] = (
+                first_data_row,
+                last_data_row,
+                [*current_status_rows, *tomorrow_status_rows],
+            )
+            next_row += 1 + spacer_rows
+    source_data_end_row = output_slots[-1][0] if output_slots else 3
+    current_day_end_row = max(
+        (excel_row for excel_row, current, _ in output_slots
+         if current is not None),
+        default=3,
+    )
     formulas_by_row = {
         2: {
             2: (
@@ -876,45 +931,31 @@ def _write_wide_sheet(
             ),
         }
     }
-    formulas_by_row[3] = summary_formulas
     for section in ("A", "B", "C"):
         values_by_row[3].update(layout[section])
     _write_template_rows(
         worksheet,
         workbook,
         sheet,
-        summary_end,
+        max_column,
         values_by_row,
         format_cache,
         formulas_by_row=formulas_by_row,
-        format_overrides_by_row={
-            1: {summary_start: summary_title_options},
-            2: {
-                summary_start + offset: summary_header_options
-                for offset in range(len(summary_labels))
-            },
-            3: {
-                summary_start + offset: summary_value_options
-                for offset in range(len(summary_labels))
-            },
-        },
     )
 
     tomorrow_start = 40 if sheet == "LB" else 50
     tomorrow_end = 72 if sheet == "LB" else 63
 
-    for index in range(len(rows)):
-        excel_row = index + 4
-        current_day_record = (
-            current_day_rows[index] if index < len(current_day_rows) else None
-        )
+    for index, (excel_row, current_day_record, tomorrow_record) in enumerate(
+        output_slots
+    ):
         current_day_values = (
             values_function(current_day_record)
             if current_day_record is not None else {}
         )
         tomorrow_values = (
-            values_function(tomorrow_rows[index])
-            if index < len(tomorrow_rows) else {}
+            values_function(tomorrow_record)
+            if tomorrow_record is not None else {}
         )
         formulas: dict[int, tuple[str, Any]] = {}
         if sheet == "LB" and current_day_record is not None:
@@ -998,10 +1039,6 @@ def _write_wide_sheet(
                 has_status_row = status_row is not None
             elif is_tomorrow_column or is_tomorrow_source_column:
                 value = tomorrow_values.get(column)
-                tomorrow_record = (
-                    tomorrow_rows[index]
-                    if index < len(tomorrow_rows) else None
-                )
                 status_row = tomorrow_record
                 has_status_row = status_row is not None
             else:
@@ -1038,9 +1075,16 @@ def _write_wide_sheet(
                     **(row_highlight or {}),
                 } or None,
             )
+        if index in subtotal_after_slot:
+            first_data_row, last_data_row, status_rows = subtotal_after_slot[index]
+            _write_status_total_row(
+                worksheet, workbook, sheet, excel_row + 1,
+                first_data_row, last_data_row, status_rows,
+                values_function, format_cache,
+            )
 
     worksheet.autofilter(
-        2, 0, max(2, len(current_day_rows) + 2), 13
+        2, 0, max(2, current_day_end_row - 1), 13
     )
 
 

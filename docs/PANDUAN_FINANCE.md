@@ -94,32 +94,34 @@ profil aplikasi. Untuk produk/nominal baru yang belum punya profil, jangan
 menganggap sel kosong berarti fee nol; minta Finance mengonfirmasi nilai dan
 tambahkan profil sebelum memakai hasil sebagai laporan final.
 
-Pada sheet `LB` dan `RB`, tidak ada lagi baris auto-SUM di bawah data Amount
-dan empat kolom fee. Sebagai gantinya, blok **TOTAL AUTO SUM (AMOUNT)** di
-sisi kanan sheet menampilkan jumlah Amount untuk SUCCESS, FAILED, dan total
-seluruh transaksi (termasuk For tomorrow). Ringkasan status mengikuti
-transaksi setelah pengurutan; kolom Amount/Fee per baris tetap tidak berubah.
+Pada sheet `LB` dan `RB`, baris total ditempatkan langsung setelah kelompok
+`SUCCESS` dan setelah kelompok `FAILED`, sejajar dengan kolom angka pada
+contoh recon. Tiga baris kosong memisahkan total SUCCESS dari transaksi
+FAILED. Amount dan empat kolom fee dijumlahkan masing-masing untuk statusnya;
+transaksi For tomorrow juga ikut dihitung. Baris total mengikuti contoh:
+kolom pertama menunjukkan Amount + Margin Biller, kemudian Amount, Total Fee,
+Customer Fee, LST Fee, dan Margin Biller. Nilai transaksi per baris tidak
+berubah.
 
 Pada sheet `LB` dan `RB`, transaksi otomatis diurutkan: semua `SUCCESS` tampil
 lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Dalam setiap
-kelompok status, tanggal/waktu diurutkan dari yang paling awal. Baris total
-tidak ditambahkan di bawah tabel. Blok **TOTAL AUTO SUM (AMOUNT)** di sisi
-kanan sheet menampilkan jumlah Amount `SUCCESS`, `FAILED`, dan seluruh
-transaksi. Ringkasan ini mencakup Current Day dan For tomorrow. Baris kedua
-tetap menampilkan jumlah transaksi `SUCCESS` dan `FAILED` untuk tabel Current
-Day; dropdown filter di header `Transaction Status` atau `Recon Result` dapat
-digunakan untuk pemeriksaan lebih lanjut. Warna hijau untuk `SUCCESS` dan
-merah untuk `FAILED` hanya diterapkan pada nilai di kolom `Transaction Status`
-pada blok recon Current Day dan For tomorrow; kolom status mentah sumber serta
-sel lain tidak diberi warna.
+kelompok status, tanggal/waktu diurutkan dari yang paling awal. Total SUCCESS
+dan FAILED muncul setelah masing-masing kelompok, dengan tiga baris kosong
+sebagai jarak setelah total SUCCESS. Baris kedua tetap menampilkan jumlah
+transaksi `SUCCESS` dan `FAILED` untuk tabel Current Day; dropdown filter di
+header `Transaction Status` atau `Recon Result` dapat digunakan untuk
+pemeriksaan lebih lanjut. Warna hijau untuk `SUCCESS` dan merah untuk
+`FAILED` hanya diterapkan pada nilai di kolom `Transaction Status` pada blok
+recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
+tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
 membatasi jumlah hari. Transaksi pukul 23:00–23:59 tidak ditampilkan di tabel
 recon dan blok data sumber **Current Day**. Transaksi tersebut ditampilkan pada
 bagian recon dan data sumber **For tomorrow because different time**.
 Jadi yang dipindahkan adalah tampilannya di tabel recon, bukan penghapusan
-transaksi dari data sumber. Ringkasan Amount di sisi kanan mencakup seluruh
-transaksi sumber, termasuk transaksi pada bagian For tomorrow.
+transaksi dari data sumber. Baris total per status mencakup seluruh transaksi
+sumber, termasuk transaksi pada bagian For tomorrow.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai

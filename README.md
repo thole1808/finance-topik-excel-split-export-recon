@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.1.12** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.1.13** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -40,6 +40,11 @@ sel lalu klik **Edit sel terpilih**, atau klik ganda sel untuk mengedit; Enter
 atau pindah sel menerapkan, Esc membatalkan. Perubahan valid ikut masuk ke
 export.
 
+Pada sheet LB/RB, subtotal Amount dan empat kolom fee muncul setelah kelompok
+SUCCESS dan FAILED. Ada tiga baris kosong setelah subtotal SUCCESS; transaksi
+For tomorrow juga ikut dijumlahkan. Tata letak mengikuti baris total pada file
+acuan.
+
 Untuk command line:
 
 ```bash
@@ -72,7 +77,7 @@ Build Windows dijalankan di runner Windows melalui GitHub Actions:
 
 - Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
   `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
-- Untuk installer rilis, push tag versi seperti `v1.1.12`. Workflow membuat
+- Untuk installer rilis, push tag versi seperti `v1.1.13`. Workflow membuat
   GitHub Release dengan `ReconBuilder-Setup.exe`.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
