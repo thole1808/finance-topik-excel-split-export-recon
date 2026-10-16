@@ -769,6 +769,12 @@ def _write_wide_sheet(
             _as_datetime(row.get("tanggal")) or dt.datetime.min,
         ),
     )
+    tomorrow_rows = [
+        record for record in rows if _is_tomorrow_transaction(record)
+    ]
+    current_day_rows = [
+        record for record in rows if not _is_tomorrow_transaction(record)
+    ]
     title_columns = (
         (1, "Current Day from bo biller recon"),
         (21 if sheet == "LB" else 19, "Current Day from bo biller apps"),
@@ -780,17 +786,18 @@ def _write_wide_sheet(
         3: {},
     }
     normalized_statuses = [
-        _transaction_status(row.get("status")) for row in rows
+        _transaction_status(row.get("status")) for row in current_day_rows
     ]
-    data_end_row = max(4, len(rows) + 3)
+    current_day_end_row = max(4, len(current_day_rows) + 3)
+    source_data_end_row = max(4, len(rows) + 3)
     formulas_by_row = {
         2: {
             2: (
-                f'=COUNTIF($L$4:$L${data_end_row},"SUCCESS")',
+                f'=COUNTIF($L$4:$L${current_day_end_row},"SUCCESS")',
                 normalized_statuses.count("SUCCESS"),
             ),
             4: (
-                f'=COUNTIF($L$4:$L${data_end_row},"FAILED")',
+                f'=COUNTIF($L$4:$L${current_day_end_row},"FAILED")',
                 normalized_statuses.count("FAILED"),
             ),
         }
@@ -807,26 +814,41 @@ def _write_wide_sheet(
         formulas_by_row=formulas_by_row,
     )
 
-    tomorrow_rows = [
-        record for record in rows if _is_tomorrow_transaction(record)
-    ]
+    source_row_by_id = {
+        id(record): index + 4 for index, record in enumerate(rows)
+    }
     tomorrow_start = 40 if sheet == "LB" else 50
     tomorrow_end = 72 if sheet == "LB" else 63
 
     for index in range(len(rows)):
         excel_row = index + 4
         record = rows[index]
-        values = values_function(record)
+        source_values = values_function(record)
+        current_day_record = (
+            current_day_rows[index] if index < len(current_day_rows) else None
+        )
+        current_day_values = (
+            values_function(current_day_record)
+            if current_day_record is not None else {}
+        )
+        current_day_source_row = (
+            source_row_by_id[id(current_day_record)]
+            if current_day_record is not None else None
+        )
         tomorrow_values = (
             values_function(tomorrow_rows[index])
             if index < len(tomorrow_rows) else {}
         )
         formulas: dict[int, tuple[str, Any]] = {}
-        if sheet == "LB":
+        if sheet == "LB" and current_day_record is not None:
             formula_row = excel_row
-            amount = _clean(record.get("tagihan"))
-            fees = _fees("lb", record, record.get("produk"), amount)
-            price = _clean(record.get("harga"))
+            source_formula_row = current_day_source_row
+            amount = _clean(current_day_record.get("tagihan"))
+            fees = _fees(
+                "lb", current_day_record,
+                current_day_record.get("produk"), amount,
+            )
+            price = _clean(current_day_record.get("harga"))
             margin = fees[3]
             p_value = (
                 (price - amount) - margin
@@ -843,49 +865,81 @@ def _write_wide_sheet(
                 else 0
             )
             formulas = {
-                16: (f"=(AG{formula_row}-AD{formula_row})-K{formula_row}", p_value),
-                17: (f"=(G{formula_row}+K{formula_row})-AG{formula_row}", q_value),
+                16: (
+                    f"=(AG{source_formula_row}-AD{source_formula_row})"
+                    f"-K{formula_row}",
+                    p_value,
+                ),
+                17: (
+                    f"=(G{source_formula_row}+K{formula_row})"
+                    f"-AG{source_formula_row}",
+                    q_value,
+                ),
                 18: (
-                    f'=OR(L{formula_row}="SUCCESS",AA{formula_row}="SUKSES")',
-                    _transaction_status(record.get("status")) == "SUCCESS",
+                    f'=OR(L{formula_row}="SUCCESS",'
+                    f'AA{source_formula_row}="SUKSES")',
+                    _transaction_status(current_day_record.get("status"))
+                    == "SUCCESS",
                 ),
             }
-            if index == 0:
+            if (
+                current_day_rows
+                and current_day_record is current_day_rows[0]
+            ):
                 formulas[19] = (
-                    f'=_xlfn._xlws.FILTER(Z4:Z{data_end_row},'
-                    f'Z4:Z{data_end_row}="N/A","Tidak ditemukan")',
+                    f'=_xlfn._xlws.FILTER(Z4:Z{source_data_end_row},'
+                    f'Z4:Z{source_data_end_row}="N/A","Tidak ditemukan")',
                     "Tidak ditemukan",
                 )
-        else:
+        elif sheet == "RB" and current_day_record is not None:
             row_number = excel_row
             formulas = {
                 16: (
-                    f'=OR(L{row_number}="SUCCESS",AC{row_number}="BERHASIL")',
-                    _transaction_status(record.get("status")) == "SUCCESS",
+                    f'=OR(L{row_number}="SUCCESS",'
+                    f'AC{current_day_source_row}="BERHASIL")',
+                    _transaction_status(current_day_record.get("status"))
+                    == "SUCCESS",
                 ),
             }
 
         for column in range(1, max_column + 1):
-            is_tomorrow_column = tomorrow_start <= column <= tomorrow_end
-            value = (
-                tomorrow_values.get(column)
-                if is_tomorrow_column
-                else values.get(column)
-            )
             status_columns = (
                 {12, 27, 51, 62} if sheet == "LB"
                 else {12, 29, 45, 61}
             )
-            status_row = (
-                tomorrow_rows[index]
-                if is_tomorrow_column and index < len(tomorrow_rows)
-                else record
+            if sheet == "LB":
+                is_main_column = 1 <= column <= 19
+                is_source_column = 21 <= column <= 37
+            else:
+                is_main_column = 1 <= column <= 16
+                is_source_column = 18 <= column <= 30 or 34 <= column <= 46
+            is_tomorrow_column = tomorrow_start <= column <= tomorrow_end
+            is_tomorrow_source_column = (
+                sheet == "LB" and 56 <= column <= 72
             )
+            if is_main_column:
+                value = current_day_values.get(column)
+                status_row = current_day_record
+                has_status_row = status_row is not None
+            elif is_tomorrow_column or is_tomorrow_source_column:
+                value = tomorrow_values.get(column)
+                tomorrow_record = (
+                    tomorrow_rows[index]
+                    if index < len(tomorrow_rows) else None
+                )
+                status_row = tomorrow_record
+                has_status_row = status_row is not None
+            elif is_source_column:
+                value = source_values.get(column)
+                status_row = record
+                has_status_row = True
+            else:
+                value = None
+                status_row = None
+                has_status_row = False
             row_highlight = (
                 _status_highlight(status_row.get("status"))
-                if column in status_columns and (
-                    not is_tomorrow_column or index < len(tomorrow_rows)
-                )
+                if column in status_columns and has_status_row
                 else None
             )
             formula_data = formulas.get(column)
@@ -944,7 +998,9 @@ def _write_wide_sheet(
             cached_value=formula_data[1] if formula_data else None,
             format_cache=format_cache,
         )
-    worksheet.autofilter(2, 0, max(2, len(rows) + 2), 13)
+    worksheet.autofilter(
+        2, 0, max(2, len(current_day_rows) + 2), 13
+    )
 
 
 def build_recon_workbook(

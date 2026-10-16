@@ -84,16 +84,18 @@ Pada sheet `LB` dan `RB`, transaksi otomatis diurutkan: semua `SUCCESS` tampil
 lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Dalam setiap
 kelompok status, tanggal/waktu diurutkan dari yang paling awal. Baris total
 diletakkan setelah seluruh transaksi dan menjumlahkan semua status. Baris kedua
-tetap menampilkan jumlah `SUCCESS` dan `FAILED`; dropdown filter di header
-`Transaction Status` atau `Recon Result` dapat digunakan untuk pemeriksaan
-lebih lanjut. Warna hijau untuk `SUCCESS` dan merah untuk `FAILED` hanya
-diterapkan pada sel status, bukan seluruh baris.
+menampilkan jumlah `SUCCESS` dan `FAILED` untuk tabel Current Day; dropdown
+filter di header `Transaction Status` atau `Recon Result` dapat digunakan
+untuk pemeriksaan lebih lanjut. Warna hijau untuk `SUCCESS` dan merah untuk
+`FAILED` hanya diterapkan pada sel status, bukan seluruh baris.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
-membatasi jumlah hari. Transaksi pukul 23:00–23:59 tetap tercatat di bagian
-utama/current day sesuai tanggal sumbernya dan juga disalin ke bagian **For
-tomorrow because different time**. Bagian For tomorrow adalah salinan, bukan
-pemindahan atau penghapusan dari data utama.
+membatasi jumlah hari. Transaksi pukul 23:00–23:59 tidak ditampilkan di tabel
+recon **Current Day**. Transaksi tersebut tetap ada pada blok data sumber
+upload dan ditampilkan pada bagian **For tomorrow because different time**.
+Jadi yang dipindahkan adalah tampilannya di tabel recon, bukan penghapusan
+transaksi dari data sumber. Baris total di bagian bawah tetap mencakup seluruh
+transaksi sumber, termasuk transaksi pada bagian For tomorrow.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
@@ -101,9 +103,8 @@ waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai
 timestamp tetap menyertakan jam, menit, dan detik.
 
 Bagian **For tomorrow because different time** pada sheet `LB`/`RB` menampilkan
-salinan transaksi dari tanggal mana pun yang waktunya **23:00:00 atau lebih**.
-Data sebelum pukul 23.00, termasuk pukul 00.00, tidak dimasukkan ke bagian
-tersebut.
+transaksi dari tanggal mana pun yang waktunya **23:00:00 atau lebih**. Data
+sebelum pukul 23.00, termasuk pukul 00.00, tidak dimasukkan ke bagian tersebut.
 
 File recon referensi hanya dibaca untuk memuat dan meninjau sheet `Summary`
 serta `Records`. Isinya tidak menggantikan hasil; sheet `Summary` dan `Records`

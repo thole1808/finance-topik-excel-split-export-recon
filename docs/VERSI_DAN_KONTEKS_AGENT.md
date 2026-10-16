@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.1.7**
+**Versi saat ini: 1.1.8**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -74,13 +74,21 @@ memodifikasi kode:
 
 ## Perbaikan versi 1.1.7
 
-- Pukul 23:00–23:59 tetap dipertahankan pada data utama dan disalin ke bagian
-  `For tomorrow`; data tidak dipindahkan keluar dari current day.
+- Pukul 23:00–23:59 disembunyikan dari tabel recon Current Day dan ditampilkan
+  di bagian `For tomorrow`; baris asli tetap ada di blok data sumber LB/RB.
 - Semua tanggal dalam file LB/RB diproses, diurutkan kronologis di dalam
   kelompok SUCCESS/FAILED, dan tidak ada lagi batas tetap 50.000 baris pada
   formula pencarian refund.
 - Warna hijau/merah dibatasi ke sel `Transaction Status` SUCCESS/FAILED saja;
   sel lain dan seluruh baris tidak diberi warna status.
+
+## Perbaikan versi 1.1.8
+
+- Memastikan transaksi pukul 23:00–23:59 tidak muncul pada tabel recon
+  `Current Day`; transaksi tersebut hanya muncul pada data sumber dan tabel
+  `For tomorrow`.
+- Menjaga referensi formula Current Day tetap menunjuk ke baris data sumber
+  yang tepat setelah baris terlambat dipisahkan.
 
 ## Gambar yang tersedia
 
@@ -98,6 +106,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.1.8 | Pindahkan transaksi 23:00–23:59 dari tampilan Current Day ke For tomorrow tanpa menghapus data sumber. |
 | 1.1.7 | Pertahankan transaksi jam 23 di data utama, dukung semua tanggal otomatis, dan warnai sel status saja. |
 | 1.1.6 | Mengurutkan SUCCESS di atas FAILED dan memberi warna hijau/merah pada baris transaksi. |
 | 1.1.5 | Mengurutkan transaksi SUCCESS di atas FAILED pada sheet LB/RB. |
@@ -112,7 +121,7 @@ Finance. Gambar ini bukan screenshot interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.7`). Tag
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.8`). Tag
   menjalankan Windows build dan menerbitkan installer ke GitHub Release.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions.
