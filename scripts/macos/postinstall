@@ -3,29 +3,46 @@ set -u
 
 APP_PATH="/Applications/Recon Builder.app"
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+LOG_FILE="/var/log/recon-builder-installer.log"
+log() { /usr/bin/logger -t ReconBuilderInstaller "$*"; printf '%s %s\n' "$(/bin/date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG_FILE"; }
+
+if [[ ! -d "$APP_PATH/Contents" || ! -x "$APP_PATH/Contents/MacOS/Recon Builder" ]]; then
+    log "ERROR app bundle missing or executable at expected path: $APP_PATH"
+    exit 0
+fi
+
 CONSOLE_USER="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null || true)"
 CONSOLE_UID="$(/usr/bin/stat -f%u /dev/console 2>/dev/null || true)"
+USER_HOME=""
+if [[ -n "$CONSOLE_USER" && "$CONSOLE_USER" != "root" && "$CONSOLE_USER" != "loginwindow" && "$CONSOLE_UID" != "0" ]]; then
+    USER_HOME="$(/usr/bin/dscl . -read "/Users/$CONSOLE_USER" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
+fi
 
-if [[ -d "$APP_PATH" ]]; then
+if [[ -n "$USER_HOME" ]]; then
+    DESKTOP="$USER_HOME/Desktop"
+    DESKTOP_APP="$DESKTOP/Recon Builder.app"
+    /bin/mkdir -p "$DESKTOP"
+    if [[ ! -e "$DESKTOP_APP" || -L "$DESKTOP_APP" ]]; then
+        /bin/ln -sfn "$APP_PATH" "$DESKTOP_APP"
+        /usr/sbin/chown -h "$CONSOLE_USER" "$DESKTOP_APP" 2>/dev/null || true
+        log "Desktop shortcut created for $CONSOLE_USER"
+    else
+        log "Desktop item already exists; left it unchanged: $DESKTOP_APP"
+    fi
+fi
+
+if [[ -x "$LSREGISTER" ]]; then
     if [[ -n "$CONSOLE_UID" && "$CONSOLE_UID" != "0" ]]; then
-        USER_HOME="$(/usr/bin/dscl . -read "/Users/$CONSOLE_USER" NFSHomeDirectory 2>/dev/null | /usr/bin/awk '{print $2}')"
-        if [[ -n "$USER_HOME" ]]; then
-            DESKTOP_APP="$USER_HOME/Desktop/Recon Builder.app"
-            /bin/mkdir -p "$USER_HOME/Desktop"
-            if [[ ! -e "$DESKTOP_APP" || -L "$DESKTOP_APP" ]]; then
-                /bin/ln -sfn "$APP_PATH" "$DESKTOP_APP"
-                /usr/sbin/chown -h "$CONSOLE_USER" "$DESKTOP_APP" 2>/dev/null || true
-            fi
-        fi
-        if [[ -x "$LSREGISTER" ]]; then
-            /bin/launchctl asuser "$CONSOLE_UID" "$LSREGISTER" -f "$APP_PATH" \
-                >/dev/null 2>&1 || "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
-        fi
-        /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/killall Dock \
-            >/dev/null 2>&1 || true
-    elif [[ -x "$LSREGISTER" ]]; then
+        /bin/launchctl asuser "$CONSOLE_UID" "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
+    else
         "$LSREGISTER" -f "$APP_PATH" >/dev/null 2>&1 || true
     fi
 fi
 
+if [[ -n "$CONSOLE_UID" && "$CONSOLE_UID" != "0" ]]; then
+    /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/open -R "$APP_PATH" >/dev/null 2>&1 || true
+    /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/killall Dock >/dev/null 2>&1 || true
+fi
+
+log "Installed Recon Builder at $APP_PATH"
 exit 0

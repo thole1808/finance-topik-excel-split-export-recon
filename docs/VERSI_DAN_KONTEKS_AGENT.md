@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.10**
+**Versi saat ini: 1.2.11**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -170,6 +170,14 @@ pengguna meminta penerbitan release.
   mendaftarkan Launch Services, dan menyegarkan Dock.
 - Updater macOS menerima DMG yang berisi PKG: setelah verifikasi checksum dan
   persetujuan admin, memasang PKG lalu membuka lagi app terpasang.
+
+## Implementasi 1.2.11 — nama bundle Mac dan visibilitas pasca-instal
+
+- Bundle macOS kini dibangun langsung sebagai `Recon Builder.app` dengan nama
+  executable dan nama yang tampil konsisten.
+- Postinstall mencatat hasil pemasangan, mendaftarkan app, membuat shortcut
+  Desktop untuk pengguna aktif, lalu membuka Finder dengan app di-highlight
+  pada `/Applications` agar lokasi pemasangan terlihat setelah installer selesai.
 
 ## Serah-terima sesi — 16 Oktober 2026
 
@@ -490,6 +498,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.11 | Nama bundle dan executable Mac konsisten; postinstall mencatat hasil dan menampilkan app di `/Applications` setelah pemasangan. |
 | 1.2.10 | PKG menyalin app eksplisit ke Applications, membuat shortcut Desktop dan mendaftarkan Launchpad; updater memasang PKG. |
 | 1.2.9 | Mendaftarkan app Mac ke Launchpad; tab File Hasil, penyimpanan default lokal aplikasi, dan simpan salinan. |
 | 1.2.8 | Watermark menggunakan pola batik floral Indonesia transparan. |

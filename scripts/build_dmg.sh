@@ -32,12 +32,12 @@ mkdir -p dist
 APP_VERSION="$($PYTHON -c "from src.version import __version__; print(__version__)")"
 BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 BUILD_DIR="$PROJECT_ROOT/build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
-APP_BUNDLE="$BUILD_DIR/ReconBuilder.app"
+APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
 "$PYTHON" -m PyInstaller \
     --clean \
     --noconfirm \
     --windowed \
-    --name "ReconBuilder" \
+    --name "Recon Builder" \
     --icon "$PROJECT_ROOT/assets/recon-builder.icns" \
     --collect-all fastexcel \
     --hidden-import fastexcel \
