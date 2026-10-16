@@ -96,9 +96,10 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 - Branch `main` sudah dipush ke repo pengguna:
   [finance-topik-excel-split-export-recon](https://github.com/thole1808/finance-topik-excel-split-export-recon).
-- Commit remote terakhir adalah `ce17a8c` (`Add Backdate and End Date workbook
-  merge`) dengan tag `v1.1.15`. Versi 1.1.16 berurutan setelahnya; perbaikan
-  source, dokumentasi, dan DMG sedang disiapkan untuk dipush dan ditag.
+- Commit `986b79c` (`Keep Backdate values visible in LB output`) sudah dipush
+  ke `main` dan diberi tag `v1.1.16`, berurutan setelah `v1.1.15`.
+- GitHub Actions sedang membangun installer Windows dan menerbitkan release
+  `v1.1.16`: [workflow run](https://github.com/thole1808/finance-topik-excel-split-export-recon/actions/runs/38895445409).
 - DMG 1.1.16 sudah dibangun di `dist/ReconBuilder.dmg` dan disalin ke root
   `ReconBuilder.dmg`. Versi bundle, signature, checksum, dan kesamaan kedua
   salinan sudah diverifikasi.
