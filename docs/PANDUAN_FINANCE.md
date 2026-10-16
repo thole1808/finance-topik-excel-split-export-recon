@@ -85,7 +85,8 @@ lebih dahulu, diikuti semua `FAILED`, lalu status lain bila ada. Baris total
 diletakkan setelah seluruh transaksi dan menjumlahkan semua status. Baris kedua
 tetap menampilkan jumlah `SUCCESS` dan `FAILED`; dropdown filter di header
 `Transaction Status` atau `Recon Result` dapat digunakan untuk pemeriksaan
-lebih lanjut.
+lebih lanjut. Baris `SUCCESS` diberi latar hijau, sedangkan baris `FAILED`
+diberi latar merah pada `Records` dan blok transaksi LB/RB.
 
 Kolom `Datetime` pada `Records`, `LB`, dan `RB` disimpan sebagai nilai tanggal/
 waktu Excel, bukan teks. Untuk mengambil transaksi hari ini pukul 23.00 sampai

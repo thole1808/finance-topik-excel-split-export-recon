@@ -163,6 +163,22 @@ def _transaction_status_sort_key(row: Mapping[str, Any]) -> int:
     return {"SUCCESS": 0, "FAILED": 1}.get(status, 2)
 
 
+def _status_highlight(status: Any) -> dict[str, Any] | None:
+    normalized = _transaction_status(status)
+    colors = {
+        "SUCCESS": ("#C6EFCE", "#006100"),
+        "FAILED": ("#FFC7CE", "#9C0006"),
+    }
+    color = colors.get(normalized)
+    if color is None:
+        return None
+    return {
+        "bg_color": color[0],
+        "font_color": color[1],
+        "pattern": 1,
+    }
+
+
 def _status_text(value: Any) -> str:
     cleaned = _clean(value)
     return str(cleaned).strip().upper() if cleaned is not None else ""
@@ -328,7 +344,12 @@ def _records(
             "recon_result": _recon_result(row.get("status")),
         })
     result.sort(
-        key=lambda item: _as_datetime(item["datetime"]) or dt.datetime.min
+        key=lambda item: (
+            _transaction_status_sort_key(
+                {"status": item["transaction_status"]}
+            ),
+            _as_datetime(item["datetime"]) or dt.datetime.min,
+        )
     )
     return result
 
@@ -865,6 +886,23 @@ def _write_wide_sheet(
                 if is_tomorrow_column
                 else values.get(column)
             )
+            is_data_column = (
+                (1 <= column <= 19 or 21 <= column <= 37 or 40 <= column <= 72)
+                if sheet == "LB"
+                else (1 <= column <= 30 or 34 <= column <= 46 or 50 <= column <= 63)
+            )
+            status_row = (
+                tomorrow_rows[index]
+                if is_tomorrow_column and index < len(tomorrow_rows)
+                else record
+            )
+            row_highlight = (
+                _status_highlight(status_row.get("status"))
+                if is_data_column and (
+                    not is_tomorrow_column or index < len(tomorrow_rows)
+                )
+                else None
+            )
             formula_data = formulas.get(column)
             date_columns = (
                 {1, 21, 40, 56} if sheet == "LB"
@@ -887,6 +925,7 @@ def _write_wide_sheet(
                 format_cache=format_cache,
                 format_overrides={
                     **(cell_overrides or {}),
+                    **(row_highlight or {}),
                     **(_semantic_highlight(
                         sheet, column,
                         formula_data[1] if formula_data else value,
@@ -974,18 +1013,18 @@ def build_recon_workbook(
             "vendor_ref", "amount", "total_fee", "customer_fee", "lst_fee",
             "margin_biller", "transaction_status", "vendor", "recon_result",
         ), start=1):
-            format_overrides = _semantic_highlight(
-                "Records", column, record.get(key)
+            format_overrides = _status_highlight(
+                record.get("transaction_status")
+            ) or {}
+            format_overrides.update(
+                _semantic_highlight("Records", column, record.get(key)) or {}
             )
             if column == 1:
-                format_overrides = {
-                    **(format_overrides or {}),
-                    "num_format": DATETIME_NUMBER_FORMAT,
-                }
+                format_overrides["num_format"] = DATETIME_NUMBER_FORMAT
             _write_cell(
                 ws_records, workbook, "Records", index, column, 2,
                 record.get(key), format_cache=format_cache,
-                format_overrides=format_overrides,
+                format_overrides=format_overrides or None,
             )
     ws_records.autofilter(0, 0, len(records), len(RECORDS_HEADERS) - 1)
 
