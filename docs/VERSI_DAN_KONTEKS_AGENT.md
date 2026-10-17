@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.35**
+**Versi saat ini: 1.2.36**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -550,6 +550,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.36 | Sinkronkan juga Customer Fee, LST Fee, dan Margin Biller (nilai uang) dari Sheet Records final ke sheet LB/RB output; `_lb_values`/`_rb_values` prioritas nilai sinkron, fallback hitung ulang. Ref/Vendor Ref tetap 6 level pencocokan. |
 | 1.2.35 | Perkuat normalisasi billing_number (hapus non-digit) dan tambah level 6 fuzzy BN (beda 1-2 digit) agar sisa baris LB/RB tersinkron dengan Ref dari Records final. |
 | 1.2.34 | Tambah level 5 pencocokan same-day fallback (pilih amount terdekat di tanggal yang sama) agar sisa baris LB/RB yang BN-nya tidak ada di Records tetap tersinkron dengan Ref dari Records. |
 | 1.2.33 | Tambah level 4 pencocokan datetime-only (jika unik) untuk sinkronisasi Ref/Vendor Ref di sheet LB/RB; 4 level total (BN → datetime+amount → amount-only → datetime-only). |

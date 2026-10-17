@@ -735,7 +735,12 @@ def _to_rows(frame: pl.DataFrame) -> list[dict[str, Any]]:
 
 
 def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
-    fees = _fees("lb", row, row.get("produk"), row.get("tagihan"))
+    fees = (
+        row.get("_sync_total_fee"), row.get("_sync_customer_fee"),
+        row.get("_sync_lst_fee"), row.get("_sync_margin"),
+    )
+    if not any(value is not None for value in fees):
+        fees = _fees("lb", row, row.get("produk"), row.get("tagihan"))
     date_value = _datetime_value(row.get("tanggal"))
     status = _transaction_status(row.get("status"))
     result = _recon_result(row.get("status"))
@@ -775,7 +780,12 @@ def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
 
 
 def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
-    fees = _fees("rb", row, row.get("kode_produk"), row.get("nominal"))
+    fees = (
+        row.get("_sync_total_fee"), row.get("_sync_customer_fee"),
+        row.get("_sync_lst_fee"), row.get("_sync_margin"),
+    )
+    if not any(value is not None for value in fees):
+        fees = _fees("rb", row, row.get("kode_produk"), row.get("nominal"))
     date_value = _datetime_value(row.get("tanggal"))
     status = _transaction_status(row.get("status"))
     result = _recon_result(row.get("status"))
@@ -1331,7 +1341,7 @@ def build_recon_workbook(
         return dv.strftime("%Y-%m-%d %H:%M:%S") if dv else ""
 
     from collections import defaultdict
-    records_by_bn: dict[str, list[tuple[float, Any, Any]]] = defaultdict(list)
+    records_by_bn: dict[str, list[tuple]] = defaultdict(list)
     records_by_dt_amt: dict[tuple, list[tuple[Any, Any]]] = defaultdict(list)
     records_by_amt: dict[float, list[tuple[Any, Any]]] = defaultdict(list)
     records_by_dt: dict[str, list[tuple[Any, Any]]] = defaultdict(list)
@@ -1341,18 +1351,26 @@ def build_recon_workbook(
         dt_str = _norm_dt(record.get("datetime"))
         ref = record.get("ref")
         vref = record.get("vendor_ref")
+        total_fee = _clean(record.get("total_fee"))
+        cust_fee = _clean(record.get("customer_fee"))
+        lst_fee = _clean(record.get("lst_fee"))
+        margin = _clean(record.get("margin_biller"))
+        fee_tuple = (
+            total_fee, cust_fee, lst_fee, margin, ref, vref,
+        )
         if bn:
-            records_by_bn[bn].append((amt if amt is not None else -1.0, ref, vref))
+            records_by_bn[bn].append((amt if amt is not None else -1.0, *fee_tuple))
         if dt_str and amt is not None:
-            records_by_dt_amt[(dt_str, amt)].append((ref, vref))
+            records_by_dt_amt[(dt_str, amt)].append(fee_tuple)
         if amt is not None:
-            records_by_amt[amt].append((ref, vref))
+            records_by_amt[amt].append(fee_tuple)
         if dt_str:
-            records_by_dt[dt_str].append((ref, vref))
+            records_by_dt[dt_str].append(fee_tuple)
 
-    def _lookup_ref(
+    def _lookup_full(
         bn_val: Any, amt_val: Any, dt_val: Any
-    ) -> tuple[Any, Any] | None:
+    ) -> tuple[Any, Any, Any, Any, Any, Any] | None:
+        """Return (total_fee, customer_fee, lst_fee, margin, ref, vendor_ref)."""
         # Level 1: billing_number
         bn = _norm_bn(bn_val)
         amt = _norm_amt(amt_val)
@@ -1360,14 +1378,12 @@ def build_recon_workbook(
         if bn and bn in records_by_bn:
             candidates = records_by_bn[bn]
             if len(candidates) == 1:
-                _, ref, vref = candidates[0]
-                return (ref, vref)
+                _, ref, vref, *_rest = (None, *candidates[0])
+                return candidates[0][1:]
             if amt is not None:
                 best = min(candidates, key=lambda c: abs(c[0] - amt))
-                _, ref, vref = best
-                return (ref, vref)
-            _, ref, vref = candidates[0]
-            return (ref, vref)
+                return best[1:]
+            return candidates[0][1:]
         # Level 2: (datetime, amount)
         if dt_str and amt is not None:
             key = (dt_str, amt)
@@ -1435,28 +1451,33 @@ def build_recon_workbook(
             if best_bn is not None:
                 candidates = records_by_bn[best_bn]
                 if len(candidates) == 1:
-                    _, ref, vref = candidates[0]
-                    return (ref, vref)
+                    return candidates[0][1:]
                 if amt is not None:
                     best = min(candidates, key=lambda c: abs(c[0] - amt))
-                    _, ref, vref = best
-                    return (ref, vref)
-                _, ref, vref = candidates[0]
-                return (ref, vref)
+                    return best[1:]
+                return candidates[0][1:]
         return None
 
     for row in lb_rows:
-        found = _lookup_ref(
+        found = _lookup_full(
             row.get("idpel"), row.get("tagihan"), row.get("tanggal")
         )
         if found is not None:
-            row["ref"], row["ref_id"] = found
+            (
+                row["_sync_total_fee"], row["_sync_customer_fee"],
+                row["_sync_lst_fee"], row["_sync_margin"],
+                row["ref"], row["ref_id"],
+            ) = found
     for row in rb_rows:
-        found = _lookup_ref(
+        found = _lookup_full(
             row.get("pelanggan_1"), row.get("nominal"), row.get("tanggal")
         )
         if found is not None:
-            row["ref"], row["ref_id"] = found
+            (
+                row["_sync_total_fee"], row["_sync_customer_fee"],
+                row["_sync_lst_fee"], row["_sync_margin"],
+                row["ref"], row["ref_id"],
+            ) = found
 
     workbook = xlsxwriter.Workbook(
         str(output_path),
