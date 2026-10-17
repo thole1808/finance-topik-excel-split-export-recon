@@ -8,6 +8,7 @@ import os
 import platform
 import shlex
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -21,6 +22,34 @@ REPOSITORY = "thole1808/finance-topik-excel-split-export-recon"
 RELEASE_API = f"https://api.github.com/repos/{REPOSITORY}/releases/latest"
 USER_AGENT = "ReconBuilder-Updater"
 BUFFER_SIZE = 1024 * 1024
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """Return an SSL context that works in both frozen (PyInstaller) and source runs.
+
+    On macOS PyInstaller bundles, the default ssl context cannot find CA
+    certificates, causing CERTIFICATE_VERIFY_FAILED for all HTTPS requests.
+    We try certifi first (bundled by PyInstaller via --collect-all certifi),
+    then fall back to the system CA store.
+    """
+    # 1. Try certifi — covers Windows, Linux, and macOS PyInstaller bundles
+    try:
+        import certifi  # type: ignore[import-untyped]
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        pass
+
+    # 2. macOS: use the system keychain CA bundle directly
+    if platform.system() == "Darwin":
+        system_ca = "/etc/ssl/cert.pem"
+        if Path(system_ca).is_file():
+            try:
+                return ssl.create_default_context(cafile=system_ca)
+            except Exception:
+                pass
+
+    # 3. Fall back to Python default (works on most Linux/Windows installs)
+    return ssl.create_default_context()
 
 
 class UpdateError(RuntimeError):
@@ -55,7 +84,7 @@ def _open_url(url: str, timeout: int = 20):
         },
     )
     try:
-        response = urllib.request.urlopen(request, timeout=timeout)
+        response = urllib.request.urlopen(request, timeout=timeout, context=_ssl_context())
     except urllib.error.HTTPError:
         raise
     except (urllib.error.URLError, TimeoutError, OSError) as exc:

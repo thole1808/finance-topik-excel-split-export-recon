@@ -1635,6 +1635,7 @@ class ReconApp(tk.Tk):
             args=(
                 self._frames["LB"], self._frames["RB"], output,
                 backdate_path, started_at, backdate_frames,
+                self._frames.get("Recon Records"),
             ),
             daemon=True,
         ).start()
@@ -1643,6 +1644,7 @@ class ReconApp(tk.Tk):
         self, lb_frame: pl.DataFrame | None, rb_frame: pl.DataFrame | None,
         output: Path, backdate_path: Path | None, started_at: float,
         backdate_frames: dict[str, pl.DataFrame | None] | None,
+        recon_records_frame: pl.DataFrame | None,
     ) -> None:
         try:
             if lb_frame is None or rb_frame is None:
@@ -1665,6 +1667,7 @@ class ReconApp(tk.Tk):
                 backdate_lb_df=backdate_frames["LB"] if backdate_frames else None,
                 backdate_rb_df=backdate_frames["RB"] if backdate_frames else None,
                 backdate_recon_df=backdate_frames["RECON"] if backdate_frames else None,
+                recon_records_df=recon_records_frame,
                 progress_callback=self._terminal_from_worker,
             )
             self.after(0, self._export_finished, result, None, started_at)

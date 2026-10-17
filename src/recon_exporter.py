@@ -1204,6 +1204,37 @@ def _write_wide_sheet(
     )
 
 
+def _records_from_recon_sheet(
+    df: pl.DataFrame,
+) -> list[dict[str, Any]]:
+    """Convert a RECON/Records sheet DataFrame directly into records dicts.
+
+    Column names match RECORDS_HEADERS exactly:
+    Datetime, Product, Billing Number, Billing Name, Ref, Vendor Ref,
+    Amount, Total Fee, Customer Fee, LST Fee, Margin Biller,
+    Transaction Status, Vendor, Recon Result.
+    """
+    result: list[dict[str, Any]] = []
+    for row in df.iter_rows(named=True):
+        result.append({
+            "datetime": _datetime_value(row.get("Datetime")),
+            "product": _clean(row.get("Product")),
+            "billing_number": _clean(row.get("Billing Number")),
+            "billing_name": _clean(row.get("Billing Name")),
+            "ref": _clean(row.get("Ref")),
+            "vendor_ref": _clean(row.get("Vendor Ref")),
+            "amount": _clean(row.get("Amount")),
+            "total_fee": _clean(row.get("Total Fee")),
+            "customer_fee": _clean(row.get("Customer Fee")),
+            "lst_fee": _clean(row.get("LST Fee")),
+            "margin_biller": _clean(row.get("Margin Biller")),
+            "transaction_status": _transaction_status(row.get("Transaction Status")),
+            "vendor": _clean(row.get("Vendor")),
+            "recon_result": _clean(row.get("Recon Result")),
+        })
+    return result
+
+
 def build_recon_workbook(
     lb_df: pl.DataFrame,
     rb_df: pl.DataFrame,
@@ -1211,6 +1242,7 @@ def build_recon_workbook(
     backdate_lb_df: pl.DataFrame | None = None,
     backdate_rb_df: pl.DataFrame | None = None,
     backdate_recon_df: pl.DataFrame | None = None,
+    recon_records_df: pl.DataFrame | None = None,
     progress_callback: Callable[[str], None] | None = None,
 ) -> Path:
     """Write a recon workbook, optionally merging Backdate rows before End Date."""
@@ -1245,16 +1277,20 @@ def build_recon_workbook(
     if progress_callback:
         progress_callback("Menyusun daftar transaksi dan status.")
     if has_backdate:
-        backdate_records = _records(
-            _to_rows(backdate_lb_df), _to_rows(backdate_rb_df)
-        )
+        # Backdate Records: ambil langsung dari sheet RECON workbook Backdate
+        backdate_records = _records_from_recon_sheet(backdate_recon_df)
         backdate_records.sort(
             key=lambda record: (
                 _as_datetime(record["datetime"]) or dt.datetime.min
             )
         )
         records.extend(backdate_records)
-    records.extend(_records(_to_rows(lb_df), _to_rows(rb_df)))
+    # End Date Records: ambil dari sheet Records file recon referensi jika tersedia,
+    # jika tidak fallback ke kalkulasi dari LB/RB
+    if recon_records_df is not None and recon_records_df.height > 0:
+        records.extend(_records_from_recon_sheet(recon_records_df))
+    else:
+        records.extend(_records(_to_rows(lb_df), _to_rows(rb_df)))
     workbook = xlsxwriter.Workbook(
         str(output_path),
         {"constant_memory": True, "strings_to_formulas": False},
