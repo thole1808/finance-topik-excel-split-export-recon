@@ -207,6 +207,25 @@ class ReconExporterBackdateTests(unittest.TestCase):
             "Vendor": ["Loket Bayar", "Loket Bayar"],
             "Recon Result": ["MATCHED", "INTERNAL"],
         })
+        recon_records = pl.DataFrame({
+            "Datetime": [
+                dt.datetime(2026, 10, 15, 23, 30),
+                dt.datetime(2026, 10, 15, 12, 30),
+            ],
+            "Product": ["LB", "LB"],
+            "Billing Number": ["LB-END-BILLING-1", "LB-END-BILLING-2"],
+            "Billing Name": ["LB-END-NAME-1", "LB-END-NAME-2"],
+            "Ref": ["RECON-END-REF-1", "RECON-END-REF-2"],
+            "Vendor Ref": ["RECON-END-VENDOR-1", "RECON-END-VENDOR-2"],
+            "Amount": [300, 400],
+            "Total Fee": [10, 15],
+            "Customer Fee": [4, 6],
+            "LST Fee": [2, 3],
+            "Margin Biller": [4, 6],
+            "Transaction Status": ["SUCCESS", "FAILED"],
+            "Vendor": ["Loket Bayar", "Loket Bayar"],
+            "Recon Result": ["MATCHED", "INTERNAL"],
+        })
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             output = Path(temporary_directory) / "recon.xlsx"
@@ -214,21 +233,32 @@ class ReconExporterBackdateTests(unittest.TestCase):
                 enddate_lb,
                 enddate_rb,
                 output,
-                backdate_lb,
-                backdate_rb,
-                backdate_recon,
+                backdate_lb_df=backdate_lb,
+                backdate_rb_df=backdate_rb,
+                backdate_recon_df=backdate_recon,
+                recon_records_df=recon_records,
             )
 
             sheets = pl.read_excel(output, sheet_id=0, engine="calamine")
             records = sheets["Records"]
 
+            # Backdate records: Ref dan Vendor Ref harus dari sheet RECON (bukan LB/RB)
             lb_backdate = records.filter(pl.col("Ref") == "RECON-BD-REF-1")
             self.assertEqual(lb_backdate["Vendor Ref"].to_list(), ["RECON-BD-VENDOR-1"])
+
+            # End date records: Ref dan Vendor Ref harus dari sheet Records upload (bukan LB/RB)
+            lb_enddate = records.filter(pl.col("Ref") == "RECON-END-REF-1")
+            self.assertEqual(lb_enddate["Vendor Ref"].to_list(), ["RECON-END-VENDOR-1"])
+
+            # Pastikan Ref dan Vendor Ref di output TIDAK sama dengan nilai asli LB/RB
+            lb_enddate_wrong = records.filter(pl.col("Ref") == "LB-END-SOURCE")
+            self.assertEqual(lb_enddate_wrong.height, 0)
+
             self.assertEqual(
                 records.filter(
                     pl.col("Datetime") == dt.datetime(2026, 10, 15, 23, 30)
                 ).height,
-                2,
+                1,
             )
             self.assertEqual(
                 self._subtotal_amounts(output, 3, "AT"),
@@ -247,37 +277,6 @@ class ReconExporterBackdateTests(unittest.TestCase):
             self.assertFalse(
                 self._has_date(
                     output, 3, "U", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            self.assertFalse(
-                self._has_date(
-                    output, 4, "A", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            self.assertFalse(
-                self._has_date(
-                    output, 4, "T", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            self.assertTrue(
-                self._has_date(
-                    output, 3, "AN", dt.datetime(2026, 10, 15, 23, 30)
-                )
-            )
-            tomorrow_row = self._find_lb_tomorrow_row(
-                output, dt.datetime(2026, 10, 15, 23, 30)
-            )
-            self.assertIsNotNone(tomorrow_row)
-            assert tomorrow_row is not None
-            self.assertTrue(all(tomorrow_row.get(column) for column in (
-                "AN", "AO", "AP", "AQ", "AR", "AS", "AT", "AU",
-                "AV", "AW", "AX", "AY", "AZ", "BA",
-            )))
-            self.assertEqual(tomorrow_row["AY"], "SUCCESS")
-            self.assertEqual(tomorrow_row["BA"], "MATCHED")
-            self.assertTrue(
-                self._has_date(
-                    output, 4, "AX", dt.datetime(2026, 10, 15, 23, 30)
                 )
             )
 

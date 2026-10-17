@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.27**
+**Versi saat ini: 1.2.28**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -550,6 +550,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.28 | Ref dan Vendor Ref di sheet Records output diambil HANYA dari Sheet RECON (backdate) dan Sheet Records (upload recon); fallback ke LB/RB hanya jika kedua sumber tersebut TIDAK ADA sama sekali. |
 | 1.2.27 | Ref dan Vendor Ref di sheet Records output diambil dari Sheet RECON (backdate) dan Sheet Records (upload recon) sebagai prioritas utama; fallback ke LB/RB hanya jika keduanya tidak tersedia. |
 | 1.2.26 | Ref dan Vendor Ref di output diambil dari Sheet RECON (backdate) dan Sheet Records (upload recon), bukan dari LB/RB. Data RECON tidak diubah oleh aplikasi. |
 | 1.2.25 | Perlindungan Ref dan Vendor Ref dari BO BILLER: nilai di sheet RECON (backdate dan file uploads End Date) tidak diubah oleh aplikasi; dipertahankan asli dari sumber kode BO BILLER. |

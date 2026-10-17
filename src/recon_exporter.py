@@ -1281,24 +1281,15 @@ def build_recon_workbook(
             )
         )
         records.extend(backdate_records)
-    elif backdate_lb_df is not None or backdate_rb_df is not None:
-        # Fallback: jika sheet RECON tidak tersedia, ambil dari sumber LB/RB
-        backdate_lb_rows = [] if backdate_lb_df is None else _to_rows(backdate_lb_df)
-        backdate_rb_rows = [] if backdate_rb_df is None else _to_rows(backdate_rb_df)
-        backdate_records = _records(backdate_lb_rows, backdate_rb_rows)
-        backdate_records.sort(
-            key=lambda record: (
-                _as_datetime(record["datetime"]) or dt.datetime.min
-            )
-        )
-        records.extend(backdate_records)
 
     # End Date Records: dari sheet Records file recon referensi (kode asli BO BILLER).
     # Nilai Ref dan Vendor Ref dipertahankan asli, tidak dimodifikasi oleh aplikasi.
     if recon_records_df is not None and recon_records_df.height > 0:
         records.extend(_records_from_recon_sheet(recon_records_df))
-    else:
-        # Fallback: jika tidak ada file recon referensi, hitung dari LB/RB
+
+    # Fallback: hanya jika tidak ada backcast RECON dan tidak ada upload recon Records.
+    # Hanya dalam kasus ini ambil Ref dan Vendor Ref dari sumber LB/RB.
+    if not records:
         records.extend(_records(_to_rows(lb_df), _to_rows(rb_df)))
     workbook = xlsxwriter.Workbook(
         str(output_path),
