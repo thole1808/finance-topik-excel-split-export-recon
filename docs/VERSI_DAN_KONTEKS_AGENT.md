@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.32**
+**Versi saat ini: 1.2.33**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -550,6 +550,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.33 | Tambah level 4 pencocokan datetime-only (jika unik) untuk sinkronisasi Ref/Vendor Ref di sheet LB/RB; 4 level total (BN → datetime+amount → amount-only → datetime-only). |
 | 1.2.32 | Tambah fallback pencocokan (datetime, amount) dan amount-only untuk sinkronisasi Ref/Vendor Ref di sheet LB/RB; handle float/int billing_number. Memperbaiki 252 baris LB yang BN-nya tidak match di Records. |
 | 1.2.31 | Kunci pencocokan sinkronisasi Ref/Vendor Ref di sheet LB/RB diganti ke billing_number saja (dengan normalisasi leading zero); amount hanya tiebreaker jika ada duplikat. Memperbaiki amount mismatch (tagihan LB ≠ Amount Records) yang menyebabkan 799 baris LB tidak tersinkron. |
 | 1.2.30 | Kunci pencocokan sinkronisasi Ref/Vendor Ref di sheet LB/RB diganti dari (datetime, amount) ke (billing_number, amount) agar lebih unik dan stabil; semua baris LB/RB dijamin Ref-nya dari Sheet Records/RECON final. |

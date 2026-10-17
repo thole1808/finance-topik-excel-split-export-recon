@@ -1331,6 +1331,7 @@ def build_recon_workbook(
     records_by_bn: dict[str, list[tuple[float, Any, Any]]] = defaultdict(list)
     records_by_dt_amt: dict[tuple, list[tuple[Any, Any]]] = defaultdict(list)
     records_by_amt: dict[float, list[tuple[Any, Any]]] = defaultdict(list)
+    records_by_dt: dict[str, list[tuple[Any, Any]]] = defaultdict(list)
     for record in records:
         bn = _norm_bn(record.get("billing_number"))
         amt = _norm_amt(record.get("amount"))
@@ -1343,13 +1344,16 @@ def build_recon_workbook(
             records_by_dt_amt[(dt_str, amt)].append((ref, vref))
         if amt is not None:
             records_by_amt[amt].append((ref, vref))
+        if dt_str:
+            records_by_dt[dt_str].append((ref, vref))
 
     def _lookup_ref(
         bn_val: Any, amt_val: Any, dt_val: Any
     ) -> tuple[Any, Any] | None:
-        # 1. Primary: billing_number
+        # Level 1: billing_number
         bn = _norm_bn(bn_val)
         amt = _norm_amt(amt_val)
+        dt_str = _norm_dt(dt_val)
         if bn and bn in records_by_bn:
             candidates = records_by_bn[bn]
             if len(candidates) == 1:
@@ -1361,20 +1365,23 @@ def build_recon_workbook(
                 return (ref, vref)
             _, ref, vref = candidates[0]
             return (ref, vref)
-        # 2. Fallback: (datetime, amount)
-        dt_str = _norm_dt(dt_val)
+        # Level 2: (datetime, amount)
         if dt_str and amt is not None:
             key = (dt_str, amt)
             if key in records_by_dt_amt:
                 candidates = records_by_dt_amt[key]
                 if len(candidates) == 1:
                     return candidates[0]
-                # Multiple: prefer one that also matches BN if possible
                 for cand in candidates:
                     return cand
-        # 3. Last resort: amount-only, only if unique
+        # Level 3: amount-only, hanya jika unik
         if amt is not None and amt in records_by_amt:
             candidates = records_by_amt[amt]
+            if len(candidates) == 1:
+                return candidates[0]
+        # Level 4: datetime-only, hanya jika unik
+        if dt_str and dt_str in records_by_dt:
+            candidates = records_by_dt[dt_str]
             if len(candidates) == 1:
                 return candidates[0]
         return None
