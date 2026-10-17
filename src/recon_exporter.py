@@ -597,11 +597,11 @@ def _write_summary(
                 f'=COUNTIF({recon_range},"MATCHED")+'
                 f'COUNTIF({recon_range},"INTERNAL")'
             )
+            # Jumlah hanya kolom Amount (G), tanpa Total Fee (H),
+            # agar cocok dengan recon manual.
             amount_formula = (
                 f'=SUMIF({recon_range},"MATCHED",{amount_range})+'
-                f'SUMIF({recon_range},"INTERNAL",{amount_range})+'
-                f'SUMIF({recon_range},"MATCHED",{fee_range})+'
-                f'SUMIF({recon_range},"INTERNAL",{fee_range})'
+                f'SUMIF({recon_range},"INTERNAL",{amount_range})'
             )
             recon = {"MATCHED", "INTERNAL"}
         elif category == "Rajabiller Transactions":
@@ -652,41 +652,36 @@ def _write_summary(
                 )
                 count_formula = f"={count_formula}"
 
+            # amount_formula hanya jumlah kolom Amount (G), tanpa fee (H).
             if vendor:
-                amount_formula = "+".join(
+                amount_formula = "=" + "+".join(
                     f'SUMIFS({amount_range},{recon_range},"{result}",'
-                    f'{vendor_range},"{vendor}")+'
-                    f'SUMIFS({fee_range},{recon_range},"{result}",'
                     f'{vendor_range},"{vendor}")'
                     for result in sorted(recon or ())
                 )
-                amount_formula = f"={amount_formula}"
             elif len(recon or ()) == 1:
                 result = next(iter(recon or ()))
                 amount_formula = (
-                    f'=SUMIF({recon_range},"{result}",{amount_range})+'
-                    f'SUMIF({recon_range},"{result}",{fee_range})'
+                    f'=SUMIF({recon_range},"{result}",{amount_range})'
                 )
             else:
-                amount_formula = "+".join(
-                    f'SUMIF({recon_range},"{result}",{amount_range})+'
-                    f'SUMIF({recon_range},"{result}",{fee_range})'
+                amount_formula = "=" + "+".join(
+                    f'SUMIF({recon_range},"{result}",{amount_range})'
                     for result in sorted(recon or ())
                 )
-                amount_formula = f"={amount_formula}"
 
         cached_count = len(cached_records)
         cached_amount = sum(
-            float(item["amount"] or 0) + float(item["total_fee"] or 0)
+            float(item["amount"] or 0)
             for item in cached_records
         )
         success_amount = sum(
-            float(item["amount"] or 0) + float(item["total_fee"] or 0)
+            float(item["amount"] or 0)
             for item in cached_records
             if item["transaction_status"] == "SUCCESS"
         )
         failed_amount = sum(
-            float(item["amount"] or 0) + float(item["total_fee"] or 0)
+            float(item["amount"] or 0)
             for item in cached_records
             if item["transaction_status"] == "FAILED"
         )
@@ -694,17 +689,11 @@ def _write_summary(
             success_formula = (
                 f'=SUMIFS({amount_range},{recon_range},"MATCHED",'
                 f'{status_range},"SUCCESS")+SUMIFS({amount_range},'
-                f'{recon_range},"INTERNAL",{status_range},"SUCCESS")+'
-                f'SUMIFS({fee_range},{recon_range},"MATCHED",'
-                f'{status_range},"SUCCESS")+SUMIFS({fee_range},'
                 f'{recon_range},"INTERNAL",{status_range},"SUCCESS")'
             )
             failed_formula = (
                 f'=SUMIFS({amount_range},{recon_range},"MATCHED",'
                 f'{status_range},"FAILED")+SUMIFS({amount_range},'
-                f'{recon_range},"INTERNAL",{status_range},"FAILED")+'
-                f'SUMIFS({fee_range},{recon_range},"MATCHED",'
-                f'{status_range},"FAILED")+SUMIFS({fee_range},'
                 f'{recon_range},"INTERNAL",{status_range},"FAILED")'
             )
         else:
@@ -713,18 +702,14 @@ def _write_summary(
             success_terms: list[str] = []
             failed_terms: list[str] = []
             for result in recon_criteria:
-                success_terms.extend((
+                success_terms.append(
                     f'SUMIFS({amount_range},{recon_range},"{result}",'
-                    f'{status_range},"SUCCESS"{vendor_criteria})',
-                    f'SUMIFS({fee_range},{recon_range},"{result}",'
-                    f'{status_range},"SUCCESS"{vendor_criteria})',
-                ))
-                failed_terms.extend((
+                    f'{status_range},"SUCCESS"{vendor_criteria})'
+                )
+                failed_terms.append(
                     f'SUMIFS({amount_range},{recon_range},"{result}",'
-                    f'{status_range},"FAILED"{vendor_criteria})',
-                    f'SUMIFS({fee_range},{recon_range},"{result}",'
-                    f'{status_range},"FAILED"{vendor_criteria})',
-                ))
+                    f'{status_range},"FAILED"{vendor_criteria})'
+                )
             success_formula = "=" + "+".join(success_terms)
             failed_formula = "=" + "+".join(failed_terms)
 
@@ -1277,8 +1262,12 @@ def build_recon_workbook(
     if progress_callback:
         progress_callback("Menyusun daftar transaksi dan status.")
     if has_backdate:
-        # Backdate Records: ambil langsung dari sheet RECON workbook Backdate
-        backdate_records = _records_from_recon_sheet(backdate_recon_df)
+        # Backdate Records: ambil dari source LB/RB (mengikuti value kode sumber),
+        # agar value Ref dan Vendor Ref tidak ditimpa oleh nilai di sheet RECON
+        # workbook Backdate (yang kadang berisi kode referensi/placeholder).
+        backdate_lb_rows = [] if backdate_lb_df is None else _to_rows(backdate_lb_df)
+        backdate_rb_rows = [] if backdate_rb_df is None else _to_rows(backdate_rb_df)
+        backdate_records = _records(backdate_lb_rows, backdate_rb_rows)
         backdate_records.sort(
             key=lambda record: (
                 _as_datetime(record["datetime"]) or dt.datetime.min

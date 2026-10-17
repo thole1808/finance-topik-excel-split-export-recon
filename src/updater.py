@@ -24,6 +24,51 @@ USER_AGENT = "ReconBuilder-Updater"
 BUFFER_SIZE = 1024 * 1024
 
 
+def _find_ca_bundle() -> str | None:
+    """Cari file CA bundle yang tersedia di sistem untuk verifikasi SSL.
+
+    Urutan prioritas:
+    1. certifi (bundled via PyInstaller --collect-all certifi)
+    2. macOS: /etc/ssl/cert.pem, ~/Library/Application Support/certifi/cacert.pem
+    3. Linux: /etc/ssl/certs/ca-certificates.crt, /etc/pki/tls/certs/ca-bundle.crt
+    4. Windows: default Python SSL context (menggunakan Windows certificate store)
+    """
+    # 1. certifi — terbaik untuk frozen PyInstaller bundle di semua OS
+    try:
+        import certifi  # type: ignore[import-untyped]
+        ca = certifi.where()
+        if ca and Path(ca).is_file():
+            return ca
+    except Exception:
+        pass
+
+    system = platform.system()
+
+    # 2. macOS system CA bundles
+    if system == "Darwin":
+        for candidate in (
+            "/etc/ssl/cert.pem",
+            "/etc/openssl/cert.pem",
+            str(Path.home() / "Library" / "Application Support" / "certifi" / "cacert.pem"),
+        ):
+            if Path(candidate).is_file():
+                return candidate
+
+    # 3. Linux system CA bundles
+    elif system == "Linux":
+        for candidate in (
+            "/etc/ssl/certs/ca-certificates.crt",
+            "/etc/pki/tls/certs/ca-bundle.crt",
+            "/etc/pki/tls/certs/ca-bundle.trust.crt",
+            "/usr/lib/ssl/certs/ca-certificates.crt",
+        ):
+            if Path(candidate).is_file():
+                return candidate
+
+    # 4. Windows: biarkan Python default (mengakses Windows certificate store)
+    return None
+
+
 def _ssl_context() -> ssl.SSLContext:
     """Return an SSL context that works in both frozen (PyInstaller) and source runs.
 
@@ -32,23 +77,15 @@ def _ssl_context() -> ssl.SSLContext:
     We try certifi first (bundled by PyInstaller via --collect-all certifi),
     then fall back to the system CA store.
     """
-    # 1. Try certifi — covers Windows, Linux, and macOS PyInstaller bundles
-    try:
-        import certifi  # type: ignore[import-untyped]
-        return ssl.create_default_context(cafile=certifi.where())
-    except Exception:
-        pass
+    ca_path = _find_ca_bundle()
+    if ca_path:
+        try:
+            return ssl.create_default_context(cafile=ca_path)
+        except Exception:
+            pass
 
-    # 2. macOS: use the system keychain CA bundle directly
-    if platform.system() == "Darwin":
-        system_ca = "/etc/ssl/cert.pem"
-        if Path(system_ca).is_file():
-            try:
-                return ssl.create_default_context(cafile=system_ca)
-            except Exception:
-                pass
-
-    # 3. Fall back to Python default (works on most Linux/Windows installs)
+    # Fallback ke default Python (biasanya cukup untuk Windows dan Linux
+    # dengan CA store sistem yang lengkap)
     return ssl.create_default_context()
 
 
