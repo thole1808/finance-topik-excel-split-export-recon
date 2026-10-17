@@ -1291,6 +1291,49 @@ def build_recon_workbook(
     # Hanya dalam kasus ini ambil Ref dan Vendor Ref dari sumber LB/RB.
     if not records:
         records.extend(_records(_to_rows(lb_df), _to_rows(rb_df)))
+
+    # Sinkronkan Ref dan Vendor Ref di lb_rows dan rb_rows dari records.
+    # Records sudah memiliki Ref/Vendor Ref asli dari RECON/Records sheet.
+    # Cocokkan berdasarkan (datetime, amount) untuk mengganti ref/ref_id
+    # yang masih mentah dari sumber LB/RB.
+    records_lookup: dict[tuple, tuple[Any, Any]] = {}
+    for record in records:
+        dt_val = _as_datetime(record.get("datetime"))
+        amount = _clean(record.get("amount"))
+        if dt_val is not None and amount is not None:
+            try:
+                key = (dt_val.replace(microsecond=0), float(amount))
+                records_lookup[key] = (
+                    record.get("ref"),
+                    record.get("vendor_ref"),
+                )
+            except (TypeError, ValueError):
+                pass
+    for row in lb_rows:
+        dt_val = _as_datetime(row.get("tanggal"))
+        amount = _clean(row.get("tagihan"))
+        if dt_val is not None and amount is not None:
+            try:
+                key = (dt_val.replace(microsecond=0), float(amount))
+                if key in records_lookup:
+                    ref, vendor_ref = records_lookup[key]
+                    row["ref"] = ref
+                    row["ref_id"] = vendor_ref
+            except (TypeError, ValueError):
+                pass
+    for row in rb_rows:
+        dt_val = _as_datetime(row.get("tanggal"))
+        amount = _clean(row.get("nominal"))
+        if dt_val is not None and amount is not None:
+            try:
+                key = (dt_val.replace(microsecond=0), float(amount))
+                if key in records_lookup:
+                    ref, vendor_ref = records_lookup[key]
+                    row["ref"] = ref
+                    row["ref_id"] = vendor_ref
+            except (TypeError, ValueError):
+                pass
+
     workbook = xlsxwriter.Workbook(
         str(output_path),
         {"constant_memory": True, "strings_to_formulas": False},

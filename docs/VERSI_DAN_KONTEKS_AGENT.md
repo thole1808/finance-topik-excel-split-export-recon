@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.28**
+**Versi saat ini: 1.2.29**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -550,6 +550,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.29 | Ref dan Vendor Ref di sheet LB/RB output juga disinkronkan dari Sheet RECON (backdate) dan Sheet Records (upload recon); nilai mentah dari sumber LB/RB diganti berdasarkan pencocokan (datetime, amount). |
 | 1.2.28 | Ref dan Vendor Ref di sheet Records output diambil HANYA dari Sheet RECON (backdate) dan Sheet Records (upload recon); fallback ke LB/RB hanya jika kedua sumber tersebut TIDAK ADA sama sekali. |
 | 1.2.27 | Ref dan Vendor Ref di sheet Records output diambil dari Sheet RECON (backdate) dan Sheet Records (upload recon) sebagai prioritas utama; fallback ke LB/RB hanya jika keduanya tidak tersedia. |
 | 1.2.26 | Ref dan Vendor Ref di output diambil dari Sheet RECON (backdate) dan Sheet Records (upload recon), bukan dari LB/RB. Data RECON tidak diubah oleh aplikasi. |
