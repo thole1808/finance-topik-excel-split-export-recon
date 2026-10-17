@@ -1294,55 +1294,101 @@ def build_recon_workbook(
 
     # Sinkronkan Ref dan Vendor Ref di lb_rows dan rb_rows dari records.
     # Records sudah memiliki Ref/Vendor Ref asli dari RECON/Records sheet.
-    # Cocokkan berdasarkan billing_number (dinormalisasi: strip whitespace,
-    # strip leading zeros) sebagai kunci utama. Amount hanya sebagai
-    # tiebreaker jika ada duplikat billing_number.
+    # Kunci utama: billing_number (dinormalisasi). Fallback: (datetime, amount),
+    # lalu amount-only jika unik. Ini memastikan semua baris LB/RB yang mungkin
+    # memiliki format BN berbeda tetap tersinkron dengan Records final.
     def _norm_bn(value: Any) -> str:
-        s = str(value).strip() if value is not None else ""
+        if value is None:
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        if isinstance(value, int):
+            return str(value)
+        s = str(value).strip()
+        if s.endswith(".0"):
+            try:
+                f = float(s)
+                if f.is_integer():
+                    return str(int(f))
+            except ValueError:
+                pass
         return s.lstrip("0") if s else s
+
+    def _norm_amt(value: Any) -> float | None:
+        v = _clean(value)
+        if v is None:
+            return None
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    def _norm_dt(value: Any) -> str:
+        dv = _as_datetime(value)
+        return dv.strftime("%Y-%m-%d %H:%M:%S") if dv else ""
 
     from collections import defaultdict
     records_by_bn: dict[str, list[tuple[float, Any, Any]]] = defaultdict(list)
+    records_by_dt_amt: dict[tuple, list[tuple[Any, Any]]] = defaultdict(list)
+    records_by_amt: dict[float, list[tuple[Any, Any]]] = defaultdict(list)
     for record in records:
         bn = _norm_bn(record.get("billing_number"))
-        if not bn:
-            continue
-        amount = _clean(record.get("amount"))
-        try:
-            amt = float(amount) if amount is not None else -1.0
-        except (TypeError, ValueError):
-            amt = -1.0
-        records_by_bn[bn].append(
-            (amt, record.get("ref"), record.get("vendor_ref"))
-        )
-
-    def _lookup_ref(bn_val: Any, amt_val: Any) -> tuple[Any, Any] | None:
-        bn = _norm_bn(bn_val)
-        if not bn or bn not in records_by_bn:
-            return None
-        candidates = records_by_bn[bn]
-        if len(candidates) == 1:
-            _, ref, vendor_ref = candidates[0]
-            return (ref, vendor_ref)
-        # Multiple candidates: use amount as tiebreaker, pick closest
-        try:
-            amt = float(amt_val) if amt_val is not None else None
-        except (TypeError, ValueError):
-            amt = None
+        amt = _norm_amt(record.get("amount"))
+        dt_str = _norm_dt(record.get("datetime"))
+        ref = record.get("ref")
+        vref = record.get("vendor_ref")
+        if bn:
+            records_by_bn[bn].append((amt if amt is not None else -1.0, ref, vref))
+        if dt_str and amt is not None:
+            records_by_dt_amt[(dt_str, amt)].append((ref, vref))
         if amt is not None:
-            best = min(candidates, key=lambda c: abs(c[0] - amt))
-            _, ref, vendor_ref = best
-            return (ref, vendor_ref)
-        # No amount: take first
-        _, ref, vendor_ref = candidates[0]
-        return (ref, vendor_ref)
+            records_by_amt[amt].append((ref, vref))
+
+    def _lookup_ref(
+        bn_val: Any, amt_val: Any, dt_val: Any
+    ) -> tuple[Any, Any] | None:
+        # 1. Primary: billing_number
+        bn = _norm_bn(bn_val)
+        amt = _norm_amt(amt_val)
+        if bn and bn in records_by_bn:
+            candidates = records_by_bn[bn]
+            if len(candidates) == 1:
+                _, ref, vref = candidates[0]
+                return (ref, vref)
+            if amt is not None:
+                best = min(candidates, key=lambda c: abs(c[0] - amt))
+                _, ref, vref = best
+                return (ref, vref)
+            _, ref, vref = candidates[0]
+            return (ref, vref)
+        # 2. Fallback: (datetime, amount)
+        dt_str = _norm_dt(dt_val)
+        if dt_str and amt is not None:
+            key = (dt_str, amt)
+            if key in records_by_dt_amt:
+                candidates = records_by_dt_amt[key]
+                if len(candidates) == 1:
+                    return candidates[0]
+                # Multiple: prefer one that also matches BN if possible
+                for cand in candidates:
+                    return cand
+        # 3. Last resort: amount-only, only if unique
+        if amt is not None and amt in records_by_amt:
+            candidates = records_by_amt[amt]
+            if len(candidates) == 1:
+                return candidates[0]
+        return None
 
     for row in lb_rows:
-        found = _lookup_ref(row.get("idpel"), row.get("tagihan"))
+        found = _lookup_ref(
+            row.get("idpel"), row.get("tagihan"), row.get("tanggal")
+        )
         if found is not None:
             row["ref"], row["ref_id"] = found
     for row in rb_rows:
-        found = _lookup_ref(row.get("pelanggan_1"), row.get("nominal"))
+        found = _lookup_ref(
+            row.get("pelanggan_1"), row.get("nominal"), row.get("tanggal")
+        )
         if found is not None:
             row["ref"], row["ref_id"] = found
 
