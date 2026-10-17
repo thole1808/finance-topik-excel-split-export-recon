@@ -1230,7 +1230,15 @@ def build_recon_workbook(
     recon_records_df: pl.DataFrame | None = None,
     progress_callback: Callable[[str], None] | None = None,
 ) -> Path:
-    """Write a recon workbook, optionally merging Backdate rows before End Date."""
+    """Write a recon workbook, optionally merging Backdate rows before End Date.
+
+    Perlindungan nilai Ref dan Vendor Ref dari BO BILLER:
+    - Backdate Records diambil dari sumber LB/RB (kode sumber asli), jangan
+      ditimpa oleh nilai di sheet RECON workbook Backdate.
+    - End Date Records diambil dari sheet Records file recon referensi, nilai
+      Ref dan Vendor Ref dipertahankan asli (murni dari BO BILLER), tidak
+      dimodifikasi oleh aplikasi.
+    """
     output_path = Path(output_path).expanduser().resolve()
     if output_path.suffix.lower() != ".xlsx":
         raise ValueError("Path output harus berakhiran .xlsx.")
@@ -1262,9 +1270,10 @@ def build_recon_workbook(
     if progress_callback:
         progress_callback("Menyusun daftar transaksi dan status.")
     if has_backdate:
-        # Backdate Records: ambil dari source LB/RB (mengikuti value kode sumber),
-        # agar value Ref dan Vendor Ref tidak ditimpa oleh nilai di sheet RECON
-        # workbook Backdate (yang kadang berisi kode referensi/placeholder).
+        # Backdate Records: ambil HANYA dari source LB/RB (kode sumber asli BO BILLER).
+        # Nilai Ref dan Vendor Ref diambil dari kolom sumber LB/RB, JANGAN dari
+        # sheet RECON workbook Backdate. Sheet RECON Backdate (yang kadang berisi
+        # kode referensi/placeholder) tidak digunakan untuk menimpa Ref/Vendor Ref.
         backdate_lb_rows = [] if backdate_lb_df is None else _to_rows(backdate_lb_df)
         backdate_rb_rows = [] if backdate_rb_df is None else _to_rows(backdate_rb_df)
         backdate_records = _records(backdate_lb_rows, backdate_rb_rows)
@@ -1274,8 +1283,9 @@ def build_recon_workbook(
             )
         )
         records.extend(backdate_records)
-    # End Date Records: ambil dari sheet Records file recon referensi jika tersedia,
-    # jika tidak fallback ke kalkulasi dari LB/RB
+    # End Date Records: ambil dari sheet Records file recon referensi jika tersedia.
+    # Nilai Ref dan Vendor Ref dipertahankan asli (murni dari BO BILLER, End Date),
+    # tidak dimodifikasi oleh aplikasi.
     if recon_records_df is not None and recon_records_df.height > 0:
         records.extend(_records_from_recon_sheet(recon_records_df))
     else:

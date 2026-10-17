@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.24**
+**Versi saat ini: 1.2.25**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -550,6 +550,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.25 | Perlindungan Ref dan Vendor Ref dari BO BILLER: nilai di sheet RECON (backdate dan file uploads End Date) tidak diubah oleh aplikasi; dipertahankan asli dari sumber kode BO BILLER. |
 | 1.2.24 | Perbaiki pemeriksaan update: sertakan token GitHub agar tidak terkena HTTP 403 rate-limit, ulangi otomatis, dan beri pesan error yang jelas beserta waktu coba lagi. |
 | 1.2.16 | Watermark batik dipindah dari belakang panel konten ke ruang kosong header agar tampil samar tanpa menutupi teks atau kontrol. |
 | 1.2.15 | Panel Terminal proses Generate diperbesar menjadi 9 baris dan font 10 pt, tetap responsif selebar jendela. |
