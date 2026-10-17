@@ -295,8 +295,8 @@ class ReconApp(tk.Tk):
         self.notebook = ttk.Notebook(preview)
         self.notebook.grid(row=0, column=0, sticky="nsew")
         self.notebook.bind("<<NotebookTabChanged>>", self._tab_changed)
-        self._add_preview_tab("LB", "Preview LB")
-        self._add_preview_tab("RB", "Preview RB")
+        self._add_preview_tab("LB", "Preview LB", editable=False)
+        self._add_preview_tab("RB", "Preview RB", editable=False)
         self._add_preview_tab(
             "Recon Summary", "Recon · Summary", editable=False
         )
@@ -310,9 +310,10 @@ class ReconApp(tk.Tk):
         self._add_history_tab()
         ttk.Label(
             preview,
-            text="Pilih Semua untuk melihat seluruh baris. Klik ganda sel untuk "
-            "mengedit LB/RB; Enter/pindah sel menerapkan, Esc membatalkan. "
-            "Summary/Records dari file recon hanya sebagai referensi.",
+            text="Pilih Semua untuk melihat seluruh baris. Preview hanya "
+            "untuk melihat dan mencari data (read-only); pengeditan "
+            "sel dimatikan. Summary/Records dari file recon hanya "
+            "sebagai referensi.",
             foreground="#536273",
         ).grid(row=1, column=0, sticky="w", pady=(8, 0))
 
@@ -1104,8 +1105,8 @@ class ReconApp(tk.Tk):
         self._apply_search(side)
 
     def _begin_edit(self, side: str, event: tk.Event) -> None:
-        if side not in {"LB", "RB"}:
-            return
+        # Preview read-only: pengeditan sel dimatikan untuk semua tab.
+        return
         tree = self._preview_widgets[side]
         item = tree.identify_row(event.y)
         column_id = tree.identify_column(event.x)
@@ -1137,48 +1138,17 @@ class ReconApp(tk.Tk):
             )
 
     def _edit_selected_cell(self, side: str) -> None:
-        target = self._selected_cells.get(side)
-        if target is None:
-            self.status.set(f"Pilih sel pada tab Preview {side} yang ingin diedit.")
-            return
-        self._open_cell_editor(side, *target)
+        # Preview read-only: pengeditan sel dimatikan untuk semua tab.
+        self.status.set(
+            "Preview hanya untuk melihat dan mencari data (read-only)."
+        )
+        return
 
     def _open_cell_editor(
         self, side: str, index: int, column: str
     ) -> None:
-        if side not in {"LB", "RB"} or self._busy or side in self._loading:
-            return
-        if self._editor is not None and self._editor_target is not None:
-            if not self._commit_edit(*self._editor_target, self._editor):
-                return
-        frame = self._frames[side]
-        if frame is None or index >= frame.height:
-            return
-        tree = self._preview_widgets[side]
-        columns = list(tree["columns"])
-        if column not in columns:
-            return
-        item = str(index)
-        column_index = columns.index(column)
-        column_id = f"#{column_index + 1}"
-        box = tree.bbox(item, column_id)
-        if not box:
-            return
-        if self._editor is not None:
-            self._editor.destroy()
-        editor = tk.Entry(tree)
-        editor.insert(0, tree.set(item, columns[column_index]))
-        editor.select_range(0, "end")
-        editor.place(x=box[0], y=box[1], width=box[2], height=box[3])
-        editor.focus_set()
-        self._editor = editor
-        self._editor_target = (side, index, columns[column_index])
-        commit = partial(
-            self._commit_edit, side, index, columns[column_index], editor
-        )
-        editor.bind("<Return>", commit)
-        editor.bind("<FocusOut>", commit)
-        editor.bind("<Escape>", partial(self._cancel_edit_event, editor))
+        # Preview read-only: pengeditan sel dimatikan untuk semua tab.
+        return
 
     def _commit_edit(
         self,
@@ -1188,66 +1158,19 @@ class ReconApp(tk.Tk):
         editor: tk.Entry,
         event: tk.Event[Any] | None = None,
     ) -> bool | str:
-        if self._editor is not editor:
-            return "break" if event is not None else False
-        raw_value = editor.get()
-        editor.destroy()
-        self._editor = None
-        self._editor_target = None
-        frame = self._frames[side]
-        if frame is None:
-            return "break" if event is not None else False
-
-        try:
-            if raw_value == "":
-                value = None
-            elif frame.schema[column] == pl.Null:
-                value = raw_value
-            else:
-                value = self._parse_edit_value(raw_value, frame.schema[column])
-            values = frame.get_column(column).to_list()
-            values[row_index] = value
-            if frame.schema[column] == pl.Null:
-                updated = pl.Series(column, values, strict=True)
-            else:
-                updated = pl.Series(
-                    column, values, dtype=frame.schema[column], strict=True
-                )
-            self._frames[side] = frame.with_columns(updated)
-        except (TypeError, ValueError, pl.exceptions.PolarsError) as exc:
-            self._invalid_edits.add((side, row_index, column))
-            self.audit.record(
-                self.operator, "preview_cell_edit_rejected", tab=side,
-                row=row_index + 1,
-                column=SOURCE_HEADERS.get(side, {}).get(column, column),
-                attempted_value=raw_value, error=str(exc),
-            )
-            messagebox.showerror(
-                "Nilai tidak valid",
-                f"Nilai untuk kolom {SOURCE_HEADERS.get(side, {}).get(column, column)} "
-                f"tidak sesuai tipe data.\n\n{exc}",
-            )
-            return "break" if event is not None else False
-
-        self._invalid_edits.discard((side, row_index, column))
-        self._edit_counts[side].add((row_index, column))
-        self.audit.record(
-            self.operator, "preview_cell_edited", tab=side,
-            row=row_index + 1,
-            column=SOURCE_HEADERS.get(side, {}).get(column, column),
-            previous_value=self._display_value(frame.get_column(column)[row_index]),
-            updated_value=self._display_value(value),
-        )
-        query = self._search_vars[side].get().strip()
-        if query:
-            self._filtered_indices[side] = self._search_indices(
-                self._frames[side], query
-            )
-        self._render_preview(side)
+        # Preview read-only: pengeditan sel dimatikan untuk semua tab.
+        # Editor dihancurkan tanpa menerapkan perubahan apa pun.
+        if self._editor is editor:
+            try:
+                editor.destroy()
+            except Exception:
+                pass
+            self._editor = None
+            self._editor_target = None
         self.status.set(
-            f"Perubahan pada upload {side} diterapkan dan akan ikut diekspor."
+            "Preview hanya untuk melihat dan mencari data (read-only)."
         )
-        return "break" if event is not None else True
+        return "break" if event is not None else False
 
     def _cancel_edit(self, editor: tk.Entry) -> None:
         if self._editor is editor:
