@@ -1294,39 +1294,57 @@ def build_recon_workbook(
 
     # Sinkronkan Ref dan Vendor Ref di lb_rows dan rb_rows dari records.
     # Records sudah memiliki Ref/Vendor Ref asli dari RECON/Records sheet.
-    # Cocokkan berdasarkan (billing_number, amount) untuk mengganti ref/ref_id
-    # yang masih mentah dari sumber LB/RB. Kunci ini lebih unik dan stabil
-    # daripada (datetime, amount) yang bisa bentrok presisi datetime.
-    def _sync_key(billing_number: Any, amount: Any) -> tuple[str, float] | None:
-        bn = str(billing_number).strip() if billing_number is not None else ""
-        try:
-            amt = float(amount) if amount is not None else None
-        except (TypeError, ValueError):
-            return None
-        if not bn or amt is None:
-            return None
-        return (bn, amt)
+    # Cocokkan berdasarkan billing_number (dinormalisasi: strip whitespace,
+    # strip leading zeros) sebagai kunci utama. Amount hanya sebagai
+    # tiebreaker jika ada duplikat billing_number.
+    def _norm_bn(value: Any) -> str:
+        s = str(value).strip() if value is not None else ""
+        return s.lstrip("0") if s else s
 
-    records_lookup: dict[tuple, tuple[Any, Any]] = {}
+    from collections import defaultdict
+    records_by_bn: dict[str, list[tuple[float, Any, Any]]] = defaultdict(list)
     for record in records:
-        key = _sync_key(record.get("billing_number"), record.get("amount"))
-        if key is not None:
-            records_lookup[key] = (
-                record.get("ref"),
-                record.get("vendor_ref"),
-            )
+        bn = _norm_bn(record.get("billing_number"))
+        if not bn:
+            continue
+        amount = _clean(record.get("amount"))
+        try:
+            amt = float(amount) if amount is not None else -1.0
+        except (TypeError, ValueError):
+            amt = -1.0
+        records_by_bn[bn].append(
+            (amt, record.get("ref"), record.get("vendor_ref"))
+        )
+
+    def _lookup_ref(bn_val: Any, amt_val: Any) -> tuple[Any, Any] | None:
+        bn = _norm_bn(bn_val)
+        if not bn or bn not in records_by_bn:
+            return None
+        candidates = records_by_bn[bn]
+        if len(candidates) == 1:
+            _, ref, vendor_ref = candidates[0]
+            return (ref, vendor_ref)
+        # Multiple candidates: use amount as tiebreaker, pick closest
+        try:
+            amt = float(amt_val) if amt_val is not None else None
+        except (TypeError, ValueError):
+            amt = None
+        if amt is not None:
+            best = min(candidates, key=lambda c: abs(c[0] - amt))
+            _, ref, vendor_ref = best
+            return (ref, vendor_ref)
+        # No amount: take first
+        _, ref, vendor_ref = candidates[0]
+        return (ref, vendor_ref)
+
     for row in lb_rows:
-        key = _sync_key(row.get("idpel"), row.get("tagihan"))
-        if key is not None and key in records_lookup:
-            ref, vendor_ref = records_lookup[key]
-            row["ref"] = ref
-            row["ref_id"] = vendor_ref
+        found = _lookup_ref(row.get("idpel"), row.get("tagihan"))
+        if found is not None:
+            row["ref"], row["ref_id"] = found
     for row in rb_rows:
-        key = _sync_key(row.get("pelanggan_1"), row.get("nominal"))
-        if key is not None and key in records_lookup:
-            ref, vendor_ref = records_lookup[key]
-            row["ref"] = ref
-            row["ref_id"] = vendor_ref
+        found = _lookup_ref(row.get("pelanggan_1"), row.get("nominal"))
+        if found is not None:
+            row["ref"], row["ref_id"] = found
 
     workbook = xlsxwriter.Workbook(
         str(output_path),

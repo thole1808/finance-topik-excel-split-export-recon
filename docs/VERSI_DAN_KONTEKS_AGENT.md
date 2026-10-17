@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.30**
+**Versi saat ini: 1.2.31**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -550,6 +550,7 @@ interaktif aplikasi.
 
 | Versi | Perubahan utama |
 |---|---|
+| 1.2.31 | Kunci pencocokan sinkronisasi Ref/Vendor Ref di sheet LB/RB diganti ke billing_number saja (dengan normalisasi leading zero); amount hanya tiebreaker jika ada duplikat. Memperbaiki amount mismatch (tagihan LB ≠ Amount Records) yang menyebabkan 799 baris LB tidak tersinkron. |
 | 1.2.30 | Kunci pencocokan sinkronisasi Ref/Vendor Ref di sheet LB/RB diganti dari (datetime, amount) ke (billing_number, amount) agar lebih unik dan stabil; semua baris LB/RB dijamin Ref-nya dari Sheet Records/RECON final. |
 | 1.2.29 | Ref dan Vendor Ref di sheet LB/RB output juga disinkronkan dari Sheet RECON (backdate) dan Sheet Records (upload recon); nilai mentah dari sumber LB/RB diganti berdasarkan pencocokan (datetime, amount). |
 | 1.2.28 | Ref dan Vendor Ref di sheet Records output diambil HANYA dari Sheet RECON (backdate) dan Sheet Records (upload recon); fallback ke LB/RB hanya jika kedua sumber tersebut TIDAK ADA sama sekali. |
