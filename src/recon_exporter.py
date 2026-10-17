@@ -1294,45 +1294,39 @@ def build_recon_workbook(
 
     # Sinkronkan Ref dan Vendor Ref di lb_rows dan rb_rows dari records.
     # Records sudah memiliki Ref/Vendor Ref asli dari RECON/Records sheet.
-    # Cocokkan berdasarkan (datetime, amount) untuk mengganti ref/ref_id
-    # yang masih mentah dari sumber LB/RB.
+    # Cocokkan berdasarkan (billing_number, amount) untuk mengganti ref/ref_id
+    # yang masih mentah dari sumber LB/RB. Kunci ini lebih unik dan stabil
+    # daripada (datetime, amount) yang bisa bentrok presisi datetime.
+    def _sync_key(billing_number: Any, amount: Any) -> tuple[str, float] | None:
+        bn = str(billing_number).strip() if billing_number is not None else ""
+        try:
+            amt = float(amount) if amount is not None else None
+        except (TypeError, ValueError):
+            return None
+        if not bn or amt is None:
+            return None
+        return (bn, amt)
+
     records_lookup: dict[tuple, tuple[Any, Any]] = {}
     for record in records:
-        dt_val = _as_datetime(record.get("datetime"))
-        amount = _clean(record.get("amount"))
-        if dt_val is not None and amount is not None:
-            try:
-                key = (dt_val.replace(microsecond=0), float(amount))
-                records_lookup[key] = (
-                    record.get("ref"),
-                    record.get("vendor_ref"),
-                )
-            except (TypeError, ValueError):
-                pass
+        key = _sync_key(record.get("billing_number"), record.get("amount"))
+        if key is not None:
+            records_lookup[key] = (
+                record.get("ref"),
+                record.get("vendor_ref"),
+            )
     for row in lb_rows:
-        dt_val = _as_datetime(row.get("tanggal"))
-        amount = _clean(row.get("tagihan"))
-        if dt_val is not None and amount is not None:
-            try:
-                key = (dt_val.replace(microsecond=0), float(amount))
-                if key in records_lookup:
-                    ref, vendor_ref = records_lookup[key]
-                    row["ref"] = ref
-                    row["ref_id"] = vendor_ref
-            except (TypeError, ValueError):
-                pass
+        key = _sync_key(row.get("idpel"), row.get("tagihan"))
+        if key is not None and key in records_lookup:
+            ref, vendor_ref = records_lookup[key]
+            row["ref"] = ref
+            row["ref_id"] = vendor_ref
     for row in rb_rows:
-        dt_val = _as_datetime(row.get("tanggal"))
-        amount = _clean(row.get("nominal"))
-        if dt_val is not None and amount is not None:
-            try:
-                key = (dt_val.replace(microsecond=0), float(amount))
-                if key in records_lookup:
-                    ref, vendor_ref = records_lookup[key]
-                    row["ref"] = ref
-                    row["ref_id"] = vendor_ref
-            except (TypeError, ValueError):
-                pass
+        key = _sync_key(row.get("pelanggan_1"), row.get("nominal"))
+        if key is not None and key in records_lookup:
+            ref, vendor_ref = records_lookup[key]
+            row["ref"] = ref
+            row["ref_id"] = vendor_ref
 
     workbook = xlsxwriter.Workbook(
         str(output_path),
