@@ -1233,8 +1233,8 @@ def build_recon_workbook(
     """Write a recon workbook, optionally merging Backdate rows before End Date.
 
     Perlindungan nilai Ref dan Vendor Ref dari BO BILLER:
-    - Backdate Records diambil dari sumber LB/RB (kode sumber asli), jangan
-      ditimpa oleh nilai di sheet RECON workbook Backdate.
+    - Backdate Records diambil dari sheet RECON workbook Backdate (kode asli BO BILLER),
+      JANGAN dari sheet LB/RB. Nilai Ref dan Vendor Ref dipertahankan asli dari data RECON.
     - End Date Records diambil dari sheet Records file recon referensi, nilai
       Ref dan Vendor Ref dipertahankan asli (murni dari BO BILLER), tidak
       dimodifikasi oleh aplikasi.
@@ -1270,19 +1270,17 @@ def build_recon_workbook(
     if progress_callback:
         progress_callback("Menyusun daftar transaksi dan status.")
     if has_backdate:
-        # Backdate Records: ambil HANYA dari source LB/RB (kode sumber asli BO BILLER).
-        # Nilai Ref dan Vendor Ref diambil dari kolom sumber LB/RB, JANGAN dari
-        # sheet RECON workbook Backdate. Sheet RECON Backdate (yang kadang berisi
-        # kode referensi/placeholder) tidak digunakan untuk menimpa Ref/Vendor Ref.
-        backdate_lb_rows = [] if backdate_lb_df is None else _to_rows(backdate_lb_df)
-        backdate_rb_rows = [] if backdate_rb_df is None else _to_rows(backdate_rb_df)
-        backdate_records = _records(backdate_lb_rows, backdate_rb_rows)
-        backdate_records.sort(
-            key=lambda record: (
-                _as_datetime(record["datetime"]) or dt.datetime.min
+        # Backdate Records: ambil dari sheet RECON workbook Backdate (kode asli BO BILLER).
+        # Nilai Ref dan Vendor Ref diambil langsung dari sheet RECON, JANGAN dari LB/RB.
+        # Data di sheet RECON tidak dimodifikasi oleh aplikasi.
+        if backdate_recon_df is not None and backdate_recon_df.height > 0:
+            backdate_records = _records_from_recon_sheet(backdate_recon_df)
+            backdate_records.sort(
+                key=lambda record: (
+                    _as_datetime(record["datetime"]) or dt.datetime.min
+                )
             )
-        )
-        records.extend(backdate_records)
+            records.extend(backdate_records)
     # End Date Records: ambil dari sheet Records file recon referensi jika tersedia.
     # Nilai Ref dan Vendor Ref dipertahankan asli (murni dari BO BILLER, End Date),
     # tidak dimodifikasi oleh aplikasi.

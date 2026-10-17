@@ -189,8 +189,23 @@ class ReconExporterBackdateTests(unittest.TestCase):
             ),
         ])
         backdate_recon = pl.DataFrame({
-            "Ref": ["RECON-REF-MUST-NOT-REPLACE-SOURCE"],
-            "Vendor Ref": ["RECON-VENDOR-REF-MUST-NOT-REPLACE-SOURCE"],
+            "Datetime": [
+                dt.datetime(2026, 10, 14, 23, 30),
+                dt.datetime(2026, 10, 14, 22, 30),
+            ],
+            "Product": ["LB", "LB"],
+            "Billing Number": ["LB-BD-BILLING-1", "LB-BD-BILLING-2"],
+            "Billing Name": ["LB-BD-NAME-1", "LB-BD-NAME-2"],
+            "Ref": ["RECON-BD-REF-1", "RECON-BD-REF-2"],
+            "Vendor Ref": ["RECON-BD-VENDOR-1", "RECON-BD-VENDOR-2"],
+            "Amount": [100, 200],
+            "Total Fee": [5, 10],
+            "Customer Fee": [2, 4],
+            "LST Fee": [1, 2],
+            "Margin Biller": [2, 4],
+            "Transaction Status": ["SUCCESS", "FAILED"],
+            "Vendor": ["Loket Bayar", "Loket Bayar"],
+            "Recon Result": ["MATCHED", "INTERNAL"],
         })
 
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -207,8 +222,8 @@ class ReconExporterBackdateTests(unittest.TestCase):
             sheets = pl.read_excel(output, sheet_id=0, engine="calamine")
             records = sheets["Records"]
 
-            lb_backdate = records.filter(pl.col("Ref") == "LB-BD-SOURCE")
-            self.assertEqual(lb_backdate["Vendor Ref"].to_list(), ["LB-BD-VENDOR"])
+            lb_backdate = records.filter(pl.col("Ref") == "RECON-BD-REF-1")
+            self.assertEqual(lb_backdate["Vendor Ref"].to_list(), ["RECON-BD-VENDOR-1"])
             self.assertEqual(
                 records.filter(
                     pl.col("Datetime") == dt.datetime(2026, 10, 15, 23, 30)
