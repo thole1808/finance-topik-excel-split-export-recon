@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.37**
+**Versi saat ini: 1.2.38**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -17,7 +17,7 @@ memodifikasi kode:
 4. [`src/recon_exporter.py`](../src/recon_exporter.py) — aturan data dan
    pembuatan workbook.
 5. Workflow dan konfigurasi installer di
-   [`.github/workflows/windows-installer.yml`](../.github/workflows/windows-installer.yml)
+    [`.github/workflows/release.yml`](../.github/workflows/release.yml)
    dan [`scripts/windows/ReconBuilder.iss`](../scripts/windows/ReconBuilder.iss).
 
 ## Implementasi 1.2.0 — UI, output, dan riwayat operator
@@ -214,20 +214,39 @@ pengguna meminta penerbitan release.
 
 ## Serah-terima sesi — 16 Oktober 2026 (sesi 2)
 
-### Perbaikan workflow: macOS DMG/PKG kini dibangun di CI
+### Perbaikan workflow: macOS DMG/PKG dibangun di CI dan release.yml
 
-**Masalah:** `updater.py` sudah lengkap (checksum SHA256, download, install DMG/PKG), tapi workflow lama hanya punya Windows runner. DMG dibangun lokal di macOS developer dan tidak pernah ter-upload ke GitHub Release. Akibatnya `latest_update()` melempar `UpdateError: "Rilis vX.X.X belum menyediakan updater untuk Darwin"`.
+**Masalah:** `updater.py` sudah lengkap (checksum SHA256, download, install DMG/PKG), tapi
+workflow lama hanya punya Windows runner dan nama file workflow belum mencerminkan
+cakupan penuh. DMG dibangun lokal di macOS developer dan tidak pernah ter-upload ke
+GitHub Release. Akibatnya `latest_update()` melempar
+`UpdateError: "Rilis vX.X.X belum menyediakan updater untuk Darwin"`.
 
-**Solusi yang diterapkan** di `.github/workflows/windows-installer.yml`:
-- Tambah job `build-macos-dmg` yang jalan di `macos-latest` runner, menjalankan `scripts/build_dmg.sh`, lalu upload DMG dan PKG sebagai artifact dan ke GitHub Release.
-- Job `build-windows-installer` sekarang punya `needs: build-macos-dmg` — jalan setelah macOS job selesai.
-- Windows job download artifact DMG/PKG dari macOS job, lalu generate `SHA256SUMS.txt` dari **semua platform sekaligus** (EXE + DMG + PKG) sebelum upload ke release.
-- Urutan: macOS build → Windows build (download macOS artifact) → SHA256SUMS.txt final → upload semua ke release.
+**Solusi yang diterapkan** di `.github/workflows/release.yml`:
+- Job `build-macos` yang jalan di `macos-latest` runner, menjalankan `scripts/build_dmg.sh`
+  (dengan `--clean` opsional), lalu upload DMG dan PKG sebagai artifact.
+- Job `build-windows` yang jalan di `windows-latest`, membangun EXE dengan PyInstaller
+  lalu membuat installer dengan Inno Setup, upload sebagai artifact.
+- `concurrency` group mencegah run paralel dari workflow yang sama.
+- `publish-release` job dengan `needs: [build-macos, build-windows]` menunggu kedua
+  platform, download semua artifact, generate `SHA256SUMS.txt` dari **semua platform
+  sekaligus** (EXE + DMG + PKG + PNG + JPG), lalu upload ke GitHub Release.
+- Pada push ke `main`, workflow membuat tag Git `v<versi>` secara eksplisit sebelum
+  membuat release. Pada tag push, validasi versi tag sesuai `src/version.py`.
+- Urutan: macOS build → Windows build → download artifact → SHA256SUMS.txt final →
+  tag (jika belum ada) → release (jika belum ada) → upload semua aset.
 
 **Aturan ke depan:**
-- Cukup push tag `vX.X.X` ke `main` — workflow otomatis build kedua platform dan publish release lengkap dengan `SHA256SUMS.txt`.
-- Tidak perlu lagi build DMG lokal untuk release; build lokal tetap bisa dipakai untuk testing sebelum push.
-- `SHA256SUMS.txt` selalu mencakup EXE + DMG + PKG sehingga `updater.py` bisa verifikasi checksum di semua platform.
+- Cukup push tag `vX.X.X` ke `main` — workflow otomatis build kedua platform dan publish
+  release lengkap dengan `SHA256SUMS.txt`.
+- Atau push ke `main` dengan versi baru di `src/version.py` — workflow otomatis membuat
+  tag dan release.
+- Tidak perlu lagi build DMG lokal untuk release; build lokal (`scripts/build_dmg.sh`)
+  tetap bisa dipakai untuk testing sebelum push, termasuk dengan flag `--clean`.
+- `SHA256SUMS.txt` selalu mencakup EXE + DMG + PKG sehingga `updater.py` bisa
+  verifikasi checksum di semua platform.
+- PNG/JPG flowchart berada di `docs/` dan disertakan sebagai aset release; SVG sumber
+  juga tersedia. Lihat `docs/FLOW_LOGIC.md` untuk logika alur lengkap.
 
 ---
 
@@ -534,7 +553,7 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.16, disediakan untuk
+Gambar berikut adalah diagram alur aplikasi versi 1.2.38, disediakan untuk
 kebutuhan dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
@@ -548,7 +567,8 @@ interaktif aplikasi.
 
 ## Riwayat versi ringkas
 
-| 1.2.37 | Preview data read-only: tampilan, pencarian, dan navigasi halaman hanya untuk melihat; tombol Edit, klik ganda, dan Enter tidak lagi menerapkan perubahan; sel tidak bisa dihapus/ diedit. |
+| 1.2.38 | Workflow release diperbaiki (release.yml, concurrency, tag Git eksplisit); build_dmg.sh mendukung --clean dan verifikasi dependensi; bug page_size.bind() diperbaiki; tombol Hapus di preview dihilangkan; updater timeout 30s/5x retry dengan pesan error yang ramah; flow diagram diperbarui ke 1.2.38. |
+| 1.2.37 | Preview data read-only: tampilan, pencarian, dan navigasi halaman hanya untuk melihat; tombol Edit, klik ganda, dan Enter tidak lagi menerapkan perubahan; sel tidak bisa dihapus/diedit. |
 | 1.2.36 | Sinkronkan juga Customer Fee, LST Fee, dan Margin Biller (nilai uang) dari Sheet Records final ke sheet LB/RB output; `_lb_values`/`_rb_values` prioritas nilai sinkron, fallback hitung ulang. Ref/Vendor Ref tetap 6 level pencocokan. |
 | 1.2.35 | Perkuat normalisasi billing_number (hapus non-digit) dan tambah level 6 fuzzy BN (beda 1-2 digit) agar sisa baris LB/RB tersinkron dengan Ref dari Records final. |
 | 1.2.34 | Tambah level 5 pencocokan same-day fallback (pilih amount terdekat di tanggal yang sama) agar sisa baris LB/RB yang BN-nya tidak ada di Records tetap tersinkron dengan Ref dari Records. |

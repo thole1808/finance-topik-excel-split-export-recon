@@ -123,7 +123,7 @@ def _retry_after_seconds(exc: urllib.error.HTTPError) -> int | None:
     return None
 
 
-def _open_url(url: str, timeout: int = 20, retries: int = 3):
+def _open_url(url: str, timeout: int = 30, retries: int = 5):
     if not url.startswith("https://"):
         raise UpdateError("URL update harus menggunakan HTTPS.")
     headers = {
@@ -131,30 +131,37 @@ def _open_url(url: str, timeout: int = 20, retries: int = 3):
         "User-Agent": USER_AGENT,
         "X-GitHub-Api-Version": "2026-03-10",
     }
-    # Token opsional mengangkat batas rate GitHub dari 60 ke 5000 permintaan/jam.
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if token:
         headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(url, headers=headers)
 
+    last_error: Exception | None = None
     for attempt in range(retries):
         try:
             response = urllib.request.urlopen(
                 request, timeout=timeout, context=_ssl_context()
             )
         except urllib.error.HTTPError as exc:
+            last_error = exc
             if exc.code in (403, 422, 500, 502, 503, 504) and attempt < retries - 1:
                 delay = _retry_after_seconds(exc)
-                time.sleep(delay if delay is not None else (1 + attempt))
+                time.sleep(delay if delay is not None else (1 + attempt * 2))
                 continue
             raise
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise UpdateError(f"Tidak dapat terhubung ke GitHub: {exc}") from exc
+            last_error = exc
+            if attempt < retries - 1:
+                time.sleep(1 + attempt * 2)
+                continue
+            raise UpdateError(f"Tidak dapat terhubung ke server update: {exc}") from exc
         if not response.geturl().startswith("https://"):
             response.close()
             raise UpdateError("Unduhan update dialihkan keluar dari koneksi HTTPS.")
         return response
-    raise UpdateError("Gagal memuat update dari GitHub setelah beberapa percobaan.")
+    if last_error is not None:
+        raise UpdateError(f"Gagal memuat update setelah {retries} percobaan: {last_error}")
+    raise UpdateError("Gagal memuat update dari server setelah beberapa percobaan.")
 
 
 def latest_update(current_version: str) -> UpdateRelease | None:

@@ -43,35 +43,32 @@ divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
 5. Jika ada data Backdate, pilih satu workbook `.xlsx` pada **File Backdate
    (opsional)**. Workbook harus memiliki sheet `LB`, `RB`, dan `RECON` dengan
    header yang cocok. Jika tidak ada Backdate, biarkan field ini kosong.
-6. Tinjau tab **Preview LB** dan **Preview RB**. Preview dapat menelusuri
-   seluruh baris file: pilih jumlah baris per halaman atau **Semua**, lalu gunakan
-   **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk menemukan
-   nilai di semua kolom, termasuk transaksi pada halaman lain.
+6. Tinjau tab **Preview LB**, **Preview RB**, dan tab Backdate. Preview dapat
+   menelusuri seluruh baris file: pilih jumlah baris per halaman atau **Semua**,
+   lalu gunakan **Sebelumnya/Berikutnya**. Gunakan **Cari seluruh data** untuk
+   menemukan nilai di semua kolom, termasuk transaksi pada halaman lain.
    Sheet Backdate tampil sebagai tab **Backdate · LB**, **Backdate · RB**, dan
    **Backdate · RECON**, sekalipun semuanya berasal dari satu workbook.
-7. Untuk koreksi LB/RB, pilih sel lalu klik **Edit sel terpilih**, atau klik
-   ganda sel. Ubah nilai, lalu tekan **Enter** atau pindah fokus untuk
-   menerapkan; **Esc** membatalkan. Perubahan pada baris preview ikut
-   diterapkan ke export. Baris lain tetap berasal dari file upload.
-   Preview recon bersifat referensi dan tidak dapat diedit.
-8. Folder output otomatis memakai folder data aplikasi pada komputer. Nama file
+    **Preview bersifat read-only** — tidak ada tombol Edit, Hapus, atau klik ganda
+    untuk mengubah sel; data hanya ditampilkan untuk inspeksi sebelum Generate.
+7. Folder output otomatis memakai folder data aplikasi pada komputer. Nama file
    dibuat dari tanggal dan waktu lokal, misalnya
    `ReconBuilder_20261017_143025_123456.xlsx`.
-9. Klik **Generate Recon**. Terminal proses menampilkan tahapan penulisan dan
+8. Klik **Generate Recon**. Terminal proses menampilkan tahapan penulisan dan
    jumlah baris Records yang diproses. Tunggu pesan sukses.
-10. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
-    Dengan Backdate, transaksi yang dibentuk dari sumber `LB`/`RB` Backdate
-    muncul di bagian awal `Records` berdasarkan Datetime, lalu diikuti hasil
-    End Date. Nilai `Ref` dan `Vendor Ref` tetap bersumber dari kolom asli
-    LB/RB. Data
-    sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
-    sebelum data End Date pada kelompok status masing-masing. `Summary`
-    menghitung gabungan Backdate dan End Date. Transaksi End Date pukul
-    23:00–23:59 ditampilkan di bagian **For tomorrow because different time**;
-    transaksi Backdate pukul 23:00 atau lebih tetap terlihat di blok utama.
-11. **Buka Folder Output** akan memilih file terakhir yang berhasil dibuat
+9. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
+   Dengan Backdate, transaksi yang dibentuk dari sumber `LB`/`RB` Backdate
+   muncul di bagian awal `Records` berdasarkan Datetime, lalu diikuti hasil
+   End Date. Nilai `Ref` dan `Vendor Ref` tetap bersumber dari kolom asli
+   LB/RB. Data
+   sumber Backdate digabung ke sheet `LB`/`RB` yang sama dan ditampilkan
+   sebelum data End Date pada kelompok status masing-masing. `Summary`
+   menghitung gabungan Backdate dan End Date. Transaksi End Date pukul
+   23:00–23:59 ditampilkan di bagian **For tomorrow because different time**;
+   transaksi Backdate pukul 23:00 atau lebih tetap terlihat di blok utama.
+10. **Buka Folder Output** akan memilih file terakhir yang berhasil dibuat
     langsung di foldernya.
-12. Buka tab **File Hasil** untuk melihat workbook yang tersimpan. Pilih file
+11. Buka tab **File Hasil** untuk melihat workbook yang tersimpan. Pilih file
     lalu tekan **Buka File** atau **Unduh / Simpan Salinan…** untuk menyalinnya
     ke lokasi yang mudah dibagikan.
 

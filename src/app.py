@@ -404,13 +404,6 @@ class ReconApp(tk.Tk):
             controls, text="Cari seluruh data",
             command=lambda current=side: self._apply_search(current),
         ).grid(row=0, column=1, padx=3)
-        ttk.Button(
-            controls, text="Hapus",
-            command=lambda current=side: self._clear_search(current),
-        ).grid(row=0, column=2, padx=3)
-        ttk.Label(controls, text="Baris/halaman").grid(
-            row=0, column=3, padx=(10, 5)
-        )
         page_size = ttk.Combobox(
             controls,
             textvariable=page_size_var,
@@ -1356,7 +1349,12 @@ class ReconApp(tk.Tk):
             )
             self.audit.record(self.operator, "update_check_failed", error=error)
             if not silent:
-                messagebox.showerror("Pemeriksaan update gagal", error)
+                messagebox.showwarning(
+                    "Update",
+                    "Tidak dapat memeriksa versi terbaru. "
+                    "Pastikan komputer terhubung ke internet, "
+                    "lalu klik Periksa Update lagi.",
+                )
             return
         self._update_info = release
         if release is not None:

@@ -1,4 +1,4 @@
-name: Windows Installer
+name: Release
 
 on:
   push:
@@ -11,15 +11,20 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  # Allow release to complete; do not skip on workflow_dispatch / tag re-run
+  cancel-in-progress: false
+
 jobs:
-  # ── macOS: build DMG + PKG ──────────────────────────────────────────────────
-  build-macos-dmg:
+  # ── macOS: build DMG + PKG ───────────────────────────────────────────────────
+  build-macos:
     runs-on: macos-latest
     steps:
       - name: Check out source
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -67,13 +72,13 @@ jobs:
           retention-days: 7
 
   # ── Windows: build EXE ─────────────────────────────────────────────────────
-  build-windows-installer:
+  build-windows:
     runs-on: windows-latest
     steps:
       - name: Check out source
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -136,16 +141,17 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # ── Publish: tunggu kedua job, generate SHA256SUMS, upload release ──────────
+  # ── Release: collect artifacts, generate SHA256SUMS, publish ─────────────────
   publish-release:
     runs-on: ubuntu-latest
-    needs: [build-macos-dmg, build-windows-installer]
+    needs: [build-macos, build-windows]
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Check out source
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
+          token: ${{ github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -157,20 +163,9 @@ jobs:
         with:
           path: dist/artifacts
 
-      - name: Generate SHA256SUMS and publish release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Locate downloaded artifacts
+        id: artifacts
         run: |
-          VERSION=$(python3 -c "from src.version import __version__; print(__version__)")
-          TAG="v${VERSION}"
-
-          # Pastikan tag sesuai versi jika dipush via tag
-          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$TAG" ]]; then
-            echo "Git tag $GITHUB_REF_NAME does not match app version $TAG" >&2
-            exit 1
-          fi
-
-          # Temukan semua artifact
           EXE=$(find dist/artifacts/ReconBuilder-Windows-Setup -name "*.exe" | head -1)
           DMG=$(find dist/artifacts/ReconBuilder-macOS-DMG -name "*.dmg" | head -1)
           PKG=$(find dist/artifacts/ReconBuilder-macOS-PKG -name "*.pkg" | head -1)
@@ -179,26 +174,80 @@ jobs:
             [[ -f "$f" ]] || { echo "Artifact tidak ditemukan: $f" >&2; exit 1; }
           done
 
-          # Generate SHA256SUMS.txt
-          sha256sum "$EXE" "$DMG" "$PKG" \
-            docs/flow-recon-finance.png \
-            docs/flow-recon-finance.jpg \
-            | sed 's|dist/artifacts/[^/]*/||g; s|docs/||g' \
-            > dist/SHA256SUMS.txt
-          echo "=== SHA256SUMS.txt ===" && cat dist/SHA256SUMS.txt
+          # Salin semua ke dist/ untuk SHA256SUMS dan upload
+          mkdir -p dist/release
+          cp "$EXE" "dist/release/$(basename "$EXE")"
+          cp "$DMG" "dist/release/$(basename "$DMG")"
+          cp "$PKG" "dist/release/$(basename "$PKG")"
 
-          # Buat release jika belum ada
-          if ! gh release view "$TAG" --json tagName >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --target "$GITHUB_SHA" \
-              --title "Recon Builder $TAG" \
-              --generate-notes
+          cp docs/flow-recon-finance.png dist/release/
+          cp docs/flow-recon-finance.jpg dist/release/
+
+          echo "exe=$EXE" >> "$GITHUB_OUTPUT"
+          echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd dist/release
+          sha256sum *.exe *.dmg *.pkg *.png *.jpg \
+            | sed 's|  \./||g' \
+            > SHA256SUMS.txt
+          echo "=== SHA256SUMS.txt ===" && cat SHA256SUMS.txt
+
+      - name: Determine version and tag
+        id: version
+        run: |
+          VERSION=$(python3 -c "from src.version import __version__; print(__version__)")
+          TAG="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION, Tag: $TAG"
+
+          # Pastikan tag sesuai versi jika dipush via tag
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$TAG" ]]; then
+            echo "Git tag $GITHUB_REF_NAME does not match app version $TAG" >&2
+            exit 1
           fi
 
-          # Upload semua asset sekaligus
+      - name: Create or verify tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+            # Push to main: buat git tag secara eksplisit
+            if ! git ls-remote --tags origin "$TAG" | grep -q "refs/tags/$TAG"; then
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git tag "$TAG"
+              git push origin "$TAG"
+              echo "Tag $TAG berhasil dibuat dan di-push."
+            else
+              echo "Tag $TAG sudah ada di remote."
+            fi
+          fi
+
+      - name: Create release if it does not exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if ! gh release view "$TAG" --json tagName >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --target "${{ github.sha }}" \
+              --title "Recon Builder $TAG" \
+              --generate-notes
+            echo "Release $TAG berhasil dibuat."
+          else
+            echo "Release $TAG sudah ada; lewati pembuatan."
+          fi
+
+      - name: Upload all assets to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          cd dist/release
           gh release upload "$TAG" \
-            "$EXE" "$DMG" "$PKG" \
-            docs/flow-recon-finance.png \
-            docs/flow-recon-finance.jpg \
-            dist/SHA256SUMS.txt \
+            *.exe *.dmg *.pkg *.png *.jpg SHA256SUMS.txt \
             --clobber
+          echo "Semua aset berhasil di-upload ke release $TAG."

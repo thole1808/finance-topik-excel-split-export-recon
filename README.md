@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.16** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.38** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
@@ -14,6 +14,7 @@ Panduan pengguna Finance (alur, format input, isi output, dan pengecekan):
 
 Gambar alur: [PNG](docs/flow-recon-finance.png) ·
 [JPG](docs/flow-recon-finance.jpg).
+Logika alur lengkap: [docs/FLOW_LOGIC.md](docs/FLOW_LOGIC.md).
 
 Update aplikasi tersedia melalui tombol di kanan atas jendela. Aplikasi
 menampilkan versi terpasang dan versi release yang tersedia; update diunduh
@@ -50,10 +51,9 @@ aplikasi dijalankan; tidak ada tanggal atau jumlah baris transaksi yang
 ditetapkan tetap.
 
 Preview dapat menelusuri semua baris: pilih ukuran halaman 100/250/500/1000 atau Semua,
-gunakan Sebelumnya/Berikutnya, atau cari di semua kolom seluruh file. Pilih
-sel lalu klik **Edit sel terpilih**, atau klik ganda sel untuk mengedit; Enter
-atau pindah sel menerapkan, Esc membatalkan. Perubahan valid ikut masuk ke
-export.
+gunakan Sebelumnya/Berikutnya, atau cari di semua kolom seluruh file. Preview
+bersifat read-only — tidak ada tombol Edit, Hapus, atau klik ganda untuk
+mengubah sel; data hanya ditampilkan untuk inspeksi sebelum Generate.
 
 Workbook Backdate ditampilkan di tab terpisah untuk sheet LB, RB, dan RECON.
 Hasil dibuat secara default pada folder data Recon Builder di komputer, dengan
@@ -111,12 +111,12 @@ tidak perlu memasang paket Python secara terpisah. Script build memakai
 
 ## Installer Windows
 
-Build Windows dijalankan di runner Windows melalui GitHub Actions:
+Build Windows dan macOS dijalankan di GitHub Actions workflow **Release**:
 
-- Push ke `main` atau jalankan workflow **Windows Installer** secara manual;
-  `ReconBuilder-Setup.exe` tersedia sebagai artifact Actions.
+- Push ke `main` atau jalankan workflow **Release** secara manual;
+  `ReconBuilder-Setup.exe`, DMG, dan PKG tersedia sebagai artifact Actions.
 - Untuk installer rilis manual, push tag yang sama dengan versi source seperti
-  `v1.2.16`. Workflow mengisi release dengan installer Windows, paket macOS,
+   `v1.2.38`. Workflow mengisi release dengan installer Windows, paket macOS,
   DMG, flowchart PNG/JPG,
   dan checksum. Push versi baru ke `main` membuat tag/release secara otomatis.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
@@ -131,7 +131,7 @@ src/
   app.py                       # Antarmuka Tkinter
   recon_exporter.py            # Baca, transformasi Polars, ekspor XlsxWriter
   audit_log.py                 # Riwayat penggunaan SQLite dengan hash chain
-  device_identity.py           # IP/MAC lokal yang dimasking untuk audit
+  device_identity.py           # IP/MAC lokal yang dimasked untuk audit
   announcements.py             # Pemberitahuan suara lintas OS
   updater.py                   # Pemeriksaan, unduhan, dan pemasangan update
   version.py                   # Versi aplikasi (sumber tunggal)
@@ -143,11 +143,18 @@ assets/
   recon-builder.icns           # Ikon aplikasi macOS
   recon-builder.ico            # Ikon aplikasi/installer Windows
 scripts/
-  build_dmg.sh                 # Build .app dan .dmg di macOS
+  build_dmg.sh                 # Build .app dan .dmg di macOS (--clean untuk reset)
+  macos/
+    postinstall                # Skrip pasca-instal PKG
   windows/
     ReconBuilder.iss           # Konfigurasi installer Inno Setup
 .github/workflows/
-  windows-installer.yml        # Build Windows artifact/release
+  release.yml                  # Build DMG/PKG (macOS) + EXE (Windows) + release
+docs/
+  FLOW_LOGIC.md                # Dokumentasi lengkap logika alur data
+  flow-recon-finance.svg       # Diagram alur (vector)
+  flow-recon-finance.png       # Diagram alur (PNG 1800×1900)
+  flow-recon-finance.jpg       # Diagram alur (JPG 1800×1900)
 ```
 
 ## Catatan
