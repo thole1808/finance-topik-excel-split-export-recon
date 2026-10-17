@@ -12,6 +12,7 @@ import ssl
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -109,27 +110,51 @@ def _version_tuple(value: str) -> tuple[int, ...]:
         raise UpdateError(f"Format versi rilis tidak valid: {value}") from exc
 
 
-def _open_url(url: str, timeout: int = 20):
+def _retry_after_seconds(exc: urllib.error.HTTPError) -> int | None:
+    """Hitung detik hingga rate-limit GitHub di-reset, jika header tersedia."""
+    try:
+        reset_header = exc.headers.get("X-RateLimit-Reset")
+        if reset_header:
+            reset_at = int(reset_header)
+            now = int(time.time())
+            return max(reset_at - now, 0)
+    except (ValueError, TypeError, AttributeError):
+        pass
+    return None
+
+
+def _open_url(url: str, timeout: int = 20, retries: int = 3):
     if not url.startswith("https://"):
         raise UpdateError("URL update harus menggunakan HTTPS.")
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": USER_AGENT,
-            "X-GitHub-Api-Version": "2026-03-10",
-        },
-    )
-    try:
-        response = urllib.request.urlopen(request, timeout=timeout, context=_ssl_context())
-    except urllib.error.HTTPError:
-        raise
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise UpdateError(f"Tidak dapat terhubung ke GitHub: {exc}") from exc
-    if not response.geturl().startswith("https://"):
-        response.close()
-        raise UpdateError("Unduhan update dialihkan keluar dari koneksi HTTPS.")
-    return response
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": USER_AGENT,
+        "X-GitHub-Api-Version": "2026-03-10",
+    }
+    # Token opsional mengangkat batas rate GitHub dari 60 ke 5000 permintaan/jam.
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    request = urllib.request.Request(url, headers=headers)
+
+    for attempt in range(retries):
+        try:
+            response = urllib.request.urlopen(
+                request, timeout=timeout, context=_ssl_context()
+            )
+        except urllib.error.HTTPError as exc:
+            if exc.code in (403, 422, 500, 502, 503, 504) and attempt < retries - 1:
+                delay = _retry_after_seconds(exc)
+                time.sleep(delay if delay is not None else (1 + attempt))
+                continue
+            raise
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            raise UpdateError(f"Tidak dapat terhubung ke GitHub: {exc}") from exc
+        if not response.geturl().startswith("https://"):
+            response.close()
+            raise UpdateError("Unduhan update dialihkan keluar dari koneksi HTTPS.")
+        return response
+    raise UpdateError("Gagal memuat update dari GitHub setelah beberapa percobaan.")
 
 
 def latest_update(current_version: str) -> UpdateRelease | None:
@@ -140,7 +165,11 @@ def latest_update(current_version: str) -> UpdateRelease | None:
     except urllib.error.HTTPError as exc:
         if exc.code == 404:
             return None
-        raise UpdateError(f"GitHub menolak pemeriksaan update (HTTP {exc.code}).") from exc
+        reset = _retry_after_seconds(exc)
+        hint = f" Coba lagi dalam {reset} detik." if reset else ""
+        raise UpdateError(
+            f"GitHub menolak pemeriksaan update (HTTP {exc.code}).{hint}"
+        ) from exc
     tag = str(release.get("tag_name", ""))
     version = tag.removeprefix("v")
     if not tag or _version_tuple(version) <= _version_tuple(current_version):
