@@ -1384,6 +1384,27 @@ def build_recon_workbook(
             candidates = records_by_dt[dt_str]
             if len(candidates) == 1:
                 return candidates[0]
+        # Level 5: datetime-only fallback (meski tidak unik, pilih berdasarkan amount terdekat)
+        if dt_str and dt_str in records_by_dt:
+            candidates = records_by_dt[dt_str]
+            if amt is not None:
+                # Cari yang amount-nya terdekat dengan semua records ber-datetime sama
+                # Untuk ini butuh info amount per candidate; simpan dari records_by_dt
+                # Karena records_by_dt hanya simpan (ref, vref), kita pakai
+                # records_by_dt_amt untuk cari yang paling cocok
+                best_key: tuple | None = None
+                best_diff = float("inf")
+                for (d, a), cands in records_by_dt_amt.items():
+                    if d.split()[0] == dt_str.split()[0]:
+                        diff = abs(a - amt)
+                        if diff < best_diff:
+                            best_diff = diff
+                            best_key = (d, a)
+                if best_key is not None:
+                    return records_by_dt_amt[best_key][0]
+            # Jika amount tidak membantu, ambil yang pertama
+            if candidates:
+                return candidates[0]
         return None
 
     for row in lb_rows:
