@@ -1309,10 +1309,13 @@ def build_recon_workbook(
             try:
                 f = float(s)
                 if f.is_integer():
-                    return str(int(f))
+                    s = str(int(f))
             except ValueError:
                 pass
-        return s.lstrip("0") if s else s
+        # Hapus semua karakter non-digit untuk normalisasi ID pelanggan
+        digits_only = "".join(ch for ch in s if ch.isdigit())
+        base = digits_only.lstrip("0") if digits_only else s.lstrip("0")
+        return base if base else s
 
     def _norm_amt(value: Any) -> float | None:
         v = _clean(value)
@@ -1405,6 +1408,41 @@ def build_recon_workbook(
             # Jika amount tidak membantu, ambil yang pertama
             if candidates:
                 return candidates[0]
+        # Level 6: fuzzy billing_number (beda 1-2 digit, pilih terdekat,
+        # lalu amount terdekat sebagai tiebreaker)
+        if bn:
+            best_bn: str | None = None
+            best_dist = 3
+            for cand_bn in records_by_bn:
+                m, n = len(bn), len(cand_bn)
+                if abs(m - n) > 2:
+                    continue
+                prev = list(range(n + 1))
+                for i in range(1, m + 1):
+                    cur = [i] + [0] * n
+                    for j in range(1, n + 1):
+                        cur[j] = min(
+                            prev[j] + 1, cur[j - 1] + 1,
+                            prev[j - 1] + (
+                                0 if bn[i - 1] == cand_bn[j - 1] else 1
+                            ),
+                        )
+                    prev = cur
+                dist = prev[n]
+                if dist < best_dist:
+                    best_dist = dist
+                    best_bn = cand_bn
+            if best_bn is not None:
+                candidates = records_by_bn[best_bn]
+                if len(candidates) == 1:
+                    _, ref, vref = candidates[0]
+                    return (ref, vref)
+                if amt is not None:
+                    best = min(candidates, key=lambda c: abs(c[0] - amt))
+                    _, ref, vref = best
+                    return (ref, vref)
+                _, ref, vref = candidates[0]
+                return (ref, vref)
         return None
 
     for row in lb_rows:
