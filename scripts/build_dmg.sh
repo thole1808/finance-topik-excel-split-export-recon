@@ -64,7 +64,8 @@ done
 # Bersihkan build lama jika diminta
 if [[ "$CLEAN" -eq 1 ]]; then
     echo "Membersihkan build/ dan dist/..."
-    rm -rf "$PROJECT_ROOT/build" "$PROJECT_ROOT/dist"
+    chmod -R +w "$PROJECT_ROOT/build" "$PROJECT_ROOT/dist" 2>/dev/null || true
+    rm -rf "$PROJECT_ROOT/build" "$PROJECT_ROOT/dist" 2>/dev/null || true
 fi
 
 mkdir -p "$PROJECT_ROOT/dist"

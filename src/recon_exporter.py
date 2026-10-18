@@ -37,9 +37,6 @@ REFERENCE_STYLES = _load_json("ref_styles.json")
 FEE_TABLES = _load_json("fee_tables.json")
 REFERENCE_DATA = _load_json("reference_data.json")
 
-SUMMARY_HEADERS = (
-    "Category", "Count", "Amount", "Amount Success", "Amount Failed",
-)
 DATETIME_NUMBER_FORMAT = "yyyy-mm-dd hh:mm:ss"
 RECORDS_HEADERS = (
     "Datetime", "Product", "Billing Number", "Billing Name", "Ref",
@@ -556,177 +553,6 @@ def _set_widths(
         worksheet.set_column(f"{letter}:{letter}", max(0, width - 5 / 7))
 
 
-def _write_summary(
-    worksheet: xlsxwriter.worksheet.Worksheet,
-    workbook: xlsxwriter.Workbook,
-    records: Sequence[Mapping[str, Any]],
-    format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
-) -> None:
-    for col, header in enumerate(SUMMARY_HEADERS, start=1):
-        _write_cell(
-            worksheet, workbook, "Summary", 0, col, 1, header,
-            format_cache=format_cache,
-        )
-
-    last_record_row = max(2, len(records) + 1)
-    end = f"{last_record_row}"
-    categories = (
-        "Internal Transactions",
-        "Rajabiller Transactions",
-        "Loket Bayar Transactions",
-        "Matched Transactions",
-        "Unmatched (Internal Only)",
-        "Unmatched (Rajabiller Only)",
-        "Unmatched (Loket Bayar Only)",
-    )
-    for summary_row, category in enumerate(categories, start=2):
-        write_row = summary_row - 1
-        _write_cell(
-            worksheet, workbook, "Summary", write_row, 1, 2, category,
-            format_cache=format_cache,
-        )
-        recon_range = f"Records!$N$2:$N${end}"
-        vendor_range = f"Records!$M$2:$M${end}"
-        status_range = f"Records!$L$2:$L${end}"
-        amount_range = f"Records!$G$2:$G${end}"
-        fee_range = f"Records!$H$2:$H${end}"
-        vendor = None
-        recon = None
-        if category == "Internal Transactions":
-            count_formula = (
-                f'=COUNTIF({recon_range},"MATCHED")+'
-                f'COUNTIF({recon_range},"INTERNAL")'
-            )
-            # Jumlah hanya kolom Amount (G), tanpa Total Fee (H),
-            # agar cocok dengan recon manual.
-            amount_formula = (
-                f'=SUMIF({recon_range},"MATCHED",{amount_range})+'
-                f'SUMIF({recon_range},"INTERNAL",{amount_range})'
-            )
-            recon = {"MATCHED", "INTERNAL"}
-        elif category == "Rajabiller Transactions":
-            vendor, recon = "Rajabiller", {"MATCHED", "EXTERNAL"}
-        elif category == "Loket Bayar Transactions":
-            vendor, recon = "Loket Bayar", {"MATCHED", "EXTERNAL"}
-        elif category == "Matched Transactions":
-            recon = {"MATCHED"}
-        elif category == "Unmatched (Internal Only)":
-            recon = {"INTERNAL"}
-        elif category == "Unmatched (Rajabiller Only)":
-            vendor, recon = "Rajabiller", {"EXTERNAL"}
-        else:
-            vendor, recon = "Loket Bayar", {"EXTERNAL"}
-
-        cached_records = [
-            item for item in records
-            if (recon is None or item["recon_result"] in recon)
-            and (vendor is None or item["vendor"] == vendor)
-        ]
-        if category != "Internal Transactions":
-            criteria = ",".join(
-                f'{recon_range},"{result}"' for result in sorted(recon or ())
-            )
-            if vendor:
-                vendor_criteria = f',{vendor_range},"{vendor}"'
-                count_formula = (
-                    f"=COUNTIFS({criteria}{vendor_criteria})"
-                    if len(recon or ()) == 1
-                    else f"=COUNTIFS({criteria},{vendor_range},\"{vendor}\")"
-                )
-                # COUNTIFS criteria pairs must be complete for each result.
-                if len(recon or ()) > 1:
-                    count_formula = "+".join(
-                        f'COUNTIFS({recon_range},"{result}",'
-                        f'{vendor_range},"{vendor}")'
-                        for result in sorted(recon or ())
-                    )
-                    count_formula = f"={count_formula}"
-            elif len(recon or ()) == 1:
-                count_formula = (
-                    f'=COUNTIF({recon_range},"{next(iter(recon or ())) }")'
-                )
-            else:
-                count_formula = "+".join(
-                    f'COUNTIF({recon_range},"{result}")'
-                    for result in sorted(recon or ())
-                )
-                count_formula = f"={count_formula}"
-
-            # amount_formula hanya jumlah kolom Amount (G), tanpa fee (H).
-            if vendor:
-                amount_formula = "=" + "+".join(
-                    f'SUMIFS({amount_range},{recon_range},"{result}",'
-                    f'{vendor_range},"{vendor}")'
-                    for result in sorted(recon or ())
-                )
-            elif len(recon or ()) == 1:
-                result = next(iter(recon or ()))
-                amount_formula = (
-                    f'=SUMIF({recon_range},"{result}",{amount_range})'
-                )
-            else:
-                amount_formula = "=" + "+".join(
-                    f'SUMIF({recon_range},"{result}",{amount_range})'
-                    for result in sorted(recon or ())
-                )
-
-        cached_count = len(cached_records)
-        cached_amount = sum(
-            float(item["amount"] or 0)
-            for item in cached_records
-        )
-        success_amount = sum(
-            float(item["amount"] or 0)
-            for item in cached_records
-            if item["transaction_status"] == "SUCCESS"
-        )
-        failed_amount = sum(
-            float(item["amount"] or 0)
-            for item in cached_records
-            if item["transaction_status"] == "FAILED"
-        )
-        if category == "Internal Transactions":
-            success_formula = (
-                f'=SUMIFS({amount_range},{recon_range},"MATCHED",'
-                f'{status_range},"SUCCESS")+SUMIFS({amount_range},'
-                f'{recon_range},"INTERNAL",{status_range},"SUCCESS")'
-            )
-            failed_formula = (
-                f'=SUMIFS({amount_range},{recon_range},"MATCHED",'
-                f'{status_range},"FAILED")+SUMIFS({amount_range},'
-                f'{recon_range},"INTERNAL",{status_range},"FAILED")'
-            )
-        else:
-            recon_criteria = sorted(recon or ())
-            vendor_criteria = f',{vendor_range},"{vendor}"' if vendor else ""
-            success_terms: list[str] = []
-            failed_terms: list[str] = []
-            for result in recon_criteria:
-                success_terms.append(
-                    f'SUMIFS({amount_range},{recon_range},"{result}",'
-                    f'{status_range},"SUCCESS"{vendor_criteria})'
-                )
-                failed_terms.append(
-                    f'SUMIFS({amount_range},{recon_range},"{result}",'
-                    f'{status_range},"FAILED"{vendor_criteria})'
-                )
-            success_formula = "=" + "+".join(success_terms)
-            failed_formula = "=" + "+".join(failed_terms)
-
-        formulas = {
-            2: (count_formula, cached_count),
-            3: (amount_formula, cached_amount),
-            4: (success_formula, success_amount),
-            5: (failed_formula, failed_amount),
-        }
-        for column, (formula, cached) in formulas.items():
-            _write_cell(
-                worksheet, workbook, "Summary", write_row, column, 2,
-                formula=formula, cached_value=cached,
-                format_cache=format_cache,
-            )
-
-
 def _to_rows(frame: pl.DataFrame) -> list[dict[str, Any]]:
     return [
         {key: _clean(value) for key, value in row.items()}
@@ -828,7 +654,7 @@ def _write_status_total_row(
     group_rows: Sequence[Mapping[str, Any]],
     values_function: Any,
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
-    tomorrow_end_row: int | None = None,
+    tomorrow_rows: Sequence[Mapping[str, Any]] = (),
 ) -> None:
     current_columns = (7, 8, 9, 10, 11)
     tomorrow_columns = (
@@ -857,6 +683,19 @@ def _write_status_total_row(
         format_cache=format_cache,
         format_overrides=common_overrides,
     )
+    tomorrow_group_rows = [
+        row for row in tomorrow_rows
+        if _transaction_status(row.get("status"))
+        == _transaction_status(group_rows[0].get("status"))
+    ] if group_rows else []
+    tomorrow_totals = [0.0] * len(tomorrow_columns)
+    for record in tomorrow_group_rows:
+        values = values_function(record)
+        for index, column in enumerate(tomorrow_columns):
+            value = _clean(values.get(column))
+            if isinstance(value, (int, float)):
+                tomorrow_totals[index] += float(value)
+
     for index, (current_column, tomorrow_column) in enumerate(
         zip(current_columns, tomorrow_columns)
     ):
@@ -864,21 +703,11 @@ def _write_status_total_row(
         tomorrow_letter = xlsxwriter.utility.xl_col_to_name(
             tomorrow_column - 1
         )
-        if sheet == "LB" and tomorrow_end_row is not None:
-            status = _transaction_status(group_rows[0].get("status"))
-            formula = (
-                f"=SUM({current_letter}{first_data_row}:"
-                f"{current_letter}{last_data_row})"
-                f'+SUMIF($AY$4:$AY${tomorrow_end_row},"{status}",'
-                f"{tomorrow_letter}$4:{tomorrow_letter}${tomorrow_end_row})"
-            )
-        else:
-            formula = (
-                f"=SUM({current_letter}{first_data_row}:"
-                f"{current_letter}{last_data_row})"
-                f"+SUM({tomorrow_letter}{first_data_row}:"
-                f"{tomorrow_letter}{last_data_row})"
-            )
+        formula = (
+            f"=SUM({current_letter}{first_data_row}:"
+            f"{current_letter}{last_data_row})+"
+            f"{tomorrow_totals[index]}"
+        )
         _write_cell(
             worksheet, workbook, sheet, total_row - 1, current_column, 4,
             formula=formula,
@@ -1014,8 +843,6 @@ def _write_wide_sheet(
         )
         if sheet == "LB" else []
     )
-    tomorrow_end_row = 3 + len(tomorrow_rows)
-
     current_records_by_row = {
         excel_row: current_record
         for excel_row, current_record, _ in output_slots
@@ -1191,7 +1018,7 @@ def _write_wide_sheet(
                 worksheet, workbook, sheet, excel_row,
                 first_data_row, last_data_row, status_rows,
                 values_function, format_cache,
-                tomorrow_end_row if sheet == "LB" else None,
+                tomorrow_rows if sheet == "LB" else (),
             )
 
     worksheet.autofilter(
@@ -1492,44 +1319,6 @@ def build_recon_workbook(
     format_cache: dict[
         tuple[str, int, int], xlsxwriter.format.Format
     ] = {}
-
-    ws_summary = workbook.add_worksheet("Summary")
-    ws_summary.hide_gridlines(2)
-    ws_summary.freeze_panes(1, 0)
-    _set_widths(ws_summary, "Summary")
-    _write_summary(ws_summary, workbook, records, format_cache)
-    if progress_callback:
-        progress_callback("Sheet Summary selesai.")
-
-    ws_records = workbook.add_worksheet("Records")
-    ws_records.hide_gridlines(2)
-    ws_records.freeze_panes(1, 0)
-    _set_widths(ws_records, "Records")
-    for column, header in enumerate(RECORDS_HEADERS, start=1):
-        _write_cell(
-            ws_records, workbook, "Records", 0, column, 1, header,
-            format_cache=format_cache,
-        )
-    for index, record in enumerate(records, start=1):
-        for column, key in enumerate((
-            "datetime", "product", "billing_number", "billing_name", "ref",
-            "vendor_ref", "amount", "total_fee", "customer_fee", "lst_fee",
-            "margin_biller", "transaction_status", "vendor", "recon_result",
-        ), start=1):
-            format_overrides = (
-                _status_highlight(record.get("transaction_status")) or {}
-                if key == "transaction_status" else {}
-            )
-            if column == 1:
-                format_overrides["num_format"] = DATETIME_NUMBER_FORMAT
-            _write_cell(
-                ws_records, workbook, "Records", index, column, 2,
-                record.get(key), format_cache=format_cache,
-                format_overrides=format_overrides or None,
-            )
-        if progress_callback and index % 5000 == 0:
-            progress_callback(f"Records: {index:,}/{len(records):,} baris ditulis.")
-    ws_records.autofilter(0, 0, len(records), len(RECORDS_HEADERS) - 1)
 
     ws_lb = workbook.add_worksheet("LB")
     ws_lb.hide_gridlines(2)
