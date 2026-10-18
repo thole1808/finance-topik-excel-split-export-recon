@@ -84,13 +84,13 @@ RB_SHEET_LAYOUT = {
         20: "Tanggal", 21: "Kode Produk", 22: "No Pelanggan-1",
         23: "No Pelanggan-2", 24: "No Pelanggan-3",
         25: "No Pelanggan-4", 26: "Via", 27: "SN", 28: "Ref",
-        29: "Status", 30: "Nominal",
+        29: "Status", 30: "Total / Nominal",
     },
     "B": {
         34: "No", 35: "ID Trx", 36: "Tanggal", 37: "Kode Produk",
         38: "No Pelanggan-1", 39: "No Pelanggan-2",
         40: "No Pelanggan-3", 41: "No Pelanggan-4", 42: "Via",
-        43: "SN", 44: "Ref", 45: "Status", 46: "Nominal",
+        43: "SN", 44: "Ref", 45: "Status", 46: "Total / Nominal",
     },
     "C": {
         50: "Datetime", 51: "Product", 52: "Billing Number",
@@ -219,6 +219,13 @@ def read_raw_excel(
 
     frame = pl.read_excel(path, sheet_id=1, engine="calamine")
     if col_map:
+        if (
+            "Nominal" in col_map and "Nominal" not in frame.columns
+            and "Total" in frame.columns
+        ):
+            # Some RB vendor exports use Total where the standard export uses
+            # Nominal. Keep Total intact and add the required display alias.
+            frame = frame.with_columns(pl.col("Total").alias("Nominal"))
         rename_map = {source: target for source, target in col_map.items()
                       if source in frame.columns}
         frame = frame.rename(rename_map)
@@ -293,6 +300,11 @@ def read_backdate_workbook(path: Path) -> dict[str, pl.DataFrame]:
         sheet_name: str, column_map: Mapping[str, str]
     ) -> pl.DataFrame:
         frame = sheets[sheet_name]
+        if (
+            sheet_name == "RB" and "Nominal" not in frame.columns
+            and "Total" in frame.columns
+        ):
+            frame = frame.with_columns(pl.col("Total").alias("Nominal"))
         rename_map = {
             source: target for source, target in column_map.items()
             if source in frame.columns
@@ -567,6 +579,19 @@ def _to_rows(frame: pl.DataFrame) -> list[dict[str, Any]]:
     ]
 
 
+def _vendor_amount(row: Mapping[str, Any], side: str) -> Any:
+    """Return the Vendor Total compared to the BO Biller Amount.
+
+    Standard Rajabiller workbooks have Nominal instead of Total, so Nominal
+    remains the fallback for that source format.
+    """
+    for key in ("total", "Total"):
+        value = _clean(row.get(key))
+        if value is not None:
+            return value
+    return _clean(row.get("nominal")) if side == "RB" else None
+
+
 def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
     if "_pair_vendor" in row or "_pair_bo" in row:
         vendor = row.get("_pair_vendor")
@@ -696,7 +721,7 @@ def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
             23: vendor.get("pelanggan_2"), 24: vendor.get("pelanggan_3"),
             25: vendor.get("pelanggan_4"), 26: vendor.get("via"),
             27: vendor.get("sn"), 28: vendor.get("ref"),
-            29: vendor.get("status"), 30: vendor.get("nominal"),
+            29: vendor.get("status"), 30: _vendor_amount(vendor, "RB"),
             34: vendor.get("no"), 35: vendor.get("id_trx"),
             36: _datetime_value(vendor.get("tanggal")),
             37: vendor.get("kode_produk"),
@@ -704,7 +729,7 @@ def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
             40: vendor.get("pelanggan_3"), 41: vendor.get("pelanggan_4"),
             42: vendor.get("via"), 43: vendor.get("sn"),
             44: vendor.get("ref"), 45: vendor.get("status"),
-            46: vendor.get("nominal"),
+            46: _vendor_amount(vendor, "RB"),
         }
         return {**raw, **recon}
 
@@ -724,13 +749,15 @@ def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
         21: row.get("kode_produk"), 22: row.get("pelanggan_1"),
         23: row.get("pelanggan_2"), 24: row.get("pelanggan_3"),
         25: row.get("pelanggan_4"), 26: row.get("via"), 27: row.get("sn"),
-        28: row.get("ref"), 29: row.get("status"), 30: row.get("nominal"),
+        28: row.get("ref"), 29: row.get("status"),
+        30: _vendor_amount(row, "RB"),
         34: row.get("no"), 35: row.get("id_trx"),
         36: date_value,
         37: row.get("kode_produk"), 38: row.get("pelanggan_1"),
         39: row.get("pelanggan_2"), 40: row.get("pelanggan_3"),
         41: row.get("pelanggan_4"), 42: row.get("via"), 43: row.get("sn"),
-        44: row.get("ref"), 45: row.get("status"), 46: row.get("nominal"),
+        44: row.get("ref"), 45: row.get("status"),
+        46: _vendor_amount(row, "RB"),
     }
     recon = {
         1: date_value, 2: product, 3: row.get("pelanggan_1"),
@@ -1203,12 +1230,14 @@ def _pair_vendor_and_bo(
         elif vendor_side == "LB":
             ref, vendor_ref = row.get("ref"), row.get("ref_id")
             bn, amount, timestamp = (
-                row.get("idpel"), row.get("tagihan"), row.get("tanggal"),
+                row.get("idpel"), _vendor_amount(row, vendor_side),
+                row.get("tanggal"),
             )
         else:
             ref, vendor_ref = row.get("ref"), row.get("sn")
             bn, amount, timestamp = (
-                row.get("pelanggan_1"), row.get("nominal"), row.get("tanggal"),
+                row.get("pelanggan_1"), _vendor_amount(row, vendor_side),
+                row.get("tanggal"),
             )
         ref_key, vendor_ref_key = text_key(ref), text_key(vendor_ref)
         bn_key, amt_key = billing_key(bn), amount_key(amount)
@@ -1261,9 +1290,8 @@ def _pair_vendor_and_bo(
                 vendor, bo = vendor_rows[vendor_index], bo_records[bo_index]
                 vendor_date = _as_datetime(vendor.get("tanggal"))
                 bo_date = _as_datetime(bo.get("datetime"))
-                vendor_amount = amount_key(
-                    vendor.get("tagihan") if vendor_side == "LB"
-                    else vendor.get("nominal")
+                vendor_amount_value = amount_key(
+                    _vendor_amount(vendor, vendor_side)
                 )
                 bo_amount = amount_key(bo.get("amount"))
                 vendor_number = billing_key(
@@ -1279,7 +1307,7 @@ def _pair_vendor_and_bo(
                     or vendor_date.date() != bo_date.date()
                     or (vendor_status and bo_status and vendor_status != bo_status)
                     or (
-                        (vendor_amount is None or vendor_amount != bo_amount)
+                        (vendor_amount_value is None or vendor_amount_value != bo_amount)
                         and tier > 1
                     )
                 ):
@@ -1309,10 +1337,9 @@ def _pair_vendor_and_bo(
             "matched": bo is not None,
             "_pair_issue": (
                 "NO BO MATCH" if bo is None else
-                "AMOUNT MISMATCH" if amount_key(
-                    vendor.get("tagihan") if vendor_side == "LB"
-                    else vendor.get("nominal")
-                ) != amount_key(bo.get("amount")) else None
+                "AMOUNT MISMATCH"
+                if amount_key(_vendor_amount(vendor, vendor_side))
+                != amount_key(bo.get("amount")) else None
             ),
         })
     for index, bo in enumerate(bo_records):

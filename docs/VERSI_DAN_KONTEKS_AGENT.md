@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.42**
+**Versi saat ini: 1.2.43**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -32,6 +32,14 @@ memodifikasi kode:
   pelanggan, nominal, tanggal, dan status. Kandidat ambigu atau berbeda tidak
   dianggap cocok; baris yang belum cocok tetap ditampilkan di sisi sumbernya.
 - DMG/PKG macOS dibangun lokal; installer Windows dibangun lewat workflow.
+
+### 1.2.43 — Dasar Amount Vendor
+
+- Matching nominal LB dan RB membandingkan BO `Amount` dengan Vendor `Total`.
+- Untuk format Rajabiller standar yang tidak memiliki kolom `Total`, gunakan
+  `Nominal` sebagai fallback; bila kolom `Total` tersedia, kolom itu diutamakan.
+- Nilai nominal berbeda pada pasangan yang memiliki referensi kuat ditandai
+  `AMOUNT MISMATCH`; pasangan cadangan tetap mensyaratkan nominal sama.
 
 - Preview menyediakan pilihan **Semua** selain paging; ketiga sheet Backdate
   (`LB`, `RB`, `RECON`) tampil sebagai tab tersendiri.
@@ -577,6 +585,7 @@ data BO di kiri dan Vendor di kanan. Gambar ini bukan screenshot interaktif.
 
 ## Riwayat versi ringkas
 
+| 1.2.43 | Bandingkan BO Amount dengan Vendor Total untuk LB/RB; RB format lama fallback ke Nominal; rebuild lokal dan rilis publik dengan checksum. |
 | 1.2.42 | Pemadanan BO Biller/Vendor satu-ke-satu; output hanya LB/RB; flow diagram baru; build macOS lokal, workflow Windows manual, release publik dengan checksum. |
 | 1.2.38 | Workflow release diperbaiki (release.yml, concurrency, tag Git eksplisit); build_dmg.sh mendukung --clean dan verifikasi dependensi; bug page_size.bind() diperbaiki; tombol Hapus di preview dihilangkan; updater timeout 30s/5x retry dengan pesan error yang ramah; flow diagram diperbarui ke 1.2.38. |
 | 1.2.37 | Preview data read-only: tampilan, pencarian, dan navigasi halaman hanya untuk melihat; tombol Edit, klik ganda, dan Enter tidak lagi menerapkan perubahan; sel tidak bisa dihapus/diedit. |

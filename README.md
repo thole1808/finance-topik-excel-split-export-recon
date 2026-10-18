@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.42** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.43** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Vendor Loket Bayar (LB) dan Rajabiller
@@ -39,10 +39,12 @@ klik **Generate Recon** setelah semua file diupload. Data BO Backdate berasal
 dari sheet `RECON`, data Vendor Backdate berasal dari sheet `LB`/`RB`; untuk
 Enddate, data BO berasal dari sheet `Records` recon dan data Vendor berasal dari
 file LB/RB. Pencocokan mengutamakan nomor referensi transaksi dan memeriksa
-nomor pelanggan, tanggal, serta status. Nominal harus cocok untuk pencocokan
-cadangan; jika referensi kuat menunjukkan transaksi sama tetapi nominal berbeda,
-keduanya tetap dipasangkan dan ditandai `AMOUNT MISMATCH`. Baris ambigu atau
-tanpa pasangan ditandai di hasil. Baris Backdate ditempatkan sebelum Enddate. Subtotal
+nomor pelanggan, tanggal, serta status. Nominal pemadanan mengambil nilai
+Vendor `Total` dan membandingkannya dengan BO `Amount` (RB standar tanpa `Total`
+menggunakan `Nominal`). Nominal harus cocok untuk pencocokan cadangan; jika
+referensi kuat menunjukkan transaksi sama tetapi nominal berbeda, keduanya
+tetap dipasangkan dan ditandai `AMOUNT MISMATCH`. Baris ambigu atau tanpa
+pasangan ditandai di hasil. Baris Backdate ditempatkan sebelum Enddate. Subtotal
 SUCCESS/FAILED di sheet `LB` dan `RB` menggabungkan Backdate dan End Date;
 transaksi End Date pukul 23:00 ditampilkan di bagian For tomorrow.
 Workbook ditulis menggunakan **Polars + XlsxWriter**. File recon input harus

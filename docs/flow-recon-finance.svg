@@ -22,7 +22,7 @@
   <rect width="1800" height="1500" fill="#f3f7fb"/>
 
   <text x="70" y="78" class="title">FLOW BARU · RECON BUILDER</text>
-  <text x="72" y="119" class="subtitle">Versi 1.2.42 · Data BO Biller di kiri · Data Vendor di kanan · tanpa sheet Records pada output</text>
+  <text x="72" y="119" class="subtitle">Versi 1.2.43 · Data BO Biller di kiri · Data Vendor di kanan · tanpa sheet Records pada output</text>
 
   <!-- Input periods -->
   <rect x="70" y="170" width="790" height="320" rx="24" class="card"/>
@@ -52,7 +52,7 @@
   <text x="1035" y="278" class="body">Referensi transaksi unik: BO Vendor Ref ↔ referensi Vendor</text>
   <circle cx="1000" cy="327" r="17" fill="#398bc4"/>
   <text x="994" y="334" font-size="18" fill="#fff" font-weight="700">2</text>
-  <text x="1035" y="335" class="body">Fallback: nomor pelanggan + nominal + waktu/tanggal</text>
+  <text x="1035" y="335" class="body">Vendor Total ↔ BO Amount; RB standar fallback ke Nominal</text>
   <circle cx="1000" cy="384" r="17" fill="#398bc4"/>
   <text x="994" y="391" font-size="18" fill="#fff" font-weight="700">3</text>
   <text x="1035" y="392" class="body">Kandidat harus unik; nomor, tanggal, dan status diperiksa</text>
@@ -103,5 +103,5 @@
   <text x="72" y="1315" class="heading">5 · Finance review</text>
   <text x="72" y="1352" class="body">Periksa pasangan, mismatch nominal, baris tanpa pasangan, subtotal, tanggal, dan status.</text>
   <text x="72" y="1410" class="small">File hasil .xlsx → folder output lokal · updater mengambil release publik dan memeriksa SHA-256.</text>
-  <text x="72" y="1460" class="tiny">Recon Builder · Flow data v1.2.42</text>
+  <text x="72" y="1460" class="tiny">Recon Builder · Flow data v1.2.43</text>
 </svg>
