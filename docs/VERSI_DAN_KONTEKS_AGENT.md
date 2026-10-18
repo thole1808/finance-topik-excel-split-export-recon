@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.43**
+**Versi saat ini: 1.2.46**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -21,6 +21,14 @@ memodifikasi kode:
    dan [`scripts/windows/ReconBuilder.iss`](../scripts/windows/ReconBuilder.iss).
 
 ## Implementasi 1.2.0 — UI, output, dan riwayat operator
+
+### 1.2.46 — Diagram dan kesiapan update
+
+- Menambahkan flowchart lengkap terpisah dari diagram ringkas ALUR RECON.
+- Memindahkan seluruh hasil build macOS/Windows ke `dist/`; manifest checksum
+  rilis bernama `SHA256SUMS.txt`.
+- Release update aplikasi harus publik, berstatus Latest, dan berisi installer
+  platform serta manifest checksum yang cocok.
 
 ### 1.2.42 — Pemadanan BO Biller dengan Vendor
 
@@ -570,18 +578,9 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 - Memperbarui gaya UI desktop dan memastikan metadata versi DMG/Inno Setup
   mengikuti `src/version.py`.
 
-## Gambar yang tersedia
+## Diagram alur
 
-Diagram berikut merangkum alur pemadanan aplikasi versi 1.2.42 untuk kebutuhan
-dokumentasi/presentasi. Sumber vector ada di
-[`flow-recon-finance.svg`](flow-recon-finance.svg):
-
-- [`flow-recon-finance.png`](flow-recon-finance.png) — PNG 2700×2250.
-- [`flow-recon-finance.jpg`](flow-recon-finance.jpg) — JPEG 2700×2250.
-
-Diagram menerangkan sumber BO Biller dan Vendor untuk Backdate/Enddate,
-pemadanan satu-ke-satu, penanda mismatch, lalu output hanya sheet LB/RB dengan
-data BO di kiri dan Vendor di kanan. Gambar ini bukan screenshot interaktif.
+Diagram yang digunakan saat ini tersedia terpisah: ringkasan di `docs/alur-recon/` dan flowchart cara kerja sistem di `docs/flowchart-sistem/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
@@ -653,6 +652,8 @@ data BO di kiri dan Vendor di kanan. Gambar ini bukan screenshot interaktif.
   workflow tersedia; upload checksum yang sesuai dan pastikan release publik.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
   dibuat di runner Windows melalui GitHub Actions `workflow_dispatch` saja.
+- Simpan manifest `SHA256SUMS.txt` lokal di `dist/` dan sertakan manifest yang
+  sama sebagai asset release bersama installer.
 - Jangan menambahkan workbook transaksi, data pelanggan, output, `.venv`,
   `build/`, atau `dist/` ke Git.
 - Matching silang settlement LB/RB belum didefinisikan oleh aturan bisnis;

@@ -3,7 +3,10 @@
 Dokumen ini menjelaskan logika alur data secara terperinci dari upload hingga output,
 termasuk sinkronisasi referensi, lookup fee, dan mekanisme update.
 
-Diagram visual alur tersedia di `flow-recon-finance.svg` / `.png` / `.jpg`.
+Diagram singkat empat sumber upload tersedia di `alur-recon/alur-recon.svg`,
+`alur-recon/alur-recon.png`, dan `alur-recon/alur-recon.jpg`.
+Flowchart lengkap sistem saat ini tersedia di `flowchart-sistem/` dalam format
+SVG, PNG, dan JPG.
 
 ---
 

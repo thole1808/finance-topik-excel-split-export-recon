@@ -5,19 +5,19 @@ memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 
 ## Gambaran alur
 
-![Diagram alur Recon Builder untuk Finance](flow-recon-finance.png)
+![Alur sederhana Recon Builder dari empat file upload ke laporan Excel](alur-recon/alur-recon.png)
 
-Versi JPG tersedia di [flow-recon-finance.jpg](flow-recon-finance.jpg).
-File sumber diagram: [flow-recon-finance.svg](flow-recon-finance.svg).
+Versi [JPG](alur-recon/alur-recon.jpg) dan sumber [SVG](alur-recon/alur-recon.svg).
+Flowchart lengkap cara kerja aplikasi: [PNG](flowchart-sistem/flowchart-sistem.png) ·
+[JPG](flowchart-sistem/flowchart-sistem.jpg).
 
-Alur singkat: **Operator → upload LB/RB/recon dan Backdate opsional → validasi →
-preview per sheet/koreksi → proses dengan terminal → export bertimestamp →
-riwayat aktivitas → periksa Summary, Records, LB, dan RB**.
-Jumlah baris, tanggal, nominal, dan nilai lain diambil dari file yang diupload
-setiap kali proses berjalan. Data pada sheet Summary dan Records dari file recon
-referensi ditampilkan untuk ditinjau; Summary dan Records pada output dihitung
-ulang dari upload LB/RB. Jika Backdate disertakan, sheet RECON Backdate
-divalidasi, tetapi tidak menggantikan nilai dari sumber LB/RB.
+Siapkan data sebelum upload: kumpulkan semua tanggal Backdate di satu workbook
+Backdate (sheet `LB`, `RB`, `RECON`), kumpulkan Enddate Vendor LB dan RB pada
+file masing-masing, serta kumpulkan Enddate BO Biller pada sheet `Records` di
+file Recon. Aplikasi tidak menggabungkan file terpisah secara otomatis.
+Setelah Generate, periksa workbook hasil yang berisi sheet **LB** dan **RB**;
+data BO Biller ada di kiri dan data Vendor di kanan. Sheet `Summary` pada file
+Recon menjadi referensi.
 
 ## Menjalankan aplikasi
 
@@ -106,10 +106,11 @@ Ikon Recon Builder disertakan dalam aplikasi macOS dan installer Windows, lalu
 ikut diperbarui bersama versi aplikasi. Diagram alur tersedia sebagai PNG dan
 JPG pada dokumen ini dan sebagai aset pada GitHub Release.
 
-Setiap push ke `main` dengan versi baru di `src/version.py` membangun installer
-Windows dan mencatat Git tag `v<versi>` serta GitHub Release yang memuat DMG,
-installer PKG macOS, installer Windows, diagram PNG/JPG, dan checksum. Siapkan
-DMG dan PKG hasil build macOS di root repository sebelum push versi baru.
+Untuk rilis update, build DMG/PKG dilakukan lokal di macOS dan installer
+Windows dibuat lewat workflow GitHub Actions manual. Setelah keduanya siap,
+terbitkan GitHub Release publik sebagai **Latest** dengan installer, diagram
+PNG/JPG, dan `SHA256SUMS.txt` yang berisi hash setiap installer. Hasil build
+lokal dan manifest checksum disimpan di folder `dist/`.
 
 ## Riwayat penggunaan dan audit
 

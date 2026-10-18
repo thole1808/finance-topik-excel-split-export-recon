@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1400" viewBox="0 0 1800 1400">
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#54728e"/>
+    </marker>
+    <marker id="green-arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#16836e"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #183858; }
+      .title { font-size: 48px; font-weight: 700; }
+      .subtitle { font-size: 25px; fill: #58718a; }
+      .heading { font-size: 28px; font-weight: 700; }
+      .card-title { font-size: 25px; font-weight: 700; }
+      .body { font-size: 21px; fill: #435e78; }
+      .small { font-size: 18px; fill: #526a81; }
+      .white { fill: #fff; }
+      .card { fill: #fff; stroke: #d1deea; stroke-width: 2; }
+      .line { fill: none; stroke: #54728e; stroke-width: 5; marker-end: url(#arrow); }
+      .green-line { fill: none; stroke: #16836e; stroke-width: 5; marker-end: url(#green-arrow); }
+    </style>
+  </defs>
+  <rect width="1800" height="1400" fill="#f3f7fb"/>
+
+  <text x="70" y="82" class="title">DARI 4 FILE JADI LAPORAN</text>
+  <text x="72" y="126" class="subtitle">Recon Builder mencocokkan catatan transaksi BO Biller dengan Vendor LB dan RB.</text>
+
+  <rect x="70" y="158" width="1660" height="78" rx="18" fill="#fff4dc" stroke="#efd49b" stroke-width="2"/>
+  <text x="100" y="193" class="body" font-weight="700">Data dari beberapa hari?</text>
+  <text x="365" y="193" class="body">Satukan data sejenis ke satu file sebelum diunggah.</text>
+  <text x="100" y="220" class="small">Aplikasi tidak menggabungkan file terpisah secara otomatis.</text>
+
+  <text x="70" y="290" class="heading">1 · Pilih file yang sesuai</text>
+
+  <!-- Backdate -->
+  <rect x="70" y="320" width="390" height="300" rx="22" class="card"/>
+  <rect x="70" y="320" width="390" height="64" rx="22" fill="#fff0d6"/>
+  <rect x="70" y="362" width="390" height="22" fill="#fff0d6"/>
+  <circle cx="106" cy="352" r="22" fill="#d99524"/>
+  <text x="99" y="360" font-size="22" font-weight="700" class="white">1</text>
+  <text x="142" y="361" class="card-title">FILE BACKDATE</text>
+  <text x="98" y="425" class="body" font-weight="700">Opsional · 1 workbook</text>
+  <text x="98" y="468" class="small">Sheet LB dan RB:</text>
+  <text x="98" y="495" class="small">catatan Vendor Backdate.</text>
+  <text x="98" y="540" class="small">Sheet RECON:</text>
+  <text x="98" y="567" class="small">catatan BO Biller Backdate.</text>
+
+  <!-- LB -->
+  <rect x="500" y="320" width="390" height="300" rx="22" class="card"/>
+  <rect x="500" y="320" width="390" height="64" rx="22" fill="#e6f4ff"/>
+  <rect x="500" y="362" width="390" height="22" fill="#e6f4ff"/>
+  <circle cx="536" cy="352" r="22" fill="#398bc4"/>
+  <text x="529" y="360" font-size="22" font-weight="700" class="white">2</text>
+  <text x="572" y="361" class="card-title">UPLOAD LB</text>
+  <text x="528" y="435" class="body" font-weight="700">Enddate · Loket Bayar</text>
+  <text x="528" y="478" class="small">Masukkan data Vendor LB.</text>
+  <text x="528" y="515" class="small">Jika banyak tanggal, gabungkan</text>
+  <text x="528" y="542" class="small">dulu ke satu file LB.</text>
+
+  <!-- RB -->
+  <rect x="930" y="320" width="390" height="300" rx="22" class="card"/>
+  <rect x="930" y="320" width="390" height="64" rx="22" fill="#e8f7f2"/>
+  <rect x="930" y="362" width="390" height="22" fill="#e8f7f2"/>
+  <circle cx="966" cy="352" r="22" fill="#18866f"/>
+  <text x="959" y="360" font-size="22" font-weight="700" class="white">3</text>
+  <text x="1002" y="361" class="card-title">UPLOAD RB</text>
+  <text x="958" y="435" class="body" font-weight="700">Enddate · Rajabiller</text>
+  <text x="958" y="478" class="small">Masukkan data Vendor RB.</text>
+  <text x="958" y="515" class="small">Jika banyak tanggal, gabungkan</text>
+  <text x="958" y="542" class="small">dulu ke satu file RB.</text>
+
+  <!-- Recon -->
+  <rect x="1360" y="320" width="370" height="300" rx="22" class="card"/>
+  <rect x="1360" y="320" width="370" height="64" rx="22" fill="#f0ebff"/>
+  <rect x="1360" y="362" width="370" height="22" fill="#f0ebff"/>
+  <circle cx="1396" cy="352" r="22" fill="#7658bd"/>
+  <text x="1389" y="360" font-size="22" font-weight="700" class="white">4</text>
+  <text x="1432" y="361" class="card-title">UPLOAD RECON</text>
+  <text x="1388" y="435" class="body" font-weight="700">Enddate · BO Biller</text>
+  <text x="1388" y="478" class="small">Sheet Records: catatan transaksi</text>
+  <text x="1388" y="505" class="small">untuk dicocokkan. Summary</text>
+  <text x="1388" y="532" class="small">hanya untuk dilihat sebagai</text>
+  <text x="1388" y="559" class="small">referensi.</text>
+
+  <path d="M265 620 L265 666" class="line"/>
+  <path d="M695 620 L695 666" class="line"/>
+  <path d="M1125 620 L1125 666" class="line"/>
+  <path d="M1545 620 L1545 666" class="line"/>
+
+  <rect x="180" y="680" width="1440" height="188" rx="24" fill="#e9f0f7" stroke="#c9d8e6" stroke-width="2"/>
+  <text x="900" y="726" text-anchor="middle" class="heading">2 · Aplikasi mencocokkan transaksi</text>
+  <text x="900" y="772" text-anchor="middle" class="body">LB dicocokkan dengan LB · RB dicocokkan dengan RB</text>
+  <text x="900" y="810" text-anchor="middle" class="small">Backdate dengan Backdate · Enddate dengan Enddate</text>
+  <text x="900" y="842" text-anchor="middle" class="small">Referensi transaksi membantu menemukan pasangan yang tepat.</text>
+
+  <path d="M900 868 L900 924" class="green-line"/>
+  <text x="70" y="968" class="heading">3 · Buka file Excel hasil</text>
+
+  <rect x="70" y="995" width="800" height="280" rx="24" class="card"/>
+  <rect x="70" y="995" width="800" height="64" rx="24" fill="#e6f4ff"/>
+  <rect x="70" y="1037" width="800" height="22" fill="#e6f4ff"/>
+  <text x="108" y="1038" class="card-title">SHEET LB · LOKET BAYAR</text>
+  <rect x="108" y="1080" width="340" height="135" rx="16" fill="#f0f7ff" stroke="#c4d9eb" stroke-width="2"/>
+  <text x="132" y="1120" class="card-title">KIRI · BO BILLER</text>
+  <text x="132" y="1157" class="small">Catatan dari sistem biller</text>
+  <text x="132" y="1185" class="small">Ref · Amount · Fee</text>
+  <rect x="490" y="1080" width="340" height="135" rx="16" fill="#effaf7" stroke="#b2dfd5" stroke-width="2"/>
+  <text x="514" y="1120" class="card-title">KANAN · VENDOR LB</text>
+  <text x="514" y="1157" class="small">Catatan Loket Bayar</text>
+  <text x="514" y="1185" class="small">Ref · Tagihan · Total</text>
+  <path d="M452 1148 L482 1148" class="green-line"/>
+  <text x="108" y="1245" class="small">Lihat kedua sisi berdampingan untuk meninjau transaksi.</text>
+
+  <rect x="930" y="995" width="800" height="280" rx="24" class="card"/>
+  <rect x="930" y="995" width="800" height="64" rx="24" fill="#e8f7f2"/>
+  <rect x="930" y="1037" width="800" height="22" fill="#e8f7f2"/>
+  <text x="968" y="1038" class="card-title">SHEET RB · RAJABILLER</text>
+  <rect x="968" y="1080" width="340" height="135" rx="16" fill="#f0f7ff" stroke="#c4d9eb" stroke-width="2"/>
+  <text x="992" y="1120" class="card-title">KIRI · BO BILLER</text>
+  <text x="992" y="1157" class="small">Catatan dari sistem biller</text>
+  <text x="992" y="1185" class="small">Ref · Amount · Fee</text>
+  <rect x="1350" y="1080" width="340" height="135" rx="16" fill="#effaf7" stroke="#b2dfd5" stroke-width="2"/>
+  <text x="1374" y="1120" class="card-title">KANAN · VENDOR RB</text>
+  <text x="1374" y="1157" class="small">Catatan Rajabiller</text>
+  <text x="1374" y="1185" class="small">Ref · Nominal</text>
+  <path d="M1312 1148 L1342 1148" class="green-line"/>
+  <text x="968" y="1245" class="small">Satu file hasil berisi dua sheet: LB dan RB.</text>
+
+  <rect x="70" y="1310" width="1660" height="62" rx="18" fill="#183858"/>
+  <text x="900" y="1350" text-anchor="middle" font-size="23" font-weight="700" class="white">Empat file masuk → transaksi dicocokkan → satu laporan Excel siap diperiksa.</text>
+</svg>

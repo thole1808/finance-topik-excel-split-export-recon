@@ -13,7 +13,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             echo "Penggunaan: build_dmg.sh [--clean]"
-            echo "  --clean  Hapus build/ dan dist/ sebelum build"
+            echo "  --clean  Hapus folder build/ dan dist/ sebelum build"
             exit 0
             ;;
         *)
@@ -70,9 +70,16 @@ fi
 
 mkdir -p "$PROJECT_ROOT/dist"
 
+# Keep temporary app/build products under dist and clear leftovers from any
+# interrupted packaging run before starting a fresh build.
+rm -rf "$PROJECT_ROOT/dist/.build" \
+    "$PROJECT_ROOT/dist/macos-installer-stage"
+mkdir -p "$PROJECT_ROOT/dist/.build/spec" \
+    "$PROJECT_ROOT/dist/.build/pyinstaller"
+
 APP_VERSION="$($PYTHON -c "from src.version import __version__; print(__version__)")"
 BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
-BUILD_DIR="$PROJECT_ROOT/build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
+BUILD_DIR="$PROJECT_ROOT/dist/.build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
 APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
 
 echo "=== Build Recon Builder v$APP_VERSION ($BUILD_TIMESTAMP) ==="
@@ -98,8 +105,8 @@ echo "Membangun aplikasi dengan PyInstaller..."
     --add-data "$PROJECT_ROOT/src/reference_data.json:src" \
     --add-data "$PROJECT_ROOT/assets/batik-watermark.png:assets" \
     --distpath "$BUILD_DIR" \
-    --specpath "$PROJECT_ROOT/build" \
-    --workpath "$PROJECT_ROOT/build/pyinstaller" \
+    --specpath "$PROJECT_ROOT/dist/.build/spec" \
+    --workpath "$PROJECT_ROOT/dist/.build/pyinstaller" \
     "$PROJECT_ROOT/app.py"
 
 DMG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.dmg"
@@ -130,6 +137,7 @@ for f in \
     [[ -f "$f" ]] && rm -f "$f"
 done
 rm -f "$PROJECT_ROOT/ReconBuilder.dmg" "$PROJECT_ROOT/ReconBuilder.pkg"
+rm -f "$PROJECT_ROOT"/ReconBuilder-v*.dmg.zip
 
 # ── 4. DMG (ULFO = lzfse, jauh lebih cepat dari UDZO di Apple runner) ─────
 echo "Membuat DMG..."
@@ -164,14 +172,11 @@ pkgbuild \
     --version "$APP_VERSION" \
     "$PROJECT_ROOT/dist/$PKG_NAME"
 
-# Salin ke root untuk backward compat
-cp "$PROJECT_ROOT/dist/$DMG_NAME" "$PROJECT_ROOT/$DMG_NAME"
-cp "$PROJECT_ROOT/dist/$PKG_NAME" "$PROJECT_ROOT/$PKG_NAME"
+# Keep only the final installers in dist after packaging completes.
+rm -rf "$PROJECT_ROOT/dist/.build"
 
 echo ""
 echo "=== Build selesai ==="
 echo "DMG:  $PROJECT_ROOT/dist/$DMG_NAME"
 echo "PKG:  $PROJECT_ROOT/dist/$PKG_NAME"
-echo "App:  $APP_BUNDLE"
-echo ""
-echo "DMG dan PKG juga disalin ke root project untuk workflow release."
+echo "Semua file build tersedia di dist/."

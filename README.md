@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.43** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.46** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Vendor Loket Bayar (LB) dan Rajabiller
@@ -13,8 +13,10 @@ Layout, lebar kolom, format angka, warna, serta rumus mengacu pada
 Panduan pengguna Finance (alur, format input, isi output, dan pengecekan):
 [docs/PANDUAN_FINANCE.md](docs/PANDUAN_FINANCE.md).
 
-Gambar alur: [PNG](docs/flow-recon-finance.png) ·
-[JPG](docs/flow-recon-finance.jpg).
+Gambar alur sederhana: [PNG](docs/alur-recon/alur-recon.png) ·
+[JPG](docs/alur-recon/alur-recon.jpg).
+Flowchart lengkap cara kerja aplikasi: [PNG](docs/flowchart-sistem/flowchart-sistem.png) ·
+[JPG](docs/flowchart-sistem/flowchart-sistem.jpg).
 Logika alur lengkap: [docs/FLOW_LOGIC.md](docs/FLOW_LOGIC.md).
 
 Update aplikasi tersedia melalui tombol di kanan atas jendela. Aplikasi
@@ -95,17 +97,16 @@ Jalankan perintah ini di macOS setelah memasang dependencies:
 
 Hasilnya:
 
-- `build/macos-<versi>-<timestamp>/ReconBuilder.app` (bundle build)
 - `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.pkg`
 - `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.dmg`
 
 DMG memuat `Recon Builder.app` langsung beserta shortcut Applications. Buka
 DMG, seret app ke Applications, selesai. PKG bertimestamp juga dibuat sebagai
-pilihan installer terpisah. Script menyalin DMG dan PKG bernama sama ke root
-repository untuk workflow release.
-Setiap push versi baru ke `main` membuat tag `v<versi>` dan GitHub Release
-berisi installer Windows, installer PKG macOS, DMG, flowchart PNG/JPG, dan
-`SHA256SUMS.txt`.
+pilihan installer terpisah. Bundle app dan file sementara berada di `dist/.build`
+selama proses packaging, lalu dibersihkan; installer final hanya berada di `dist/`.
+Release publik dibuat setelah build macOS lokal dan build Windows dari workflow
+manual selesai. Release Latest berisi installer Windows, DMG/PKG macOS,
+flowchart PNG/JPG, dan `SHA256SUMS.txt` yang memuat hash setiap installer.
 
 Installer menghasilkan aplikasi desktop mandiri; spreadsheet LB/RB dipilih
 saat aplikasi dijalankan dan tidak dibundel bersama aplikasi. Engine Excel Polars
@@ -116,14 +117,12 @@ tidak perlu memasang paket Python secara terpisah. Script build memakai
 
 ## Installer Windows
 
-Build Windows dan macOS dijalankan di GitHub Actions workflow **Release**:
+Build Windows dijalankan manual melalui GitHub Actions workflow
+`.github/workflows/release.yml`. Build macOS dilakukan lokal melalui skrip di
+atas. Produk dan file sementara build ditempatkan di `dist/`; file sementara
+dibersihkan setelah build.
 
-- Push ke `main` atau jalankan workflow **Release** secara manual;
-  `ReconBuilder-Setup.exe`, DMG, dan PKG tersedia sebagai artifact Actions.
-- Untuk installer rilis manual, push tag yang sama dengan versi source seperti
-   `v1.2.38`. Workflow mengisi release dengan installer Windows, paket macOS,
-  DMG, flowchart PNG/JPG,
-  dan checksum. Push versi baru ke `main` membuat tag/release secara otomatis.
+- Workflow manual menghasilkan `dist/ReconBuilder-Setup.exe` sebagai artifact.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
 
@@ -157,9 +156,13 @@ scripts/
   release.yml                  # Build installer Windows via manual dispatch
 docs/
   FLOW_LOGIC.md                # Dokumentasi lengkap logika alur data
-  flow-recon-finance.svg       # Diagram alur (vector)
-  flow-recon-finance.png       # Diagram alur baru (PNG 2700×2250)
-  flow-recon-finance.jpg       # Diagram alur baru (JPG 2700×2250)
+  flowchart-sistem/            # Diagram lengkap alur aplikasi saat ini
+    flowchart-sistem.png       # Flowchart PNG
+    flowchart-sistem.jpg       # Flowchart JPG
+  alur-recon/                  # Diagram sederhana empat upload ke output
+    alur-recon.svg             # Sumber vector
+    alur-recon.png             # Gambar PNG
+    alur-recon.jpg             # Gambar JPG
 ```
 
 ## Catatan
