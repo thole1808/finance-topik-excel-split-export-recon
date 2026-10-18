@@ -1266,13 +1266,17 @@ def _pair_vendor_and_bo(
             if amt_key is not None and time_key else None,
             ("amount_date", amt_key, date_key)
             if amt_key is not None and date_key else None,
+            ("bn_time", bn_key, time_key)
+            if bn_key and time_key else None,
+            ("bn_date", bn_key, date_key)
+            if bn_key and date_key else None,
         )
 
     vendor_keys = [keys(row, False) for row in vendor_rows]
     bo_keys = [keys(row, True) for row in bo_records]
     matches: dict[int, int] = {}
     used_bo: set[int] = set()
-    for tier in range(6):
+    for tier in range(8):
         vendor_groups: dict[Any, list[int]] = {}
         bo_groups: dict[Any, list[int]] = {}
         for index, row_keys in enumerate(vendor_keys):
@@ -1301,15 +1305,26 @@ def _pair_vendor_and_bo(
                 bo_number = billing_key(bo.get("billing_number"))
                 vendor_status = _transaction_status(vendor.get("status"))
                 bo_status = _transaction_status(bo.get("transaction_status"))
-                if (
+                # Exact transaction references are authoritative. Other
+                # heuristic keys still require matching date, bill number,
+                # and status to avoid pairing unrelated repeated payments.
+                if tier <= 1:
+                    if vendor_status and bo_status and vendor_status != bo_status:
+                        continue
+                elif tier >= 6:
+                    if (
+                        not vendor_number or vendor_number != bo_number
+                        or vendor_date is None or bo_date is None
+                        or vendor_date.date() != bo_date.date()
+                        or (vendor_status and bo_status and vendor_status != bo_status)
+                    ):
+                        continue
+                elif (
                     not vendor_number or vendor_number != bo_number
                     or vendor_date is None or bo_date is None
                     or vendor_date.date() != bo_date.date()
                     or (vendor_status and bo_status and vendor_status != bo_status)
-                    or (
-                        (vendor_amount_value is None or vendor_amount_value != bo_amount)
-                        and tier > 1
-                    )
+                    or vendor_amount_value is None or vendor_amount_value != bo_amount
                 ):
                     continue
                 matches[vendor_index] = bo_index
@@ -1335,12 +1350,7 @@ def _pair_vendor_and_bo(
             "tagihan": vendor.get("tagihan") if vendor_side == "LB" else None,
             "harga": vendor.get("harga") if vendor_side == "LB" else None,
             "matched": bo is not None,
-            "_pair_issue": (
-                "NO BO MATCH" if bo is None else
-                "AMOUNT MISMATCH"
-                if amount_key(_vendor_amount(vendor, vendor_side))
-                != amount_key(bo.get("amount")) else None
-            ),
+            "_pair_issue": None,
         })
     for index, bo in enumerate(bo_records):
         if index not in used_bo:
