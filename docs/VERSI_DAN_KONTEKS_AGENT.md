@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.46**
+**Versi saat ini: 1.2.47**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -21,6 +21,15 @@ memodifikasi kode:
    dan [`scripts/windows/ReconBuilder.iss`](../scripts/windows/ReconBuilder.iss).
 
 ## Implementasi 1.2.0 — UI, output, dan riwayat operator
+
+### 1.2.47 — Audit hasil, ekspor identitas penuh, dan peta teknologi
+
+- Mengikat event Generate ke sumber, hash sumber/output, akun OS, metadata
+  workbook, dan ID event untuk penelusuran file.
+- Ekspor CSV menyertakan IP/MAC lokal tanpa masking untuk event baru; layar
+  aplikasi tetap menampilkan versi tersamarkan.
+- Mendokumentasikan stack yang benar-benar digunakan, serta batas keamanan dan
+  ketiadaan backend pemantauan.
 
 ### 1.2.46 — Diagram dan kesiapan update
 
@@ -580,10 +589,13 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Diagram alur
 
-Diagram yang digunakan saat ini tersedia terpisah: ringkasan di `docs/alur-recon/` dan flowchart cara kerja sistem di `docs/flowchart-sistem/` (SVG, PNG, dan JPG).
+Diagram yang digunakan saat ini tersedia terpisah: ringkasan di
+`docs/alur-recon/`, flowchart cara kerja sistem di `docs/flowchart-sistem/`,
+serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
+| 1.2.47 | Audit Generate terikat hash input/output dan metadata workbook; CSV memakai IP/MAC lokal penuh; diagram stack teknologi aktual. |
 | 1.2.43 | Bandingkan BO Amount dengan Vendor Total untuk LB/RB; RB format lama fallback ke Nominal; rebuild lokal dan rilis publik dengan checksum. |
 | 1.2.42 | Pemadanan BO Biller/Vendor satu-ke-satu; output hanya LB/RB; flow diagram baru; build macOS lokal, workflow Windows manual, release publik dengan checksum. |
 | 1.2.38 | Workflow release diperbaiki (release.yml, concurrency, tag Git eksplisit); build_dmg.sh mendukung --clean dan verifikasi dependensi; bug page_size.bind() diperbaiki; tombol Hapus di preview dihilangkan; updater timeout 30s/5x retry dengan pesan error yang ramah; flow diagram diperbarui ke 1.2.38. |
@@ -654,6 +666,11 @@ Diagram yang digunakan saat ini tersedia terpisah: ringkasan di `docs/alur-recon
   dibuat di runner Windows melalui GitHub Actions `workflow_dispatch` saja.
 - Simpan manifest `SHA256SUMS.txt` lokal di `dist/` dan sertakan manifest yang
   sama sebagai asset release bersama installer.
+- Bundle desktop lokal dapat diekstrak atau dipatch pemilik/admin komputer;
+  checksum installer tidak mencegahnya. Jangan klaim proteksi anti-crack tanpa
+  lisensi/backend dan validasi sisi server.
+- Pemantauan lintas komputer belum tersedia sebelum backend autentikasi dan
+  telemetry yang transparan disediakan.
 - Jangan menambahkan workbook transaksi, data pelanggan, output, `.venv`,
   `build/`, atau `dist/` ke Git.
 - Matching silang settlement LB/RB belum didefinisikan oleh aturan bisnis;

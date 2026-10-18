@@ -7,6 +7,7 @@ Diagram singkat empat sumber upload tersedia di `alur-recon/alur-recon.svg`,
 `alur-recon/alur-recon.png`, dan `alur-recon/alur-recon.jpg`.
 Flowchart lengkap sistem saat ini tersedia di `flowchart-sistem/` dalam format
 SVG, PNG, dan JPG.
+Peta teknologi runtime dan installer tersedia di `technology-stack/`.
 
 ---
 
@@ -201,12 +202,18 @@ Sebelum memakai hasil, Finance harus memverifikasi:
 ## 8. Riwayat lokal (SQLite)
 
 - Lokasi: `~/Library/Application Support/Recon Builder/usage-history.sqlite3` (macOS)
-- Event: app_started, source_upload_selected, source_loaded, generate_started,
-  generate_succeeded, generate_failed, update_check_started, update_available,
-  dll.
+- Event Generate mencatat ID mulai/selesai, akun OS, nama/path dan hash SHA-256
+  setiap sumber, jumlah baris, hasil, ukuran, lokasi, serta SHA-256 workbook.
+- ID event, akun, waktu, nama sumber, dan hash sumber ikut dicatat sebagai
+  metadata workbook.
+- Event lain meliputi app_started, upload, preview/edit, update, ekspor, dan
+  pembukaan hasil.
 - Setiap event memiliki `previous_hash` dan `event_hash` (SHA-256 hash chain)
-- IP dan MAC dimasking (3 oktet pertama saja)
-- Bisa diekspor ke CSV dan diperiksa integritas rantainya
+- Layar menampilkan IP/MAC tersamarkan; ekspor CSV mencantumkan nilai lokal
+  penuh untuk event yang menyimpannya. Event versi lama hanya memiliki nilai
+  tersamarkan dan tidak dapat dipulihkan menjadi nilai asli.
+- Bisa diekspor ke CSV dan diperiksa integritas rantainya.
+- Log tersimpan per komputer; tidak dikirim ke server karena belum ada backend.
 
 ---
 

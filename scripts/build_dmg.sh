@@ -53,7 +53,7 @@ if ! command -v codesign >/dev/null 2>&1; then
 fi
 
 echo "Memverifikasi dependensi Python..."
-for module in fastexcel polars xlsxwriter PIL certifi; do
+for module in fastexcel polars xlsxwriter certifi; do
     if ! "$PYTHON" -c "import $module" >/dev/null 2>&1; then
         echo "Module Python '$module' tidak tersedia pada $PYTHON." >&2
         echo "Pasang dependency dengan: $PYTHON -m pip install -r requirements.txt" >&2
@@ -95,15 +95,12 @@ echo "Membangun aplikasi dengan PyInstaller..."
     --icon "$PROJECT_ROOT/assets/recon-builder.icns" \
     --collect-all fastexcel \
     --hidden-import fastexcel \
-    --collect-all PIL \
-    --hidden-import PIL \
     --collect-all certifi \
     --hidden-import certifi \
     --paths "$PROJECT_ROOT" \
     --add-data "$PROJECT_ROOT/src/ref_styles.json:src" \
     --add-data "$PROJECT_ROOT/src/fee_tables.json:src" \
     --add-data "$PROJECT_ROOT/src/reference_data.json:src" \
-    --add-data "$PROJECT_ROOT/assets/batik-watermark.png:assets" \
     --distpath "$BUILD_DIR" \
     --specpath "$PROJECT_ROOT/dist/.build/spec" \
     --workpath "$PROJECT_ROOT/dist/.build/pyinstaller" \

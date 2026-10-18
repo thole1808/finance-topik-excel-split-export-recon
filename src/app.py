@@ -11,6 +11,8 @@ import shutil
 import time
 import json
 import getpass
+import hashlib
+import socket
 from functools import partial
 from pathlib import Path
 import platform
@@ -68,6 +70,8 @@ class ReconApp(tk.Tk):
         )
         self.last_output_path: Path | None = self.audit.last_successful_output()
         self._pending_output_path: Path | None = None
+        self._pending_generation_event_id: int | None = None
+        self._pending_generation_context: dict[str, Any] = {}
         self.status = tk.StringVar(
             value="Upload file Excel LB, RB, dan recon untuk memulai."
         )
@@ -637,12 +641,16 @@ class ReconApp(tk.Tk):
         tree.delete(*tree.get_children())
         for event in self.audit.recent_events(1000):
             details = json.loads(event["details_json"])
+            visible_details = {
+                key: value for key, value in details.items()
+                if key not in {"ip_address", "mac_address"}
+            }
             tree.insert(
                 "", "end",
                 values=(
                     format_local_datetime(event["occurred_at"]),
                     event["operator"], event["action"],
-                    event["details_json"], event["host"],
+                    json.dumps(visible_details, ensure_ascii=False), event["host"],
                     details.get("ip_masked", "—"), details.get("mac_masked", "—"),
                 ),
             )
@@ -1525,20 +1533,35 @@ class ReconApp(tk.Tk):
             "ReconBuilder_%Y%m%d_%H%M%S_%f.xlsx"
         )
         self._pending_output_path = output
+        source_paths = {"LB": lb_path, "RB": rb_path, "Recon": recon_path}
+        if backdate_path:
+            source_paths["Backdate"] = backdate_path
+        generation_context = {
+            "source_files": {
+                name: {"name": path.name, "path": str(path)}
+                for name, path in source_paths.items()
+            },
+            "source_rows": {
+                "LB": self._frames["LB"].height,
+                "RB": self._frames["RB"].height,
+                "Recon Summary": self._frames["Recon Summary"].height,
+                "Recon Records": self._frames["Recon Records"].height,
+                **({
+                    f"Backdate {sheet}": frame.height
+                    for sheet, frame in backdate_frames.items()
+                    if frame is not None
+                } if backdate_frames else {}),
+            },
+        }
+        self._pending_generation_context = generation_context
         self._terminal.configure(state="normal")
         self._terminal.delete("1.0", "end")
         self._terminal.configure(state="disabled")
         self._terminal_write("Generate dimulai")
-        self.audit.record(
+        self._pending_generation_event_id = self.audit.record(
             self.operator, "generate_started", output=output.name,
             output_path=str(output),
-            lb_rows=self._frames["LB"].height,
-            rb_rows=self._frames["RB"].height,
-            backdate_file=backdate_path.name if backdate_path else None,
-            backdate_rows=(
-                {sheet: frame.height for sheet, frame in backdate_frames.items()}
-                if backdate_frames else None
-            ),
+            **generation_context,
         )
 
         self._busy = True
@@ -1557,6 +1580,8 @@ class ReconApp(tk.Tk):
                 self._frames["LB"], self._frames["RB"], output,
                 backdate_path, started_at, backdate_frames,
                 self._frames.get("Recon Records"),
+                source_paths, generation_context,
+                self._pending_generation_event_id,
             ),
             daemon=True,
         ).start()
@@ -1566,10 +1591,20 @@ class ReconApp(tk.Tk):
         output: Path, backdate_path: Path | None, started_at: float,
         backdate_frames: dict[str, pl.DataFrame | None] | None,
         recon_records_frame: pl.DataFrame | None,
+        source_paths: dict[str, Path],
+        generation_context: dict[str, Any],
+        generation_event_id: int | None,
     ) -> None:
+        source_hashes: dict[str, str] = {}
         try:
             if lb_frame is None or rb_frame is None:
                 raise ValueError("File LB dan RB harus dimuat sebelum export.")
+            for source_name, source_path in source_paths.items():
+                digest = hashlib.sha256()
+                with source_path.open("rb") as source_file:
+                    for chunk in iter(lambda: source_file.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                source_hashes[source_name] = digest.hexdigest()
             if backdate_path is not None and backdate_frames is not None:
                 self._terminal_from_worker(
                     f"Membaca Backdate: {backdate_path.name}"
@@ -1589,14 +1624,46 @@ class ReconApp(tk.Tk):
                 backdate_rb_df=backdate_frames["RB"] if backdate_frames else None,
                 backdate_recon_df=backdate_frames["RECON"] if backdate_frames else None,
                 recon_records_df=recon_records_frame,
+                audit_metadata={
+                    "Generated By": self.operator,
+                    "OS Account": getpass.getuser(),
+                    "Generated Host": socket.gethostname(),
+                    "Generation Event ID": str(generation_event_id or ""),
+                    "Generated At": dt.datetime.now().astimezone().isoformat(
+                        timespec="seconds"
+                    ),
+                    **{
+                        f"Source {name}": details["name"]
+                        for name, details in generation_context["source_files"].items()
+                    },
+                    **{
+                        f"Source {name} SHA256": digest
+                        for name, digest in source_hashes.items()
+                    },
+                },
                 progress_callback=self._terminal_from_worker,
             )
-            self.after(0, self._export_finished, result, None, started_at)
+            output_digest = hashlib.sha256()
+            with result.open("rb") as output_file:
+                for chunk in iter(lambda: output_file.read(1024 * 1024), b""):
+                    output_digest.update(chunk)
+            self.after(
+                0, self._export_finished, result, None, started_at,
+                generation_event_id, generation_context, source_hashes,
+                output_digest.hexdigest(),
+            )
         except Exception as exc:
-            self.after(0, self._export_finished, None, str(exc), started_at)
+            self.after(
+                0, self._export_finished, None, str(exc), started_at,
+                generation_event_id, generation_context, source_hashes, None,
+            )
 
     def _export_finished(
-        self, result: Path | None, error: str | None, started_at: float
+        self, result: Path | None, error: str | None, started_at: float,
+        generation_event_id: int | None,
+        generation_context: dict[str, Any],
+        source_hashes: dict[str, str],
+        output_sha256: str | None,
     ) -> None:
         elapsed = time.perf_counter() - started_at
         self.progress.stop()
@@ -1615,9 +1682,15 @@ class ReconApp(tk.Tk):
                     str(self._pending_output_path)
                     if self._pending_output_path else None
                 ),
+                generate_started_event_id=generation_event_id,
+                source_files=generation_context.get("source_files", {}),
+                source_rows=generation_context.get("source_rows", {}),
+                source_sha256=source_hashes,
                 error=error, elapsed_seconds=round(elapsed, 3),
             )
             self._pending_output_path = None
+            self._pending_generation_event_id = None
+            self._pending_generation_context = {}
             self._refresh_history()
             messagebox.showerror("Gagal membuat recon", error)
             return
@@ -1630,8 +1703,17 @@ class ReconApp(tk.Tk):
         self.audit.record(
             self.operator, "generate_succeeded", output=result.name,
             output_path=str(result),
+            generate_started_event_id=generation_event_id,
+            generated_by=self.operator,
+            os_account=getpass.getuser(),
+            source_files=generation_context.get("source_files", {}),
+            source_rows=generation_context.get("source_rows", {}),
+            source_sha256=source_hashes,
+            output_sha256=output_sha256,
             elapsed_seconds=round(elapsed, 3), size_bytes=result.stat().st_size,
         )
+        self._pending_generation_event_id = None
+        self._pending_generation_context = {}
         announce("Selesai. File rekonsiliasi dari BO Biller sudah berhasil dibuat.")
         self._refresh_history()
         self._refresh_generated_files()

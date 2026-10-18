@@ -10,6 +10,8 @@ memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 Versi [JPG](alur-recon/alur-recon.jpg) dan sumber [SVG](alur-recon/alur-recon.svg).
 Flowchart lengkap cara kerja aplikasi: [PNG](flowchart-sistem/flowchart-sistem.png) ·
 [JPG](flowchart-sistem/flowchart-sistem.jpg).
+Teknologi aplikasi: [PNG](technology-stack/technology-stack.png) ·
+[JPG](technology-stack/technology-stack.jpg).
 
 Siapkan data sebelum upload: kumpulkan semua tanggal Backdate di satu workbook
 Backdate (sheet `LB`, `RB`, `RECON`), kumpulkan Enddate Vendor LB dan RB pada
@@ -114,16 +116,15 @@ lokal dan manifest checksum disimpan di folder `dist/`.
 
 ## Riwayat penggunaan dan audit
 
-Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, nama akun PC
-yang sedang login, perangkat, versi aplikasi, IP lokal tersamarkan, MAC
-tersamarkan, aksi, dan rinciannya. IP disimpan sebagai tiga oktet pertama
-(misalnya `192.168.1.*`); MAC hanya menampilkan tiga oktet awal
-(misalnya `AA:BB:CC:**:**:**`). Alamat mentah tidak disimpan. Aplikasi
-mencatat pembukaan/penutupan, tab yang dibuka, file yang dipilih/dimuat, pencarian,
-perubahan sel (nilai lama dan baru), navigasi preview, proses generate (hasil,
-durasi, ukuran atau kegagalan), dan pembukaan lokasi output. Gunakan
-**Periksa integritas** untuk memvalidasi rantai hash, atau **Ekspor CSV** untuk
-menyimpan seluruh log.
+Tab **Riwayat** menampilkan aktivitas operator dengan waktu lokal, akun OS,
+perangkat, versi aplikasi, IP/MAC tersamarkan, aksi, dan rincian. Proses
+Generate mengikat event mulai/berhasil/gagal, file dan hash SHA-256 sumber,
+jumlah baris, nama/lokasi/ukuran/hash SHA-256 output, serta ID event. Workbook
+hasil menyimpan akun, waktu, file sumber, dan ID event pada properti dokumen.
+Gunakan **Periksa integritas** untuk memvalidasi rantai hash, atau **Ekspor CSV**
+untuk menyimpan seluruh log dengan kolom IP/MAC lokal penuh untuk event baru.
+Event versi sebelumnya hanya memiliki IP/MAC tersamarkan sehingga nilai lama
+tidak dapat dipulihkan.
 
 Database SQLite tersimpan per akun komputer: macOS
 `~/Library/Application Support/Recon Builder/usage-history.sqlite3`, Windows
@@ -132,9 +133,11 @@ Database SQLite tersimpan per akun komputer: macOS
 ditetapkan). Simpan/backup file tersebut sesuai kebijakan Finance. Rantai hash
 mendeteksi perubahan pada rekaman yang tersisa, tetapi log lokal bukan bukti
 non-repudiation: akun PC tidak membuktikan siapa orang yang memakai perangkat,
-dan pemilik perangkat dapat menghapus atau mengganti database. Untuk pembuktian lintas operator yang
-kuat, aplikasi perlu login terverifikasi (misalnya SSO) dan mengirim event ke
-server audit terpusat dengan hak tulis terbatas serta retensi yang dikelola.
+dan pemilik perangkat dapat menghapus atau mengganti database. Metadata dan
+hash membantu penelusuran, tetapi pemilik/admin komputer dapat mengubah aplikasi
+atau database. Pembuktian lintas operator memerlukan login terverifikasi
+(misalnya SSO) dan server audit terpusat. Backend pemantauan belum tersedia;
+aplikasi tidak mengirim telemetry atau daftar pengguna ke developer.
 Rincian audit menyimpan nilai sel yang diedit dan query pencarian; batasi akses
 ke database/CSV ekspor sesuai kebijakan data Finance.
 

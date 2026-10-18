@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from src.version import __version__
-from src.device_identity import masked_device_identity
+from src.device_identity import device_identity, masked_device_identity
 from src.localization import format_local_datetime
 
 ZERO_HASH = "0" * 64
@@ -45,6 +45,7 @@ class AuditLog:
 
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or audit_directory() / "usage-history.sqlite3"
+        self.device_ip, self.device_mac = device_identity()
         self.device_ip_masked, self.device_mac_masked = masked_device_identity()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as connection:
@@ -125,6 +126,8 @@ class AuditLog:
         occurred_at = dt.datetime.now().astimezone().isoformat(timespec="seconds")
         details["ip_masked"] = self.device_ip_masked
         details["mac_masked"] = self.device_mac_masked
+        details["ip_address"] = self.device_ip
+        details["mac_address"] = self.device_mac
         details_json = self._canonical(details)
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -197,7 +200,8 @@ class AuditLog:
     def export_csv(self, path: Path) -> Path:
         fields = (
             "id", "occurred_at", "operator", "os_user", "host", "app_version",
-            "action", "details_json", "previous_hash", "event_hash",
+            "action", "ip_address", "mac_address", "details_json",
+            "previous_hash", "event_hash",
         )
         with self._connect() as connection, Path(path).open(
             "w", encoding="utf-8-sig", newline=""
@@ -205,11 +209,22 @@ class AuditLog:
             writer = csv.writer(output)
             writer.writerow(fields)
             for row in connection.execute(
-                "SELECT " + ",".join(fields) + " FROM events ORDER BY id"
+                "SELECT " + ",".join(fields[:7] + ("details_json",) + fields[9:])
+                + " FROM events ORDER BY id"
             ):
+                details = json.loads(row["details_json"])
+                row_values = {
+                    **dict(row),
+                    "ip_address": details.get("ip_address", ""),
+                    "mac_address": details.get("mac_address", ""),
+                    "details_json": self._canonical({
+                        key: value for key, value in details.items()
+                        if key not in {"ip_masked", "mac_masked"}
+                    }),
+                }
                 writer.writerow([
-                    format_local_datetime(row[field]) if field == "occurred_at"
-                    else row[field]
+                    format_local_datetime(row_values[field])
+                    if field == "occurred_at" else row_values[field]
                     for field in fields
                 ])
         return Path(path)

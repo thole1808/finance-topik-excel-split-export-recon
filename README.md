@@ -1,6 +1,6 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.46** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.47** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Vendor Loket Bayar (LB) dan Rajabiller
@@ -17,6 +17,8 @@ Gambar alur sederhana: [PNG](docs/alur-recon/alur-recon.png) ·
 [JPG](docs/alur-recon/alur-recon.jpg).
 Flowchart lengkap cara kerja aplikasi: [PNG](docs/flowchart-sistem/flowchart-sistem.png) ·
 [JPG](docs/flowchart-sistem/flowchart-sistem.jpg).
+Teknologi dan framework yang benar-benar digunakan: [PNG](docs/technology-stack/technology-stack.png) ·
+[JPG](docs/technology-stack/technology-stack.jpg).
 Logika alur lengkap: [docs/FLOW_LOGIC.md](docs/FLOW_LOGIC.md).
 
 Update aplikasi tersedia melalui tombol di kanan atas jendela. Aplikasi
@@ -69,10 +71,12 @@ nama ganda). Tab **File Hasil** menampilkan workbook yang sudah dibuat, membuka
 file, atau menyimpan salinan ke lokasi pilihan. Tombol buka output memilih file
 hasil terakhir. Aplikasi memakai akun PC/laptop yang sedang login sebagai
 operator, menampilkan jam lokal dan terminal proses, serta mencatat aktivitas
-ke SQLite lokal. Riwayat dapat
-diperiksa integritasnya dan diekspor sebagai CSV. Log lokal mendeteksi perubahan
+ke SQLite lokal. Riwayat Generate mencatat akun OS, file dan hash sumber,
+jumlah baris, hasil, lokasi, ukuran, hash SHA-256 output, serta event ID di
+metadata workbook. Ekspor CSV menyertakan IP/MAC lokal penuh untuk event baru;
+layar tetap menampilkan nilainya tersamarkan. Log lokal mendeteksi perubahan
 pada entri yang masih ada, tetapi tidak mencegah pemilik perangkat menghapus
-database atau memalsukan identitas operator; audit yang kuat memerlukan login
+database atau memalsukan identitas operator; audit kuat memerlukan login
 terverifikasi dan penyimpanan log terpusat.
 
 Pada sheet LB/RB, subtotal Amount dan empat kolom fee muncul setelah kelompok
@@ -127,6 +131,16 @@ dibersihkan setelah build.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
 
+## Batas keamanan dan pemantauan
+
+Aplikasi desktop offline tidak dapat dijamin mustahil diekstrak, disalin, atau
+di-patch pada komputer yang dikuasai pemiliknya. Checksum melindungi integritas
+installer saat diunduh, bukan mencegah pembongkaran program setelah terpasang.
+Belum ada server lisensi, anti-tamper tepercaya, atau endpoint pemantauan
+pengguna. Riwayat sekarang hanya tersimpan di komputer pengguna. Diagram
+[teknologi](docs/technology-stack/technology-stack.png) menunjukkan cakupan
+dan batasnya.
+
 ## Struktur source
 
 ```text
@@ -136,7 +150,7 @@ src/
   app.py                       # Antarmuka Tkinter
   recon_exporter.py            # Baca, transformasi Polars, ekspor XlsxWriter
   audit_log.py                 # Riwayat penggunaan SQLite dengan hash chain
-  device_identity.py           # IP/MAC lokal yang dimasked untuk audit
+  device_identity.py           # Identitas IP/MAC lokal untuk audit
   announcements.py             # Pemberitahuan suara lintas OS
   updater.py                   # Pemeriksaan, unduhan, dan pemasangan update
   version.py                   # Versi aplikasi (sumber tunggal)
@@ -160,6 +174,10 @@ docs/
   flowchart-sistem/            # Diagram lengkap alur aplikasi saat ini
     flowchart-sistem.png       # Flowchart PNG
     flowchart-sistem.jpg       # Flowchart JPG
+  technology-stack/            # Diagram stack yang benar-benar digunakan
+    technology-stack.svg       # Sumber vector diagram teknologi
+    technology-stack.png       # Diagram teknologi PNG
+    technology-stack.jpg       # Diagram teknologi JPG
   alur-recon/                  # Diagram sederhana empat upload ke output
     alur-recon.svg             # Sumber vector
     alur-recon.png             # Gambar PNG

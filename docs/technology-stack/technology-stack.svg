@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1600" viewBox="0 0 1800 1600">
+<defs><linearGradient id="head" x1="0" x2="1"><stop stop-color="#101e36"/><stop offset="1" stop-color="#173a63"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#172b46" flood-opacity=".10"/></filter></defs>
+<rect width="100%" height="100%" fill="#f3f6fb"/><rect width="100%" height="145" fill="url(#head)"/>
+<text x="72" y="65" fill="#8be1d2" font-family="Arial" font-size="19" font-weight="700" letter-spacing="2">RECON BUILDER · v1.2.47</text>
+<text x="72" y="112" fill="white" font-family="Arial" font-size="37" font-weight="700">Teknologi &amp; Framework yang Benar-Benar Dipakai</text>
+<text x="72" y="174" fill="#52647e" font-family="Arial" font-size="18">Peta arsitektur runtime, pemrosesan Excel, audit, updater, dan build desktop dari source saat ini.</text>
+<rect x="72" y="210" width="1656" height="170" rx="22" fill="white" filter="url(#shadow)"/><rect x="72" y="210" width="14" height="150" rx="7" fill="#248d91"/>
+<text x="114" y="252" fill="#13243b" font-family="Arial" font-size="25" font-weight="700">1 · APLIKASI DESKTOP</text><text x="114" y="280" fill="#718198" font-family="Arial" font-size="16">Yang berjalan di komputer pengguna</text>
+<text x="114.0" y="322" fill="#248d91" font-family="Arial" font-size="19" font-weight="700">Python 3</text>
+<text x="114.0" y="350" fill="#273950" font-family="Arial" font-size="16">Bahasa/runtime utama</text>
+<text x="114.0" y="373" fill="#273950" font-family="Arial" font-size="16">Kode dan aturan recon</text>
+<line x1="612.6666666666666" y1="298" x2="612.6666666666666" y2="342" stroke="#e5ebf2" stroke-width="2"/>
+<text x="632.6666666666666" y="322" fill="#248d91" font-family="Arial" font-size="19" font-weight="700">Tkinter + ttk</text>
+<text x="632.6666666666666" y="350" fill="#273950" font-family="Arial" font-size="16">Framework antarmuka desktop</text>
+<text x="632.6666666666666" y="373" fill="#273950" font-family="Arial" font-size="16">Upload, preview, riwayat, dialog</text>
+<line x1="1131.3333333333333" y1="298" x2="1131.3333333333333" y2="342" stroke="#e5ebf2" stroke-width="2"/>
+<text x="1151.3333333333333" y="322" fill="#248d91" font-family="Arial" font-size="19" font-weight="700">macOS / Windows</text>
+<text x="1151.3333333333333" y="350" fill="#273950" font-family="Arial" font-size="16">Platform distribusi aktif</text>
+<text x="1151.3333333333333" y="373" fill="#273950" font-family="Arial" font-size="16">DMG/PKG dan Setup.exe</text>
+<rect x="72" y="405" width="1656" height="170" rx="22" fill="white" filter="url(#shadow)"/><rect x="72" y="405" width="14" height="170" rx="7" fill="#3477c5"/>
+<text x="114" y="447" fill="#13243b" font-family="Arial" font-size="25" font-weight="700">2 · PEMROSESAN DATA EXCEL</text><text x="114" y="475" fill="#718198" font-family="Arial" font-size="16">Input .xlsx → normalisasi/pencocokan → workbook hasil</text>
+<text x="114.0" y="517" fill="#3477c5" font-family="Arial" font-size="19" font-weight="700">Polars</text>
+<text x="114.0" y="545" fill="#273950" font-family="Arial" font-size="16">DataFrame, filter, sorting</text>
+<text x="114.0" y="568" fill="#273950" font-family="Arial" font-size="16">Transformasi dan pemadanan</text>
+<line x1="612.6666666666666" y1="493" x2="612.6666666666666" y2="557" stroke="#e5ebf2" stroke-width="2"/>
+<text x="632.6666666666666" y="517" fill="#3477c5" font-family="Arial" font-size="19" font-weight="700">fastexcel / Calamine</text>
+<text x="632.6666666666666" y="545" fill="#273950" font-family="Arial" font-size="16">Mesin baca Excel melalui Polars</text>
+<text x="632.6666666666666" y="568" fill="#273950" font-family="Arial" font-size="16">Membaca sheet workbook .xlsx</text>
+<line x1="1131.3333333333333" y1="493" x2="1131.3333333333333" y2="557" stroke="#e5ebf2" stroke-width="2"/>
+<text x="1151.3333333333333" y="517" fill="#3477c5" font-family="Arial" font-size="19" font-weight="700">XlsxWriter</text>
+<text x="1151.3333333333333" y="545" fill="#273950" font-family="Arial" font-size="16">Membangun sheet LB/RB</text>
+<text x="1151.3333333333333" y="568" fill="#273950" font-family="Arial" font-size="16">Format, formula, properti dokumen</text>
+<rect x="72" y="620" width="1656" height="170" rx="22" fill="white" filter="url(#shadow)"/><rect x="72" y="620" width="14" height="170" rx="7" fill="#8b64bd"/>
+<text x="114" y="662" fill="#13243b" font-family="Arial" font-size="25" font-weight="700">3 · RIWAYAT &amp; IDENTITAS LOKAL</text><text x="114" y="690" fill="#718198" font-family="Arial" font-size="16">Data audit disimpan di akun komputer; tidak dikirim ke server</text>
+<text x="114.0" y="732" fill="#8b64bd" font-family="Arial" font-size="19" font-weight="700">SQLite3</text>
+<text x="114.0" y="760" fill="#273950" font-family="Arial" font-size="16">Database lokal</text>
+<text x="114.0" y="783" fill="#273950" font-family="Arial" font-size="16">Event proses Generate dan pengguna</text>
+<line x1="612.6666666666666" y1="708" x2="612.6666666666666" y2="772" stroke="#e5ebf2" stroke-width="2"/>
+<text x="632.6666666666666" y="732" fill="#8b64bd" font-family="Arial" font-size="19" font-weight="700">SHA-256 + hashlib</text>
+<text x="632.6666666666666" y="760" fill="#273950" font-family="Arial" font-size="16">Hash berantai event</text>
+<text x="632.6666666666666" y="783" fill="#273950" font-family="Arial" font-size="16">Hash file sumber dan output</text>
+<line x1="1131.3333333333333" y1="708" x2="1131.3333333333333" y2="772" stroke="#e5ebf2" stroke-width="2"/>
+<text x="1151.3333333333333" y="732" fill="#8b64bd" font-family="Arial" font-size="19" font-weight="700">CSV + metadata XLSX</text>
+<text x="1151.3333333333333" y="760" fill="#273950" font-family="Arial" font-size="16">IP/MAC penuh di CSV event baru</text>
+<text x="1151.3333333333333" y="783" fill="#273950" font-family="Arial" font-size="16">ID event dan akun di properti workbook</text>
+<rect x="72" y="835" width="1656" height="170" rx="22" fill="white" filter="url(#shadow)"/><rect x="72" y="835" width="14" height="170" rx="7" fill="#d18b2e"/>
+<text x="114" y="877" fill="#13243b" font-family="Arial" font-size="25" font-weight="700">4 · PEMERIKSAAN &amp; PEMASANGAN UPDATE</text><text x="114" y="905" fill="#718198" font-family="Arial" font-size="16">Update diunduh dari GitHub Releases</text>
+<text x="114.0" y="947" fill="#d18b2e" font-family="Arial" font-size="19" font-weight="700">urllib + HTTPS</text>
+<text x="114.0" y="975" fill="#273950" font-family="Arial" font-size="16">GitHub REST API /releases/latest</text>
+<text x="114.0" y="998" fill="#273950" font-family="Arial" font-size="16">TLS memakai certifi / trust store</text>
+<line x1="612.6666666666666" y1="923" x2="612.6666666666666" y2="987" stroke="#e5ebf2" stroke-width="2"/>
+<text x="632.6666666666666" y="947" fill="#d18b2e" font-family="Arial" font-size="19" font-weight="700">SHA256SUMS.txt</text>
+<text x="632.6666666666666" y="975" fill="#273950" font-family="Arial" font-size="16">Hash diperiksa sebelum install</text>
+<text x="632.6666666666666" y="998" fill="#273950" font-family="Arial" font-size="16">Menjaga integritas file unduhan</text>
+<line x1="1131.3333333333333" y1="923" x2="1131.3333333333333" y2="987" stroke="#e5ebf2" stroke-width="2"/>
+<text x="1151.3333333333333" y="947" fill="#d18b2e" font-family="Arial" font-size="19" font-weight="700">Helper per OS</text>
+<text x="1151.3333333333333" y="975" fill="#273950" font-family="Arial" font-size="16">macOS: DMG → PKG → Applications</text>
+<text x="1151.3333333333333" y="998" fill="#273950" font-family="Arial" font-size="16">Windows: Setup.exe / Inno Setup</text>
+<rect x="72" y="1050" width="1656" height="170" rx="22" fill="white" filter="url(#shadow)"/><rect x="72" y="1050" width="14" height="170" rx="7" fill="#397d63"/>
+<text x="114" y="1092" fill="#13243b" font-family="Arial" font-size="25" font-weight="700">5 · BUILD &amp; DISTRIBUSI</text><text x="114" y="1120" fill="#718198" font-family="Arial" font-size="16">Produk dan file sementara build diarahkan ke dist/</text>
+<text x="114.0" y="1162" fill="#397d63" font-family="Arial" font-size="19" font-weight="700">PyInstaller</text>
+<text x="114.0" y="1190" fill="#273950" font-family="Arial" font-size="16">Bundle app dan dependensi</text>
+<text x="114.0" y="1213" fill="#273950" font-family="Arial" font-size="16">Bundle bisa diekstrak/reverse-engineer</text>
+<line x1="612.6666666666666" y1="1138" x2="612.6666666666666" y2="1202" stroke="#e5ebf2" stroke-width="2"/>
+<text x="632.6666666666666" y="1162" fill="#397d63" font-family="Arial" font-size="19" font-weight="700">macOS tools</text>
+<text x="632.6666666666666" y="1190" fill="#273950" font-family="Arial" font-size="16">hdiutil membuat DMG</text>
+<text x="632.6666666666666" y="1213" fill="#273950" font-family="Arial" font-size="16">pkgbuild PKG; ad-hoc codesign</text>
+<line x1="1131.3333333333333" y1="1138" x2="1131.3333333333333" y2="1202" stroke="#e5ebf2" stroke-width="2"/>
+<text x="1151.3333333333333" y="1162" fill="#397d63" font-family="Arial" font-size="19" font-weight="700">Windows tools</text>
+<text x="1151.3333333333333" y="1190" fill="#273950" font-family="Arial" font-size="16">GitHub Actions windows-latest</text>
+<text x="1151.3333333333333" y="1213" fill="#273950" font-family="Arial" font-size="16">Inno Setup membuat installer</text>
+<rect x="72" y="1265" width="1656" height="72" rx="18" fill="#e7eef7"/><text x="102" y="1295" fill="#162842" font-family="Arial" font-size="18" font-weight="700">Komponen pendukung yang digunakan</text><text x="102" y="1322" fill="#344960" font-family="Arial" font-size="16">certifi (sertifikat TLS) · json/CSV (format data) · threading/subprocess (pekerjaan latar &amp; helper OS) · JSON profil fee/style/referensi</text>
+<rect x="72" y="1360" width="806" height="184" rx="20" fill="#fff4e8" stroke="#ebc78f" stroke-width="2"/><text x="102" y="1398" fill="#9a5a13" font-family="Arial" font-size="20" font-weight="700">BATAS PERLINDUNGAN DESKTOP</text>
+<text x="102" y="1457" fill="#514538" font-family="Arial" font-size="15">• Pemilik PC dapat menyalin atau membongkar app lokal.</text>
+<text x="102" y="1484" fill="#514538" font-family="Arial" font-size="15">• Belum ada lisensi/aktivasi, anti-tamper tepercaya, atau cert penanda tangan.</text>
+<text x="102" y="1511" fill="#514538" font-family="Arial" font-size="15">• Tidak mungkin menjamin app lokal mustahil di-patch/crack.</text>
+<rect x="900" y="1360" width="828" height="184" rx="20" fill="#e9f4f2" stroke="#a6d1c9" stroke-width="2"/><text x="930" y="1398" fill="#21756b" font-family="Arial" font-size="20" font-weight="700">PEMANTAUAN DEVELOPER</text>
+<text x="930" y="1457" fill="#314e4b" font-family="Arial" font-size="15">• Belum ada backend/API telemetry.</text>
+<text x="930" y="1484" fill="#314e4b" font-family="Arial" font-size="15">• Riwayat hanya tersimpan di client; tidak mengirim daftar pengguna.</text>
+<text x="930" y="1511" fill="#314e4b" font-family="Arial" font-size="15">• Perlu server, autentikasi, kebijakan retensi, dan pemberitahuan jelas.</text>
+<text x="72" y="1580" fill="#77869a" font-family="Arial" font-size="13">Pillow tidak dicantumkan karena tidak dipakai source aktif dan dikeluarkan dari dependency/build v1.2.47. Tidak memakai React, Flask, Django, atau web framework.</text></svg>
