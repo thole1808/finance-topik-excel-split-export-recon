@@ -153,7 +153,14 @@ def _datetime_value(value: Any) -> Any:
 def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
     if row.get("_period_order") == 0:
         return False
-    timestamp = _as_datetime(row.get("tanggal"))
+    vendor_row = row.get("_pair_vendor")
+    bo_record = row.get("_pair_bo")
+    source_time = (
+        vendor_row.get("tanggal") if isinstance(vendor_row, Mapping)
+        else bo_record.get("datetime") if isinstance(bo_record, Mapping)
+        else row.get("tanggal")
+    )
+    timestamp = _as_datetime(source_time)
     return timestamp is not None and timestamp.time() >= dt.time(23, 0)
 
 
@@ -561,6 +568,56 @@ def _to_rows(frame: pl.DataFrame) -> list[dict[str, Any]]:
 
 
 def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
+    if "_pair_vendor" in row or "_pair_bo" in row:
+        vendor = row.get("_pair_vendor")
+        bo = row.get("_pair_bo")
+        vendor = vendor if isinstance(vendor, Mapping) else {}
+        bo = bo if isinstance(bo, Mapping) else {}
+        fees = tuple(bo.get(key) for key in (
+            "total_fee", "customer_fee", "lst_fee", "margin_biller",
+        ))
+        date_value = _datetime_value(bo.get("datetime"))
+        status = _transaction_status(bo.get("transaction_status"))
+        recon = {
+            1: date_value, 2: bo.get("product"),
+            3: bo.get("billing_number"), 4: bo.get("billing_name"),
+            5: bo.get("ref"), 6: bo.get("vendor_ref"),
+            7: bo.get("amount"), 8: fees[0], 9: fees[1],
+            10: fees[2], 11: fees[3], 12: status,
+            13: bo.get("vendor"),
+            14: row.get("_pair_issue") or bo.get("recon_result"),
+            40: date_value, 41: bo.get("product"),
+            42: bo.get("billing_number"), 43: bo.get("billing_name"),
+            44: bo.get("ref"), 45: bo.get("vendor_ref"),
+            46: bo.get("amount"), 47: fees[0], 48: fees[1],
+            49: fees[2], 50: fees[3], 51: status,
+            52: bo.get("vendor"),
+            53: row.get("_pair_issue") or bo.get("recon_result"),
+        }
+        raw = {
+            21: _datetime_value(vendor.get("tanggal")),
+            22: vendor.get("operator"), 23: vendor.get("nama"),
+            24: vendor.get("idpel"), 25: vendor.get("produk"),
+            26: vendor.get("periode"), 27: vendor.get("status"),
+            28: vendor.get("ref_id"), 29: vendor.get("lembar"),
+            30: vendor.get("tagihan"), 31: vendor.get("denda"),
+            32: vendor.get("admin"), 33: vendor.get("harga"),
+            34: vendor.get("fee_loket"), 35: vendor.get("fee_bulan"),
+            36: vendor.get("total"), 37: vendor.get("ref"),
+        }
+        raw_next = {
+            56: _datetime_value(vendor.get("tanggal")),
+            57: vendor.get("operator"), 58: vendor.get("nama"),
+            59: vendor.get("idpel"), 60: vendor.get("produk"),
+            61: vendor.get("periode"), 62: vendor.get("status"),
+            63: vendor.get("ref"), 64: vendor.get("lembar"),
+            65: vendor.get("tagihan"), 66: vendor.get("denda"),
+            67: vendor.get("admin"), 68: vendor.get("harga"),
+            69: vendor.get("fee_loket"), 70: vendor.get("fee_bulan"),
+            71: vendor.get("total"), 72: vendor.get("ref_id"),
+        }
+        return {**raw, **recon, **raw_next}
+
     fees = (
         row.get("_sync_total_fee"), row.get("_sync_customer_fee"),
         row.get("_sync_lst_fee"), row.get("_sync_margin"),
@@ -606,6 +663,51 @@ def _lb_values(row: Mapping[str, Any]) -> dict[int, Any]:
 
 
 def _rb_values(row: Mapping[str, Any]) -> dict[int, Any]:
+    if "_pair_vendor" in row or "_pair_bo" in row:
+        vendor = row.get("_pair_vendor")
+        bo = row.get("_pair_bo")
+        vendor = vendor if isinstance(vendor, Mapping) else {}
+        bo = bo if isinstance(bo, Mapping) else {}
+        fees = tuple(bo.get(key) for key in (
+            "total_fee", "customer_fee", "lst_fee", "margin_biller",
+        ))
+        date_value = _datetime_value(bo.get("datetime"))
+        status = _transaction_status(bo.get("transaction_status"))
+        recon = {
+            1: date_value, 2: bo.get("product"),
+            3: bo.get("billing_number"), 4: bo.get("billing_name"),
+            5: bo.get("ref"), 6: bo.get("vendor_ref"),
+            7: bo.get("amount"), 8: fees[0], 9: fees[1],
+            10: fees[2], 11: fees[3], 12: status,
+            13: bo.get("vendor"),
+            14: row.get("_pair_issue") or bo.get("recon_result"),
+            50: date_value, 51: bo.get("product"),
+            52: bo.get("billing_number"), 53: bo.get("billing_name"),
+            54: bo.get("ref"), 55: bo.get("vendor_ref"),
+            56: bo.get("amount"), 57: fees[0], 58: fees[1],
+            59: fees[2], 60: fees[3], 61: status,
+            62: bo.get("vendor"),
+            63: row.get("_pair_issue") or bo.get("recon_result"),
+        }
+        raw = {
+            18: vendor.get("no"), 19: vendor.get("id_trx"),
+            20: _datetime_value(vendor.get("tanggal")),
+            21: vendor.get("kode_produk"), 22: vendor.get("pelanggan_1"),
+            23: vendor.get("pelanggan_2"), 24: vendor.get("pelanggan_3"),
+            25: vendor.get("pelanggan_4"), 26: vendor.get("via"),
+            27: vendor.get("sn"), 28: vendor.get("ref"),
+            29: vendor.get("status"), 30: vendor.get("nominal"),
+            34: vendor.get("no"), 35: vendor.get("id_trx"),
+            36: _datetime_value(vendor.get("tanggal")),
+            37: vendor.get("kode_produk"),
+            38: vendor.get("pelanggan_1"), 39: vendor.get("pelanggan_2"),
+            40: vendor.get("pelanggan_3"), 41: vendor.get("pelanggan_4"),
+            42: vendor.get("via"), 43: vendor.get("sn"),
+            44: vendor.get("ref"), 45: vendor.get("status"),
+            46: vendor.get("nominal"),
+        }
+        return {**raw, **recon}
+
     fees = (
         row.get("_sync_total_fee"), row.get("_sync_customer_fee"),
         row.get("_sync_lst_fee"), row.get("_sync_margin"),
@@ -678,7 +780,7 @@ def _write_status_total_row(
         format_cache=format_cache,
         format_overrides=common_overrides,
     )
-    for current_column in current_columns:
+    for index, current_column in enumerate(current_columns):
         current_letter = xlsxwriter.utility.xl_col_to_name(current_column - 1)
         formula = (
             f"=SUM({current_letter}{first_data_row}:"
@@ -716,8 +818,11 @@ def _write_wide_sheet(
     ]
     title_columns = (
         (1, "Current Day from bo biller recon"),
-        (21 if sheet == "LB" else 19, "Current Day from bo biller apps"),
-        (40 if sheet == "LB" else 34, "For tomorrow because different time"),
+        (21 if sheet == "LB" else 19, f"Current Day from Vendor {sheet}"),
+        (
+            40 if sheet == "LB" else 34,
+            f"Vendor {sheet} for tomorrow because different time",
+        ),
     )
     values_by_row: dict[int, dict[int, Any]] = {
         1: {column: text for column, text in title_columns},
@@ -858,13 +963,12 @@ def _write_wide_sheet(
         formulas: dict[int, tuple[str, Any]] = {}
         if sheet == "LB" and current_day_record is not None:
             formula_row = excel_row
-            amount = _clean(current_day_record.get("tagihan"))
-            fees = _fees(
-                "lb", current_day_record,
-                current_day_record.get("produk"), amount,
-            )
-            price = _clean(current_day_record.get("harga"))
-            margin = fees[3]
+            source_row = current_day_record.get("_pair_vendor")
+            if not isinstance(source_row, Mapping):
+                source_row = current_day_record
+            amount = _clean(source_row.get("tagihan"))
+            price = _clean(source_row.get("harga"))
+            margin = _clean(current_day_values.get(11))
             p_value = (
                 (price - amount) - margin
                 if isinstance(price, (int, float))
@@ -1032,6 +1136,201 @@ def _records_from_recon_sheet(
     return result
 
 
+def _vendor_rows_from_source(
+    df: pl.DataFrame, side: str
+) -> list[dict[str, Any]]:
+    """Normalize raw or Backdate vendor sheets to the internal source schema."""
+    mapping = LB_COL_MAP if side == "LB" else RB_COL_MAP
+    rename = {header: field for header, field in mapping.items()
+              if header in df.columns}
+    normalized = df.rename(rename)
+    return _to_rows(normalized)
+
+
+def _record_vendor_side(record: Mapping[str, Any]) -> str | None:
+    vendor = " ".join(str(record.get("vendor") or "").casefold().split())
+    product = " ".join(str(record.get("product") or "").casefold().split())
+    if "loket bayar" in vendor or vendor == "lb":
+        return "LB"
+    if "rajabiller" in vendor or vendor == "rb":
+        return "RB"
+    if "loket bayar" in product or product == "lb" or product.startswith("lb "):
+        return "LB"
+    if "rajabiller" in product or product == "rb" or product.startswith("rb "):
+        return "RB"
+    return None
+
+
+def _pair_vendor_and_bo(
+    vendor_rows: Sequence[Mapping[str, Any]],
+    bo_records: Sequence[Mapping[str, Any]],
+    vendor_side: str,
+    period_order: int,
+) -> tuple[list[dict[str, Any]], int, int, int]:
+    """Pair source rows one-to-one; ambiguous candidates stay unmatched."""
+    def text_key(value: Any) -> str:
+        value = _clean(value)
+        return "" if value is None else "".join(str(value).split()).casefold()
+
+    def billing_key(value: Any) -> str:
+        value = _clean(value)
+        if value is None:
+            return ""
+        normalized = "".join(str(value).split()).casefold()
+        digits = "".join(ch for ch in normalized if ch.isdigit())
+        return (digits.lstrip("0") or digits) if digits else normalized
+
+    def amount_key(value: Any) -> int | None:
+        value = _clean(value)
+        if value is None:
+            return None
+        try:
+            return round(float(value) * 100)
+        except (TypeError, ValueError):
+            return None
+
+    def timestamp_key(value: Any) -> str:
+        parsed = _as_datetime(value)
+        return parsed.strftime("%Y-%m-%d %H:%M:%S") if parsed else ""
+
+    def keys(row: Mapping[str, Any], bo: bool) -> tuple[Any, ...]:
+        if bo:
+            ref, vendor_ref = row.get("ref"), row.get("vendor_ref")
+            bn, amount, timestamp = (
+                row.get("billing_number"), row.get("amount"),
+                row.get("datetime"),
+            )
+        elif vendor_side == "LB":
+            ref, vendor_ref = row.get("ref"), row.get("ref_id")
+            bn, amount, timestamp = (
+                row.get("idpel"), row.get("tagihan"), row.get("tanggal"),
+            )
+        else:
+            ref, vendor_ref = row.get("ref"), row.get("sn")
+            bn, amount, timestamp = (
+                row.get("pelanggan_1"), row.get("nominal"), row.get("tanggal"),
+            )
+        ref_key, vendor_ref_key = text_key(ref), text_key(vendor_ref)
+        bn_key, amt_key = billing_key(bn), amount_key(amount)
+        time_key = timestamp_key(timestamp)
+        date_key = time_key[:10] if time_key else ""
+        if bo:
+            # BO Vendor Ref may correspond to either LB's Ref ID or its
+            # transaction serial (No. Reff/SN). BO Ref is a biller reference.
+            vendor_reference = vendor_ref_key
+            alternate_reference = vendor_ref_key
+        elif vendor_side == "LB":
+            vendor_reference = text_key(row.get("ref_id"))
+            alternate_reference = text_key(row.get("ref"))
+        else:
+            vendor_reference = text_key(row.get("sn"))
+            alternate_reference = text_key(row.get("id_trx"))
+        return (
+            ("vendor_ref", vendor_reference) if vendor_reference else None,
+            ("vendor_ref", alternate_reference)
+            if alternate_reference else None,
+            ("bn_amount_time", bn_key, amt_key, time_key)
+            if bn_key and amt_key is not None and time_key else None,
+            ("bn_amount_date", bn_key, amt_key, date_key)
+            if bn_key and amt_key is not None and date_key else None,
+            ("amount_time", amt_key, time_key)
+            if amt_key is not None and time_key else None,
+            ("amount_date", amt_key, date_key)
+            if amt_key is not None and date_key else None,
+        )
+
+    vendor_keys = [keys(row, False) for row in vendor_rows]
+    bo_keys = [keys(row, True) for row in bo_records]
+    matches: dict[int, int] = {}
+    used_bo: set[int] = set()
+    for tier in range(6):
+        vendor_groups: dict[Any, list[int]] = {}
+        bo_groups: dict[Any, list[int]] = {}
+        for index, row_keys in enumerate(vendor_keys):
+            if index in matches or row_keys[tier] is None:
+                continue
+            vendor_groups.setdefault(row_keys[tier], []).append(index)
+        for index, row_keys in enumerate(bo_keys):
+            if index in used_bo or row_keys[tier] is None:
+                continue
+            bo_groups.setdefault(row_keys[tier], []).append(index)
+        for key, vendor_indices in vendor_groups.items():
+            bo_indices = bo_groups.get(key, [])
+            if len(vendor_indices) == len(bo_indices) == 1:
+                vendor_index, bo_index = vendor_indices[0], bo_indices[0]
+                vendor, bo = vendor_rows[vendor_index], bo_records[bo_index]
+                vendor_date = _as_datetime(vendor.get("tanggal"))
+                bo_date = _as_datetime(bo.get("datetime"))
+                vendor_amount = amount_key(
+                    vendor.get("tagihan") if vendor_side == "LB"
+                    else vendor.get("nominal")
+                )
+                bo_amount = amount_key(bo.get("amount"))
+                vendor_number = billing_key(
+                    vendor.get("idpel") if vendor_side == "LB"
+                    else vendor.get("pelanggan_1")
+                )
+                bo_number = billing_key(bo.get("billing_number"))
+                vendor_status = _transaction_status(vendor.get("status"))
+                bo_status = _transaction_status(bo.get("transaction_status"))
+                if (
+                    not vendor_number or vendor_number != bo_number
+                    or vendor_date is None or bo_date is None
+                    or vendor_date.date() != bo_date.date()
+                    or (vendor_status and bo_status and vendor_status != bo_status)
+                    or (
+                        (vendor_amount is None or vendor_amount != bo_amount)
+                        and tier > 1
+                    )
+                ):
+                    continue
+                matches[vendor_index] = bo_index
+                used_bo.add(bo_index)
+
+    result: list[dict[str, Any]] = []
+    for index, vendor in enumerate(vendor_rows):
+        bo_index = matches.get(index)
+        bo = bo_records[bo_index] if bo_index is not None else None
+        date_value = (
+            bo.get("datetime") if bo else vendor.get("tanggal")
+        )
+        status = (
+            bo.get("transaction_status") if bo
+            else vendor.get("status")
+        )
+        result.append({
+            "_pair_vendor": vendor,
+            "_pair_bo": bo,
+            "_period_order": period_order,
+            "tanggal": date_value,
+            "status": status,
+            "tagihan": vendor.get("tagihan") if vendor_side == "LB" else None,
+            "harga": vendor.get("harga") if vendor_side == "LB" else None,
+            "matched": bo is not None,
+            "_pair_issue": (
+                "NO BO MATCH" if bo is None else
+                "AMOUNT MISMATCH" if amount_key(
+                    vendor.get("tagihan") if vendor_side == "LB"
+                    else vendor.get("nominal")
+                ) != amount_key(bo.get("amount")) else None
+            ),
+        })
+    for index, bo in enumerate(bo_records):
+        if index not in used_bo:
+            result.append({
+                "_pair_vendor": None,
+                "_pair_bo": bo,
+                "_period_order": period_order,
+                "tanggal": bo.get("datetime"),
+                "status": bo.get("transaction_status"),
+                "tagihan": None,
+                "harga": None,
+                "matched": False,
+                "_pair_issue": "NO VENDOR MATCH",
+            })
+    return result, len(matches), len(vendor_rows) - len(matches), len(bo_records) - len(used_bo)
+
+
 def build_recon_workbook(
     lb_df: pl.DataFrame,
     rb_df: pl.DataFrame,
@@ -1063,223 +1362,76 @@ def build_recon_workbook(
             "Data Backdate harus menyertakan sheet LB, RB, dan RECON."
         )
     lb_rows = (
-        [{**row, "_period_order": 0} for row in _to_rows(backdate_lb_df)]
+        [{**row, "_period_order": 0}
+         for row in _vendor_rows_from_source(backdate_lb_df, "LB")]
         if backdate_lb_df is not None else []
     )
     lb_rows.extend(
-        [{**row, "_period_order": 1} for row in _to_rows(lb_df)]
-        if has_backdate else _to_rows(lb_df)
+        [{**row, "_period_order": 1} for row in _vendor_rows_from_source(lb_df, "LB")]
+        if has_backdate else _vendor_rows_from_source(lb_df, "LB")
     )
     rb_rows = (
-        [{**row, "_period_order": 0} for row in _to_rows(backdate_rb_df)]
+        [{**row, "_period_order": 0}
+         for row in _vendor_rows_from_source(backdate_rb_df, "RB")]
         if backdate_rb_df is not None else []
     )
     rb_rows.extend(
-        [{**row, "_period_order": 1} for row in _to_rows(rb_df)]
-        if has_backdate else _to_rows(rb_df)
+        [{**row, "_period_order": 1} for row in _vendor_rows_from_source(rb_df, "RB")]
+        if has_backdate else _vendor_rows_from_source(rb_df, "RB")
     )
-    records: list[dict[str, Any]] = []
+    bo_records_by_period: dict[int, list[dict[str, Any]]] = {0: [], 1: []}
     if progress_callback:
-        progress_callback("Menyusun daftar transaksi dan status.")
+        progress_callback("Menyusun sumber BO Biller dan data vendor.")
 
-    # Backdate Records: dari sheet RECON workbook Backdate (kode asli BO BILLER).
-    # Nilai Ref dan Vendor Ref diambil langsung dari sheet RECON, JANGAN dari LB/RB.
-    # Data di sheet RECON tidak dimodifikasi oleh aplikasi.
+    # Backdate RECON adalah sumber BO Biller untuk vendor Backdate.
     if backdate_recon_df is not None and backdate_recon_df.height > 0:
-        backdate_records = _records_from_recon_sheet(backdate_recon_df)
-        backdate_records.sort(
-            key=lambda record: (
-                _as_datetime(record["datetime"]) or dt.datetime.min
-            )
-        )
-        records.extend(backdate_records)
+        bo_records_by_period[0] = _records_from_recon_sheet(backdate_recon_df)
 
-    # End Date Records: dari sheet Records file recon referensi (kode asli BO BILLER).
-    # Nilai Ref dan Vendor Ref dipertahankan asli, tidak dimodifikasi oleh aplikasi.
+    # Records dari file recon adalah sumber BO Biller untuk End Date.
     if recon_records_df is not None and recon_records_df.height > 0:
-        records.extend(_records_from_recon_sheet(recon_records_df))
+        bo_records_by_period[1] = _records_from_recon_sheet(recon_records_df)
 
-    # Fallback: hanya jika tidak ada backcast RECON dan tidak ada upload recon Records.
-    # Hanya dalam kasus ini ambil Ref dan Vendor Ref dari sumber LB/RB.
-    if not records:
-        records.extend(_records(_to_rows(lb_df), _to_rows(rb_df)))
-
-    # Sinkronkan Ref dan Vendor Ref di lb_rows dan rb_rows dari records.
-    # Records sudah memiliki Ref/Vendor Ref asli dari RECON/Records sheet.
-    # Kunci utama: billing_number (dinormalisasi). Fallback: (datetime, amount),
-    # lalu amount-only jika unik. Ini memastikan semua baris LB/RB yang mungkin
-    # memiliki format BN berbeda tetap tersinkron dengan Records final.
-    def _norm_bn(value: Any) -> str:
-        if value is None:
-            return ""
-        if isinstance(value, float) and value.is_integer():
-            return str(int(value))
-        if isinstance(value, int):
-            return str(value)
-        s = str(value).strip()
-        if s.endswith(".0"):
-            try:
-                f = float(s)
-                if f.is_integer():
-                    s = str(int(f))
-            except ValueError:
-                pass
-        # Hapus semua karakter non-digit untuk normalisasi ID pelanggan
-        digits_only = "".join(ch for ch in s if ch.isdigit())
-        base = digits_only.lstrip("0") if digits_only else s.lstrip("0")
-        return base if base else s
-
-    def _norm_amt(value: Any) -> float | None:
-        v = _clean(value)
-        if v is None:
-            return None
-        try:
-            return float(v)
-        except (TypeError, ValueError):
-            return None
-
-    def _norm_dt(value: Any) -> str:
-        dv = _as_datetime(value)
-        return dv.strftime("%Y-%m-%d %H:%M:%S") if dv else ""
-
-    from collections import defaultdict
-    records_by_bn: dict[str, list[tuple]] = defaultdict(list)
-    records_by_dt_amt: dict[tuple, list[tuple[Any, Any]]] = defaultdict(list)
-    records_by_amt: dict[float, list[tuple[Any, Any]]] = defaultdict(list)
-    records_by_dt: dict[str, list[tuple[Any, Any]]] = defaultdict(list)
-    for record in records:
-        bn = _norm_bn(record.get("billing_number"))
-        amt = _norm_amt(record.get("amount"))
-        dt_str = _norm_dt(record.get("datetime"))
-        ref = record.get("ref")
-        vref = record.get("vendor_ref")
-        total_fee = _clean(record.get("total_fee"))
-        cust_fee = _clean(record.get("customer_fee"))
-        lst_fee = _clean(record.get("lst_fee"))
-        margin = _clean(record.get("margin_biller"))
-        fee_tuple = (
-            total_fee, cust_fee, lst_fee, margin, ref, vref,
-        )
-        if bn:
-            records_by_bn[bn].append((amt if amt is not None else -1.0, *fee_tuple))
-        if dt_str and amt is not None:
-            records_by_dt_amt[(dt_str, amt)].append(fee_tuple)
-        if amt is not None:
-            records_by_amt[amt].append(fee_tuple)
-        if dt_str:
-            records_by_dt[dt_str].append(fee_tuple)
-
-    def _lookup_full(
-        bn_val: Any, amt_val: Any, dt_val: Any
-    ) -> tuple[Any, Any, Any, Any, Any, Any] | None:
-        """Return (total_fee, customer_fee, lst_fee, margin, ref, vendor_ref)."""
-        # Level 1: billing_number
-        bn = _norm_bn(bn_val)
-        amt = _norm_amt(amt_val)
-        dt_str = _norm_dt(dt_val)
-        if bn and bn in records_by_bn:
-            candidates = records_by_bn[bn]
-            if len(candidates) == 1:
-                _, ref, vref, *_rest = (None, *candidates[0])
-                return candidates[0][1:]
-            if amt is not None:
-                best = min(candidates, key=lambda c: abs(c[0] - amt))
-                return best[1:]
-            return candidates[0][1:]
-        # Level 2: (datetime, amount)
-        if dt_str and amt is not None:
-            key = (dt_str, amt)
-            if key in records_by_dt_amt:
-                candidates = records_by_dt_amt[key]
-                if len(candidates) == 1:
-                    return candidates[0]
-                for cand in candidates:
-                    return cand
-        # Level 3: amount-only, hanya jika unik
-        if amt is not None and amt in records_by_amt:
-            candidates = records_by_amt[amt]
-            if len(candidates) == 1:
-                return candidates[0]
-        # Level 4: datetime-only, hanya jika unik
-        if dt_str and dt_str in records_by_dt:
-            candidates = records_by_dt[dt_str]
-            if len(candidates) == 1:
-                return candidates[0]
-        # Level 5: datetime-only fallback (meski tidak unik, pilih berdasarkan amount terdekat)
-        if dt_str and dt_str in records_by_dt:
-            candidates = records_by_dt[dt_str]
-            if amt is not None:
-                # Cari yang amount-nya terdekat dengan semua records ber-datetime sama
-                # Untuk ini butuh info amount per candidate; simpan dari records_by_dt
-                # Karena records_by_dt hanya simpan (ref, vref), kita pakai
-                # records_by_dt_amt untuk cari yang paling cocok
-                best_key: tuple | None = None
-                best_diff = float("inf")
-                for (d, a), cands in records_by_dt_amt.items():
-                    if d.split()[0] == dt_str.split()[0]:
-                        diff = abs(a - amt)
-                        if diff < best_diff:
-                            best_diff = diff
-                            best_key = (d, a)
-                if best_key is not None:
-                    return records_by_dt_amt[best_key][0]
-            # Jika amount tidak membantu, ambil yang pertama
-            if candidates:
-                return candidates[0]
-        # Level 6: fuzzy billing_number (beda 1-2 digit, pilih terdekat,
-        # lalu amount terdekat sebagai tiebreaker)
-        if bn:
-            best_bn: str | None = None
-            best_dist = 3
-            for cand_bn in records_by_bn:
-                m, n = len(bn), len(cand_bn)
-                if abs(m - n) > 2:
-                    continue
-                prev = list(range(n + 1))
-                for i in range(1, m + 1):
-                    cur = [i] + [0] * n
-                    for j in range(1, n + 1):
-                        cur[j] = min(
-                            prev[j] + 1, cur[j - 1] + 1,
-                            prev[j - 1] + (
-                                0 if bn[i - 1] == cand_bn[j - 1] else 1
-                            ),
-                        )
-                    prev = cur
-                dist = prev[n]
-                if dist < best_dist:
-                    best_dist = dist
-                    best_bn = cand_bn
-            if best_bn is not None:
-                candidates = records_by_bn[best_bn]
-                if len(candidates) == 1:
-                    return candidates[0][1:]
-                if amt is not None:
-                    best = min(candidates, key=lambda c: abs(c[0] - amt))
-                    return best[1:]
-                return candidates[0][1:]
-        return None
-
-    for row in lb_rows:
-        found = _lookup_full(
-            row.get("idpel"), row.get("tagihan"), row.get("tanggal")
-        )
-        if found is not None:
-            (
-                row["_sync_total_fee"], row["_sync_customer_fee"],
-                row["_sync_lst_fee"], row["_sync_margin"],
-                row["ref"], row["ref_id"],
-            ) = found
-    for row in rb_rows:
-        found = _lookup_full(
-            row.get("pelanggan_1"), row.get("nominal"), row.get("tanggal")
-        )
-        if found is not None:
-            (
-                row["_sync_total_fee"], row["_sync_customer_fee"],
-                row["_sync_lst_fee"], row["_sync_margin"],
-                row["ref"], row["ref_id"],
-            ) = found
+    has_bo_references = any(bo_records_by_period.values())
+    if has_bo_references:
+        unclassified = [
+            row for period_rows in bo_records_by_period.values()
+            for row in period_rows if _record_vendor_side(row) is None
+        ]
+        if unclassified:
+            raise ValueError(
+                f"{len(unclassified):,} baris Records BO Biller tidak dapat "
+                "ditentukan sebagai LB atau RB. Pastikan kolom Vendor berisi "
+                "Loket Bayar/Rajabiller, atau Product berisi penanda LB/RB."
+            )
+        for side, source_rows in (("LB", lb_rows), ("RB", rb_rows)):
+            paired_rows: list[dict[str, Any]] = []
+            matched_count = vendor_only_count = bo_only_count = 0
+            for period_order in (0, 1):
+                vendor_period = [
+                    row for row in source_rows
+                    if row.get("_period_order", 1) == period_order
+                ]
+                bo_period = [
+                    row for row in bo_records_by_period[period_order]
+                    if _record_vendor_side(row) == side
+                ]
+                result, matched, vendor_only, bo_only = _pair_vendor_and_bo(
+                    vendor_period, bo_period, side, period_order
+                )
+                paired_rows.extend(result)
+                matched_count += matched
+                vendor_only_count += vendor_only
+                bo_only_count += bo_only
+            if side == "LB":
+                lb_rows = paired_rows
+            else:
+                rb_rows = paired_rows
+            if progress_callback:
+                progress_callback(
+                    f"{side}: {matched_count:,} pasangan cocok; "
+                    f"{vendor_only_count:,} baris vendor tanpa pasangan BO; "
+                    f"{bo_only_count:,} baris BO tanpa pasangan vendor."
+                )
 
     workbook = xlsxwriter.Workbook(
         str(output_path),

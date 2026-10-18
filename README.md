@@ -1,11 +1,12 @@
 # Recon Builder — LB & RB
 
-**Versi aplikasi: 1.2.38** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.42** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
-Aplikasi desktop untuk membaca workbook Loket Bayar (LB) dan Rajabiller (RB),
-meninjau sheet **Summary** dan **Records** dari file recon referensi, lalu
-menghasilkan recon dengan sheet **Summary**, **Records**, **LB**, dan **RB**.
+Aplikasi desktop untuk membaca workbook Vendor Loket Bayar (LB) dan Rajabiller
+(RB), mencocokkannya dengan data BO Biller dari file recon, lalu menghasilkan
+workbook dengan sheet **LB** dan **RB**. Kolom kiri berisi BO Biller dan kolom
+kanan berisi transaksi Vendor.
 Layout, lebar kolom, format angka, warna, serta rumus mengacu pada
 `recon-2026-10-14-v1.xlsx`.
 
@@ -34,18 +35,20 @@ python3 app.py
 Pada aplikasi desktop, upload file LB, RB, dan file recon referensi berformat
 Excel `.xlsx`; tersedia juga field upload opsional untuk satu workbook
 Backdate `.xlsx` dengan sheet `LB`, `RB`, dan `RECON`. Saat Backdate dipilih,
-klik **Generate Recon** setelah semua file wajib diupload. Data Backdate untuk
-sheet `Records` diambil dari sumber LB/RB (termasuk Ref dan Vendor Ref), lalu
-ditempatkan di awal berdasarkan Datetime sebelum data End Date. Subtotal
+klik **Generate Recon** setelah semua file diupload. Data BO Backdate berasal
+dari sheet `RECON`, data Vendor Backdate berasal dari sheet `LB`/`RB`; untuk
+Enddate, data BO berasal dari sheet `Records` recon dan data Vendor berasal dari
+file LB/RB. Pencocokan mengutamakan nomor referensi transaksi dan memeriksa
+nomor pelanggan, tanggal, serta status. Nominal harus cocok untuk pencocokan
+cadangan; jika referensi kuat menunjukkan transaksi sama tetapi nominal berbeda,
+keduanya tetap dipasangkan dan ditandai `AMOUNT MISMATCH`. Baris ambigu atau
+tanpa pasangan ditandai di hasil. Baris Backdate ditempatkan sebelum Enddate. Subtotal
 SUCCESS/FAILED di sheet `LB` dan `RB` menggabungkan Backdate dan End Date;
-transaksi End Date pukul 23:00 ditampilkan di bagian For tomorrow dan tetap
-ada pada `Records`.
-Tanpa Backdate, output reguler tetap seperti sebelumnya. Workbook
-ditulis menggunakan **Polars + XlsxWriter**. File recon referensi harus
-memiliki sheet `Summary` dan `Records`; kedua sheet dapat ditinjau, sedangkan
-Summary/Records output dihitung dari upload LB/RB. Sheet `RECON` pada workbook
-Backdate divalidasi, tetapi tidak menggantikan data sumber LB/RB. Command line
-tetap menerima dua file LB/RB seperti contoh di bawah.
+transaksi End Date pukul 23:00 ditampilkan di bagian For tomorrow.
+Workbook ditulis menggunakan **Polars + XlsxWriter**. File recon input harus
+memiliki sheet `Summary` dan `Records`; file Backdate harus memiliki sheet `LB`,
+`RB`, dan `RECON`. Command line tetap menerima dua file LB/RB seperti contoh
+di bawah.
 Nilai dan jumlah transaksi dibaca ulang dari file yang dipilih setiap kali
 aplikasi dijalankan; tidak ada tanggal atau jumlah baris transaksi yang
 ditetapkan tetap.

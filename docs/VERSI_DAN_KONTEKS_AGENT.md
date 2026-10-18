@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.38**
+**Versi saat ini: 1.2.42**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -21,6 +21,17 @@ memodifikasi kode:
    dan [`scripts/windows/ReconBuilder.iss`](../scripts/windows/ReconBuilder.iss).
 
 ## Implementasi 1.2.0 — UI, output, dan riwayat operator
+
+### 1.2.42 — Pemadanan BO Biller dengan Vendor
+
+- Output hanya memiliki sheet `LB` dan `RB`; kolom kiri bersumber dari BO
+  Biller, kolom kanan dari Vendor.
+- BO Backdate dibaca dari `RECON`; Vendor Backdate dibaca dari `LB`/`RB`.
+  BO Enddate dibaca dari `Records` file recon; Vendor Enddate dari upload LB/RB.
+- Pemadanan satu-ke-satu mengutamakan Vendor Ref dan memvalidasi nomor
+  pelanggan, nominal, tanggal, dan status. Kandidat ambigu atau berbeda tidak
+  dianggap cocok; baris yang belum cocok tetap ditampilkan di sisi sumbernya.
+- DMG/PKG macOS dibangun lokal; installer Windows dibangun lewat workflow.
 
 - Preview menyediakan pilihan **Semua** selain paging; ketiga sheet Backdate
   (`LB`, `RB`, `RECON`) tampil sebagai tab tersendiri.
