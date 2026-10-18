@@ -122,7 +122,8 @@ Build Windows dijalankan manual melalui GitHub Actions workflow
 atas. Produk dan file sementara build ditempatkan di `dist/`; file sementara
 dibersihkan setelah build.
 
-- Workflow manual menghasilkan `dist/ReconBuilder-Setup.exe` sebagai artifact.
+- Workflow manual menghasilkan `dist/ReconBuilder-Setup.exe` sebagai artifact
+  Actions dan mengunggahnya ke draft release untuk dirilis bersama paket macOS.
 - Installer menggunakan Inno Setup dan menyertakan Polars, `fastexcel`/
   Calamine, serta file aplikasi agar pengguna tidak perlu memasang Python.
 

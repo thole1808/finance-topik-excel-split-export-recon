@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: windows-installer-${{ github.ref }}
@@ -71,3 +71,11 @@ jobs:
           path: dist/ReconBuilder-Setup.exe
           if-no-files-found: error
           retention-days: 7
+
+      - name: Upload installer to the draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = python -c "from src.version import __version__; print(__version__)"
+          gh release upload "v$version" "dist/ReconBuilder-Setup.exe" --clobber
