@@ -286,7 +286,7 @@ class ReconApp(tk.Tk):
 
         preview = ttk.LabelFrame(
             content,
-            text="2. Preview — edit data LB/RB; recon sebagai referensi",
+            text="2. Preview",
             padding=10,
         )
         preview.grid(row=1, column=0, sticky="nsew")
