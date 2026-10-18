@@ -7,6 +7,12 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      windows_only:
+        description: Build only the Windows installer (keep local macOS release assets)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -19,6 +25,7 @@ concurrency:
 jobs:
   # ── macOS: build DMG + PKG ───────────────────────────────────────────────────
   build-macos:
+    if: github.event_name != 'workflow_dispatch' || !inputs.windows_only
     runs-on: macos-latest
     steps:
       - name: Check out source
@@ -145,7 +152,7 @@ jobs:
   publish-release:
     runs-on: ubuntu-latest
     needs: [build-macos, build-windows]
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || !inputs.windows_only)
     steps:
       - name: Check out source
         uses: actions/checkout@v4

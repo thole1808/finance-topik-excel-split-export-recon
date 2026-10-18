@@ -654,13 +654,8 @@ def _write_status_total_row(
     group_rows: Sequence[Mapping[str, Any]],
     values_function: Any,
     format_cache: dict[tuple[str, int, int], xlsxwriter.format.Format],
-    tomorrow_rows: Sequence[Mapping[str, Any]] = (),
 ) -> None:
     current_columns = (7, 8, 9, 10, 11)
-    tomorrow_columns = (
-        (46, 47, 48, 49, 50) if sheet == "LB"
-        else (56, 57, 58, 59, 60)
-    )
     totals = [0.0] * len(current_columns)
     for record in group_rows:
         values = values_function(record)
@@ -683,30 +678,11 @@ def _write_status_total_row(
         format_cache=format_cache,
         format_overrides=common_overrides,
     )
-    tomorrow_group_rows = [
-        row for row in tomorrow_rows
-        if _transaction_status(row.get("status"))
-        == _transaction_status(group_rows[0].get("status"))
-    ] if group_rows else []
-    tomorrow_totals = [0.0] * len(tomorrow_columns)
-    for record in tomorrow_group_rows:
-        values = values_function(record)
-        for index, column in enumerate(tomorrow_columns):
-            value = _clean(values.get(column))
-            if isinstance(value, (int, float)):
-                tomorrow_totals[index] += float(value)
-
-    for index, (current_column, tomorrow_column) in enumerate(
-        zip(current_columns, tomorrow_columns)
-    ):
+    for current_column in current_columns:
         current_letter = xlsxwriter.utility.xl_col_to_name(current_column - 1)
-        tomorrow_letter = xlsxwriter.utility.xl_col_to_name(
-            tomorrow_column - 1
-        )
         formula = (
             f"=SUM({current_letter}{first_data_row}:"
-            f"{current_letter}{last_data_row})+"
-            f"{tomorrow_totals[index]}"
+            f"{current_letter}{last_data_row})"
         )
         _write_cell(
             worksheet, workbook, sheet, total_row - 1, current_column, 4,
@@ -1018,7 +994,6 @@ def _write_wide_sheet(
                 worksheet, workbook, sheet, excel_row,
                 first_data_row, last_data_row, status_rows,
                 values_function, format_cache,
-                tomorrow_rows if sheet == "LB" else (),
             )
 
     worksheet.autofilter(
