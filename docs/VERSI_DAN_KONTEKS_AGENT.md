@@ -564,20 +564,20 @@ Gunakan catatan ini saat melanjutkan pekerjaan pada sesi atau agent baru.
 
 ## Gambar yang tersedia
 
-Gambar berikut adalah diagram alur aplikasi versi 1.2.38, disediakan untuk
-kebutuhan dokumentasi/presentasi. Sumber vector ada di
+Diagram berikut merangkum alur pemadanan aplikasi versi 1.2.42 untuk kebutuhan
+dokumentasi/presentasi. Sumber vector ada di
 [`flow-recon-finance.svg`](flow-recon-finance.svg):
 
-- [`flow-recon-finance.png`](flow-recon-finance.png) — PNG 1800×1800.
-- [`flow-recon-finance.jpg`](flow-recon-finance.jpg) — JPEG 1800×1800.
+- [`flow-recon-finance.png`](flow-recon-finance.png) — PNG 2700×2250.
+- [`flow-recon-finance.jpg`](flow-recon-finance.jpg) — JPEG 2700×2250.
 
-Diagram menerangkan upload file per sheet → validasi → preview/edit → proses
-Polars dan terminal → export bertimestamp → sheet Summary/Records/LB/RB →
-pemeriksaan Finance dan pencatatan aktivitas lokal. Gambar ini bukan screenshot
-interaktif aplikasi.
+Diagram menerangkan sumber BO Biller dan Vendor untuk Backdate/Enddate,
+pemadanan satu-ke-satu, penanda mismatch, lalu output hanya sheet LB/RB dengan
+data BO di kiri dan Vendor di kanan. Gambar ini bukan screenshot interaktif.
 
 ## Riwayat versi ringkas
 
+| 1.2.42 | Pemadanan BO Biller/Vendor satu-ke-satu; output hanya LB/RB; flow diagram baru; build macOS lokal, workflow Windows manual, release publik dengan checksum. |
 | 1.2.38 | Workflow release diperbaiki (release.yml, concurrency, tag Git eksplisit); build_dmg.sh mendukung --clean dan verifikasi dependensi; bug page_size.bind() diperbaiki; tombol Hapus di preview dihilangkan; updater timeout 30s/5x retry dengan pesan error yang ramah; flow diagram diperbarui ke 1.2.38. |
 | 1.2.37 | Preview data read-only: tampilan, pencarian, dan navigasi halaman hanya untuk melihat; tombol Edit, klik ganda, dan Enter tidak lagi menerapkan perubahan; sel tidak bisa dihapus/diedit. |
 | 1.2.36 | Sinkronkan juga Customer Fee, LST Fee, dan Margin Biller (nilai uang) dari Sheet Records final ke sheet LB/RB output; `_lb_values`/`_rb_values` prioritas nilai sinkron, fallback hitung ulang. Ref/Vendor Ref tetap 6 level pencocokan. |

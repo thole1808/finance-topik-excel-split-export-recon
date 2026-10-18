@@ -152,12 +152,12 @@ scripts/
   windows/
     ReconBuilder.iss           # Konfigurasi installer Inno Setup
 .github/workflows/
-  release.yml                  # Build DMG/PKG (macOS) + EXE (Windows) + release
+  release.yml                  # Build installer Windows via manual dispatch
 docs/
   FLOW_LOGIC.md                # Dokumentasi lengkap logika alur data
   flow-recon-finance.svg       # Diagram alur (vector)
-  flow-recon-finance.png       # Diagram alur (PNG 1800×1900)
-  flow-recon-finance.jpg       # Diagram alur (JPG 1800×1900)
+  flow-recon-finance.png       # Diagram alur baru (PNG 2700×2250)
+  flow-recon-finance.jpg       # Diagram alur baru (JPG 2700×2250)
 ```
 
 ## Catatan

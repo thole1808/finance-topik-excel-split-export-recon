@@ -1,201 +1,107 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1950" viewBox="0 0 1800 1950">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1500" viewBox="0 0 1800 1500">
   <defs>
     <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
       <path d="M1 1 L11 6 L1 11 Z" fill="#6685a1"/>
     </marker>
-    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M1 1 L11 6 L1 11 Z" fill="#8b73cf"/>
-    </marker>
     <marker id="arrow-teal" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M1 1 L11 6 L1 11 Z" fill="#20b49f"/>
+      <path d="M1 1 L11 6 L1 11 Z" fill="#159b87"/>
     </marker>
     <style>
       text { font-family: Arial, Helvetica, sans-serif; fill: #17365d; }
-      .title { font-size: 46px; font-weight: 700; }
-      .subtitle { font-size: 22px; fill: #5d7591; }
-      .heading { font-size: 25px; font-weight: 700; }
-      .body { font-size: 18px; fill: #506985; }
-      .small { font-size: 16px; fill: #506985; }
-      .tiny { font-size: 14px; fill: #61748B; }
-      .card { fill: #ffffff; stroke: #d2deea; stroke-width: 2; }
-      .connector { fill: none; stroke: #6685a1; stroke-width: 5; marker-end: url(#arrow); }
-      .reference { fill: none; stroke: #8b73cf; stroke-width: 5; marker-end: url(#arrow-purple); }
-      .teal-connector { fill: none; stroke: #20b49f; stroke-width: 5; marker-end: url(#arrow-teal); }
+      .title { font-size: 48px; font-weight: 700; }
+      .subtitle { font-size: 23px; fill: #5d7591; }
+      .heading { font-size: 27px; font-weight: 700; }
+      .body { font-size: 21px; fill: #506985; }
+      .small { font-size: 18px; fill: #506985; }
+      .tiny { font-size: 16px; fill: #61748b; }
+      .card { fill: #fff; stroke: #d2deea; stroke-width: 2; }
+      .line { fill: none; stroke: #6685a1; stroke-width: 5; marker-end: url(#arrow); }
+      .teal { fill: none; stroke: #159b87; stroke-width: 5; marker-end: url(#arrow-teal); }
     </style>
   </defs>
-  <rect width="1800" height="1950" fill="#f3f7fb"/>
+  <rect width="1800" height="1500" fill="#f3f7fb"/>
 
-  <text x="76" y="76" class="title">ALUR RECON BUILDER</text>
-  <text x="78" y="116" class="subtitle">Versi 1.2.38 · Upload → preview read-only → proses → hasil bertimestamp + riwayat + update</text>
+  <text x="70" y="78" class="title">FLOW BARU · RECON BUILDER</text>
+  <text x="72" y="119" class="subtitle">Versi 1.2.42 · Data BO Biller di kiri · Data Vendor di kanan · tanpa sheet Records pada output</text>
 
-  <!-- Upload sources -->
-  <rect x="76" y="190" width="350" height="135" rx="20" class="card"/>
-  <rect x="76" y="190" width="13" height="135" rx="7" fill="#20b49f"/>
-  <text x="106" y="231" class="heading">Upload LB</text>
-  <text x="106" y="264" class="body">.xlsx · sheet pertama</text>
-  <text x="106" y="292" class="body">Sumber transaksi Loket Bayar</text>
+  <!-- Input periods -->
+  <rect x="70" y="170" width="790" height="320" rx="24" class="card"/>
+  <rect x="70" y="170" width="14" height="320" rx="7" fill="#edaa39"/>
+  <text x="108" y="218" class="heading">1 · Sumber transaksi</text>
+  <rect x="105" y="245" width="720" height="95" rx="16" fill="#fff8eb" stroke="#efd39c" stroke-width="2"/>
+  <text x="130" y="280" class="body" font-weight="700">BACKDATE (opsional)</text>
+  <text x="130" y="314" class="small">BO: Backdate · RECON  |  Vendor: Backdate · LB / RB</text>
+  <rect x="105" y="360" width="720" height="95" rx="16" fill="#eff8ff" stroke="#b9d6ed" stroke-width="2"/>
+  <text x="130" y="395" class="body" font-weight="700">ENDDATE</text>
+  <text x="130" y="429" class="small">BO: file Recon · Records  |  Vendor: upload LB / upload RB</text>
+  <text x="108" y="472" class="tiny">File Recon juga memuat Summary untuk validasi / preview input.</text>
 
-  <rect x="76" y="365" width="350" height="135" rx="20" class="card"/>
-  <rect x="76" y="365" width="13" height="135" rx="7" fill="#f2a93b"/>
-  <text x="106" y="406" class="heading">Upload RB</text>
-  <text x="106" y="439" class="body">.xlsx · sheet pertama</text>
-  <text x="106" y="467" class="body">Sumber transaksi Rajabiller</text>
+  <!-- Input validation -->
+  <rect x="70" y="535" width="790" height="160" rx="24" class="card"/>
+  <rect x="70" y="535" width="14" height="160" rx="7" fill="#398bc4"/>
+  <text x="108" y="583" class="heading">2 · Validasi dan normalisasi</text>
+  <text x="108" y="622" class="body">Header, format tanggal, nomor pelanggan, nominal, status, dan referensi.</text>
+  <text x="108" y="658" class="small">Backdate dipasangkan hanya dengan Backdate; Enddate hanya dengan Enddate.</text>
 
-  <rect x="76" y="540" width="350" height="135" rx="20" class="card"/>
-  <rect x="76" y="540" width="13" height="135" rx="7" fill="#8b73cf"/>
-  <text x="106" y="581" class="heading">Upload Recon referensi</text>
-  <text x="106" y="614" class="body">.xlsx · wajib Summary + Records</text>
-  <text x="106" y="642" class="body">Hanya ditampilkan untuk ditinjau</text>
+  <!-- Pairing logic -->
+  <rect x="940" y="170" width="790" height="525" rx="24" class="card"/>
+  <rect x="940" y="170" width="14" height="525" rx="7" fill="#159b87"/>
+  <text x="980" y="218" class="heading">3 · Pemadanan satu-ke-satu</text>
+  <circle cx="1000" cy="270" r="17" fill="#159b87"/>
+  <text x="994" y="277" font-size="18" fill="#fff" font-weight="700">1</text>
+  <text x="1035" y="278" class="body">Referensi transaksi unik: BO Vendor Ref ↔ referensi Vendor</text>
+  <circle cx="1000" cy="327" r="17" fill="#398bc4"/>
+  <text x="994" y="334" font-size="18" fill="#fff" font-weight="700">2</text>
+  <text x="1035" y="335" class="body">Fallback: nomor pelanggan + nominal + waktu/tanggal</text>
+  <circle cx="1000" cy="384" r="17" fill="#398bc4"/>
+  <text x="994" y="391" font-size="18" fill="#fff" font-weight="700">3</text>
+  <text x="1035" y="392" class="body">Kandidat harus unik; nomor, tanggal, dan status diperiksa</text>
+  <line x1="980" y1="425" x2="1690" y2="425" stroke="#d2deea" stroke-width="2"/>
+  <text x="980" y="466" class="heading">Hasil pengecekan pasangan</text>
+  <rect x="980" y="488" width="710" height="48" rx="12" fill="#eaf7ee"/>
+  <text x="1000" y="520" class="small" font-weight="700">COCOK</text>
+  <text x="1150" y="520" class="small">Referensi dan data transaksi konsisten</text>
+  <rect x="980" y="545" width="710" height="48" rx="12" fill="#fff5df"/>
+  <text x="1000" y="577" class="small" font-weight="700">AMOUNT MISMATCH</text>
+  <text x="1220" y="577" class="small">Referensi kuat, nominal berbeda; ditandai</text>
+  <rect x="980" y="602" width="710" height="58" rx="12" fill="#fceced"/>
+  <text x="1000" y="637" class="small" font-weight="700">NO BO / NO VENDOR MATCH</text>
+  <text x="1275" y="637" class="small">Tidak dipasangkan secara tebakan</text>
 
-  <rect x="76" y="715" width="350" height="150" rx="20" class="card"/>
-  <rect x="76" y="715" width="13" height="150" rx="7" fill="#f2a93b"/>
-  <text x="106" y="756" class="heading">File Backdate (opsional)</text>
-  <text x="106" y="791" class="body">.xlsx · wajib sheet LB, RB, RECON</text>
-  <text x="106" y="815" class="body">Backdate LB/RB/RECON diproses saat Generate;</text>
-  <text x="106" y="840" class="small">tampil di tab Backdate · LB/RB/RECON.</text>
+  <!-- flow arrows -->
+  <path d="M860 330 L920 330 L920 255 L940 255" class="teal"/>
+  <path d="M465 490 L465 525" class="line"/>
+  <path d="M860 615 L900 615 L900 480 L940 480" class="teal"/>
 
-  <!-- Validation -->
-  <rect x="500" y="235" width="335" height="320" rx="22" class="card"/>
-  <rect x="500" y="235" width="13" height="320" rx="7" fill="#3591d0"/>
-  <text x="532" y="280" class="heading">Validasi input</text>
-  <text x="532" y="316" class="body">Header wajib harus cocok</text>
-  <text x="532" y="348" class="body">File harus Excel .xlsx</text>
-  <text x="532" y="380" class="body">Footer RB non-numerik dibuang</text>
-  <text x="532" y="412" class="body">Backdate: semua sheet LB/RB/RECON</text>
-  <text x="532" y="444" class="small">Tidak valid → proses dihentikan</text>
+  <!-- Output shape -->
+  <rect x="70" y="760" width="1660" height="490" rx="24" class="card"/>
+  <rect x="70" y="760" width="14" height="490" rx="7" fill="#17365d"/>
+  <text x="108" y="808" class="heading">4 · Generate workbook · hanya sheet LB dan RB</text>
+  <text x="108" y="845" class="small">Backdate tampil sebelum Enddate · transaksi Enddate pukul 23:00+ masuk blok For tomorrow</text>
 
-  <!-- Preview read-only -->
-  <rect x="900" y="235" width="340" height="320" rx="22" class="card"/>
-  <rect x="900" y="235" width="13" height="320" rx="7" fill="#20b49f"/>
-  <text x="932" y="280" class="heading">Preview (read-only)</text>
-  <text x="932" y="316" class="body">Telusuri semua baris LB/RB</text>
-  <text x="932" y="348" class="body">Semua / 100 / 250 / 500 / 1000</text>
-  <text x="932" y="380" class="body">Cari di semua kolom</text>
-  <text x="932" y="412" class="body">Sebelumnya / Berikutnya</text>
-  <text x="932" y="444" class="small">Edit dan hapus dinonaktifkan</text>
-  <text x="932" y="470" class="small">Recon: referensi saja, read-only</text>
+  <!-- two-side example -->
+  <rect x="108" y="875" width="750" height="292" rx="18" fill="#f0f7ff" stroke="#b9d6ed" stroke-width="2"/>
+  <rect x="108" y="875" width="750" height="58" rx="18" fill="#dceeff"/>
+  <text x="135" y="913" class="heading">KIRI · BO BILLER</text>
+  <text x="135" y="972" class="body">Datetime · Product · Billing Number · Billing Name</text>
+  <text x="135" y="1013" class="body">Ref · Vendor Ref · Amount · Fee · Status</text>
+  <text x="135" y="1070" class="small">Nilai BO tetap dari Records (Enddate) / RECON (Backdate)</text>
+  <text x="135" y="1112" class="small">Recon Result menandai MATCHED atau mismatch</text>
 
-  <!-- Reference preview lane -->
-  <rect x="505" y="605" width="735" height="100" rx="20" fill="#f8f5ff" stroke="#d8cef5" stroke-width="2"/>
-  <text x="535" y="646" class="heading">Recon referensi → pratinjau saja</text>
-  <text x="535" y="680" class="body">Preview saja; Summary/Records output dihitung ulang dari upload LB/RB.</text>
+  <rect x="938" y="875" width="750" height="292" rx="18" fill="#effaf7" stroke="#b2dfd5" stroke-width="2"/>
+  <rect x="938" y="875" width="750" height="58" rx="18" fill="#d9f2eb"/>
+  <text x="965" y="913" class="heading">KANAN · VENDOR</text>
+  <text x="965" y="972" class="body">LB: Idpel · Nama · Ref ID · Tagihan · Harga</text>
+  <text x="965" y="1013" class="body">RB: ID Trx · Pelanggan · SN · Ref · Nominal</text>
+  <text x="965" y="1070" class="small">Nilai Vendor tetap dari upload LB/RB (Enddate)</text>
+  <text x="965" y="1112" class="small">atau sheet LB/RB pada workbook Backdate</text>
 
-  <!-- Main connectors: uploads to validation/preview -->
-  <path d="M426 257 L500 300" class="connector"/>
-  <path d="M426 467 L500 392" class="connector"/>
-  <path d="M426 607 L500 607" class="reference"/>
-  <path d="M426 790 L500 790" class="connector"/>
-  <path d="M835 375 L900 375" class="connector"/>
+  <rect x="108" y="1182" width="1580" height="42" rx="12" fill="#fff8eb"/>
+  <text x="132" y="1210" class="small">Subtotal memakai SUM · pasangan meragukan tetap terpisah · tidak ada sheet Summary/Records pada file hasil</text>
 
-  <!-- Data processing -->
-  <rect x="1300" y="235" width="425" height="490" rx="22" class="card"/>
-  <rect x="1300" y="235" width="13" height="490" rx="7" fill="#20b49f"/>
-  <text x="1332" y="280" class="heading">Proses data (Polars)</text>
-  <text x="1332" y="316" class="body">Status: SUCCESS di atas FAILED</text>
-  <text x="1332" y="348" class="body">Jam ≥ 23:00 → blok For tomorrow</text>
-  <text x="1332" y="380" class="body">Backdate lebih dulu, lalu End Date</text>
-  <text x="1332" y="412" class="body">Summary/Records dihitung dari LB/RB</text>
-  <line x1="1332" y1="445" x2="1692" y2="445" stroke="#d2deea" stroke-width="2"/>
-  <text x="1332" y="480" class="heading">Sinkronisasi Ref/Vendor Ref</text>
-  <text x="1332" y="516" class="small">1. billing_number (dinormalisasi)</text>
-  <text x="1332" y="547" class="small">2. datetime + amount</text>
-  <text x="1332" y="578" class="small">3. amount-only (jika unik)</text>
-  <text x="1332" y="610" class="small">4. datetime-only (jika unik)</text>
-  <text x="1332" y="641" class="small">5. same-day fallback (amount terdekat)</text>
-  <text x="1332" y="672" class="small">6. fuzzy billing_number (1-2 digit)</text>
-  <rect x="1332" y="700" width="355" height="55" rx="10" fill="#fff7e6" stroke="#f0c36d" stroke-width="2"/>
-  <text x="1355" y="730" class="tiny">Ref/Vendor Ref dari sheet RECON/Records,</text>
-  <text x="1355" y="748" class="tiny">bukan dari nilai asli LB/RB.</text>
-
-  <!-- Fee lookup -->
-  <rect x="900" y="605" width="340" height="320" rx="22" class="card"/>
-  <rect x="900" y="605" width="13" height="320" rx="7" fill="#8b73cf"/>
-  <text x="932" y="648" class="heading">Lookup fee per transaksi</text>
-  <text x="932" y="684" class="small">1. reference_data: kode + nominal</text>
-  <text x="932" y="716" class="small">2. fee_tables: kode produk</text>
-  <text x="932" y="748" class="small">3. Field fee sumber LB, jika ada</text>
-  <rect x="930" y="780" width="300" height="45" rx="10" fill="#fff7e6" stroke="#f0c36d" stroke-width="2"/>
-  <text x="950" y="810" class="tiny">Profil tidak ditemukan + input tak punya fee → sel kosong,</text>
-  <text x="950" y="828" class="tiny">bukan angka 0.</text>
-
-  <!-- Connector from preview to processing -->
-  <path d="M1060 555 L1280 555" class="teal-connector"/>
-
-  <!-- Connector from validation to processing -->
-  <path d="M835 300 L1280 350" class="teal-connector"/>
-
-  <!-- Connector from reference preview lane to processing -->
-  <path d="M1235 655 L1280 490" class="reference"/>
-
-  <!-- Connector from fee lookup to processing -->
-  <path d="M1060 605 L1150 605 L1150 490" class="teal-connector"/>
-
-  <!-- Export -->
-  <path d="M1512 730 L1512 830" class="teal-connector"/>
-  <rect x="1215" y="830" width="510" height="100" rx="20" class="card"/>
-  <rect x="1215" y="830" width="13" height="100" rx="7" fill="#f2a93b"/>
-  <text x="1248" y="872" class="heading">Export workbook Excel (.xlsx)</text>
-  <text x="1248" y="904" class="body">XlsxWriter · formula, format, filter, warna status</text>
-
-  <!-- Output sheets -->
-  <path d="M1470 930 L1470 965 L281 965 L281 1000" class="teal-connector"/>
-  <path d="M1470 965 L701 965 L701 1000" class="teal-connector"/>
-  <path d="M1470 965 L1121 965 L1121 1000" class="teal-connector"/>
-  <path d="M1470 965 L1541 965 L1541 1000" class="teal-connector"/>
-
-  <rect x="76" y="1000" width="410" height="125" rx="20" class="card"/>
-  <rect x="76" y="1000" width="13" height="125" rx="7" fill="#3591d0"/>
-  <text x="108" y="1044" class="heading">Summary</text>
-  <text x="108" y="1078" class="body">Jumlah dan nominal per kategori/status</text>
-
-  <rect x="496" y="1000" width="410" height="125" rx="20" class="card"/>
-  <rect x="496" y="1000" width="13" height="125" rx="7" fill="#3591d0"/>
-  <text x="528" y="1044" class="heading">Records</text>
-  <text x="528" y="1078" class="body">Gabungan transaksi LB + RB dan fee</text>
-
-  <rect x="916" y="1000" width="410" height="125" rx="20" class="card"/>
-  <rect x="916" y="1000" width="13" height="125" rx="7" fill="#3591d0"/>
-  <text x="948" y="1044" class="heading">LB</text>
-  <text x="948" y="1078" class="body">Sumber LB + kolom recon dan formula</text>
-
-  <rect x="1336" y="1000" width="410" height="125" rx="20" class="card"/>
-  <rect x="1336" y="1000" width="13" height="125" rx="7" fill="#3591d0"/>
-  <text x="1368" y="1044" class="heading">RB</text>
-  <text x="1368" y="1078" class="body">Sumber RB + kolom recon dan formula</text>
-
-  <!-- Finance review -->
-  <path d="M281 1125 L281 1170 L900 1170 L900 1200" class="connector"/>
-  <path d="M701 1125 L701 1170" fill="none" stroke="#6685a1" stroke-width="5"/>
-  <path d="M1121 1125 L1121 1170" fill="none" stroke="#6685a1" stroke-width="5"/>
-  <path d="M1541 1125 L1541 1170 L900 1170" fill="none" stroke="#6685a1" stroke-width="5"/>
-  <rect x="500" y="1200" width="800" height="100" rx="20" class="card"/>
-  <rect x="500" y="1200" width="13" height="100" rx="7" fill="#17365d"/>
-  <text x="535" y="1243" class="heading">Pemeriksaan Finance</text>
-  <text x="535" y="1277" class="body">Cek jumlah, fee kosong, status, nominal, tanggal, jam 23:00+</text>
-
-  <!-- Local history / audit -->
-  <rect x="76" y="1340" width="760" height="140" rx="20" class="card"/>
-  <rect x="76" y="1340" width="13" height="140" rx="7" fill="#20b49f"/>
-  <text x="108" y="1382" class="heading">Riwayat lokal (SQLite)</text>
-  <text x="108" y="1416" class="body">Audit hash chain · IP/MAC masked · ekspor CSV · cek integritas</text>
-
-  <!-- Update check -->
-  <rect x="876" y="1340" width="740" height="140" rx="20" class="card"/>
-  <rect x="876" y="1340" width="13" height="140" rx="7" fill="#8b73cf"/>
-  <text x="908" y="1382" class="heading">Pemeriksaan &amp; update otomatis</text>
-  <text x="908" y="1416" class="body">Cek GitHub Release · SHA-256 verifikasi · pasang &amp; buka kembali</text>
-
-  <!-- Footer notes -->
-  <rect x="76" y="1530" width="1670" height="110" rx="20" fill="#eef5ff" stroke="#aac9e8" stroke-width="2"/>
-  <text x="108" y="1568" class="heading">Catatan penting</text>
-  <text x="108" y="1602" class="small">Label MATCHED/INTERNAL dari status, bukan hasil pencocokan silang LB↔RB. Ref/Vendor Ref</text>
-  <text x="108" y="1626" class="small">di LB/RB disinkronisasi dari sheet RECON/Records agar konsisten dengan BO BILLER.</text>
-
-  <rect x="76" y="1660" width="1670" height="140" rx="20" fill="#eaf4f8" stroke="#aac9e8" stroke-width="2"/>
-  <text x="108" y="1700" class="heading">Operator · proses · pembaruan</text>
-  <text x="108" y="1730" class="body">Akun PC otomatis; jam lokal + nama hari/bulan Indonesia; watermark batik.</text>
-  <text x="108" y="1754" class="body">Voice: status generate + tombol Tes Suara; update otomatis macOS/Windows.</text>
-
-  <text x="76" y="1840" class="tiny">Data pada sheet Summary dan Records output dihitung ulang dari upload LB/RB — tidak disalin dari recon referensi.</text>
-  <text x="76" y="1865" class="tiny">Tanpa Backdate, output reguler tetap 4 sheet (Summary, Records, LB, RB) seperti sebelumnya.</text>
+  <!-- Footer -->
+  <text x="72" y="1315" class="heading">5 · Finance review</text>
+  <text x="72" y="1352" class="body">Periksa pasangan, mismatch nominal, baris tanpa pasangan, subtotal, tanggal, dan status.</text>
+  <text x="72" y="1410" class="small">File hasil .xlsx → folder output lokal · updater mengambil release publik dan memeriksa SHA-256.</text>
+  <text x="72" y="1460" class="tiny">Recon Builder · Flow data v1.2.42</text>
 </svg>
