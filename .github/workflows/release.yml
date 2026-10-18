@@ -1,91 +1,21 @@
-name: Release
+name: Windows Installer
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
   workflow_dispatch:
-    inputs:
-      windows_only:
-        description: Build only the Windows installer (keep local macOS release assets)
-        required: false
-        type: boolean
-        default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
-  # Allow release to complete; do not skip on workflow_dispatch / tag re-run
+  group: windows-installer-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  # ── macOS: build DMG + PKG ───────────────────────────────────────────────────
-  build-macos:
-    if: github.event_name != 'workflow_dispatch' || !inputs.windows_only
-    runs-on: macos-latest
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Install project dependencies
-        run: python3 -m pip install -r requirements.txt
-
-      - name: Cache PyInstaller build
-        uses: actions/cache@v4
-        with:
-          path: build/pyinstaller
-          key: pyinstaller-macos-${{ hashFiles('requirements.txt', 'src/**/*.py', 'app.py') }}
-          restore-keys: pyinstaller-macos-
-
-      - name: Build DMG and PKG
-        run: bash scripts/build_dmg.sh
-
-      - name: Locate versioned artifacts
-        id: artifacts
-        run: |
-          VERSION=$(python3 -c "from src.version import __version__; print(__version__)")
-          DMG=$(ls dist/ReconBuilder-v${VERSION}-*.dmg | sort | tail -1)
-          PKG=$(ls dist/ReconBuilder-v${VERSION}-*.pkg | sort | tail -1)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
-          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
-
-      - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ReconBuilder-macOS-DMG
-          path: ${{ steps.artifacts.outputs.dmg }}
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Upload PKG artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ReconBuilder-macOS-PKG
-          path: ${{ steps.artifacts.outputs.pkg }}
-          if-no-files-found: error
-          retention-days: 7
-
-  # ── Windows: build EXE ─────────────────────────────────────────────────────
   build-windows:
     runs-on: windows-latest
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -147,114 +77,3 @@ jobs:
           path: dist/ReconBuilder-Setup.exe
           if-no-files-found: error
           retention-days: 7
-
-  # ── Release: collect artifacts, generate SHA256SUMS, publish ─────────────────
-  publish-release:
-    runs-on: ubuntu-latest
-    needs: [build-macos, build-windows]
-    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || !inputs.windows_only)
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ github.token }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist/artifacts
-
-      - name: Locate downloaded artifacts
-        id: artifacts
-        run: |
-          EXE=$(find dist/artifacts/ReconBuilder-Windows-Setup -name "*.exe" | head -1)
-          DMG=$(find dist/artifacts/ReconBuilder-macOS-DMG -name "*.dmg" | head -1)
-          PKG=$(find dist/artifacts/ReconBuilder-macOS-PKG -name "*.pkg" | head -1)
-
-          for f in "$EXE" "$DMG" "$PKG"; do
-            [[ -f "$f" ]] || { echo "Artifact tidak ditemukan: $f" >&2; exit 1; }
-          done
-
-          # Salin semua ke dist/ untuk SHA256SUMS dan upload
-          mkdir -p dist/release
-          cp "$EXE" "dist/release/$(basename "$EXE")"
-          cp "$DMG" "dist/release/$(basename "$DMG")"
-          cp "$PKG" "dist/release/$(basename "$PKG")"
-
-          cp docs/flow-recon-finance.png dist/release/
-          cp docs/flow-recon-finance.jpg dist/release/
-
-          echo "exe=$EXE" >> "$GITHUB_OUTPUT"
-          echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
-          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
-
-      - name: Generate SHA256SUMS
-        run: |
-          cd dist/release
-          sha256sum *.exe *.dmg *.pkg *.png *.jpg \
-            | sed 's|  \./||g' \
-            > SHA256SUMS.txt
-          echo "=== SHA256SUMS.txt ===" && cat SHA256SUMS.txt
-
-      - name: Determine version and tag
-        id: version
-        run: |
-          VERSION=$(python3 -c "from src.version import __version__; print(__version__)")
-          TAG="v${VERSION}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Version: $VERSION, Tag: $TAG"
-
-          # Pastikan tag sesuai versi jika dipush via tag
-          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$TAG" ]]; then
-            echo "Git tag $GITHUB_REF_NAME does not match app version $TAG" >&2
-            exit 1
-          fi
-
-      - name: Create or verify tag
-        run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
-            # Push to main: buat git tag secara eksplisit
-            if ! git ls-remote --tags origin "$TAG" | grep -q "refs/tags/$TAG"; then
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              git tag "$TAG"
-              git push origin "$TAG"
-              echo "Tag $TAG berhasil dibuat dan di-push."
-            else
-              echo "Tag $TAG sudah ada di remote."
-            fi
-          fi
-
-      - name: Create release if it does not exist
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          if ! gh release view "$TAG" --json tagName >/dev/null 2>&1; then
-            gh release create "$TAG" \
-              --target "${{ github.sha }}" \
-              --title "Recon Builder $TAG" \
-              --generate-notes
-            echo "Release $TAG berhasil dibuat."
-          else
-            echo "Release $TAG sudah ada; lewati pembuatan."
-          fi
-
-      - name: Upload all assets to release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          cd dist/release
-          gh release upload "$TAG" \
-            *.exe *.dmg *.pkg *.png *.jpg SHA256SUMS.txt \
-            --clobber
-          echo "Semua aset berhasil di-upload ke release $TAG."

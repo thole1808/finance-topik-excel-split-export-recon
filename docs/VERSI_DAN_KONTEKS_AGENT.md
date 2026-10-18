@@ -639,11 +639,11 @@ interaktif aplikasi.
 
 - Ubah `__version__` di `src/version.py` pada setiap rilis; gunakan format
   semantic versioning `MAJOR.MINOR.PATCH`.
-- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.1.16`). Tag
-  menjalankan Windows build dan menerbitkan installer Windows serta DMG ke
-  GitHub Release.
+- Tag Git harus sama dengan versi dan diawali `v` (mis. `v1.2.42`). Buat
+  release secara manual setelah DMG/PKG lokal dan installer Windows dari
+  workflow tersedia; upload checksum yang sesuai dan pastikan release publik.
 - DMG dibangun di macOS melalui `scripts/build_dmg.sh`; installer Windows
-  dibuat di runner Windows melalui GitHub Actions.
+  dibuat di runner Windows melalui GitHub Actions `workflow_dispatch` saja.
 - Jangan menambahkan workbook transaksi, data pelanggan, output, `.venv`,
   `build/`, atau `dist/` ke Git.
 - Matching silang settlement LB/RB belum didefinisikan oleh aturan bisnis;
