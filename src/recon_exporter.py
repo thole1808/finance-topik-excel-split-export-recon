@@ -163,6 +163,8 @@ def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
     timestamp = _as_datetime(source_time)
     if timestamp is None or timestamp.time() < dt.time(23, 0):
         return False
+    if row.get("_period_day_count", 0) < 3:
+        return True
     period_last_date = row.get("_period_last_date")
     if period_last_date is not None:
         return timestamp.date() == period_last_date
@@ -1374,6 +1376,10 @@ def _pair_vendor_and_bo(
                 vendor.get("_period_last_date")
                 or (bo.get("_period_last_date") if bo else None)
             ),
+            "_period_day_count": (
+                vendor.get("_period_day_count")
+                or (bo.get("_period_day_count") if bo else 0)
+            ),
         })
     for index, bo in enumerate(bo_records):
         if index not in used_bo:
@@ -1388,6 +1394,7 @@ def _pair_vendor_and_bo(
                 "matched": False,
                 "_pair_issue": "NO VENDOR MATCH",
                 "_period_last_date": bo.get("_period_last_date"),
+                "_period_day_count": bo.get("_period_day_count", 0),
             })
     return result, len(matches), len(vendor_rows) - len(matches), len(bo_records) - len(used_bo)
 
@@ -1477,8 +1484,10 @@ def build_recon_workbook(
                 if (timestamp := _as_datetime(row.get("datetime"))) is not None
             )
             period_last_date = max(period_dates, default=None)
+            period_day_count = len(set(period_dates))
             for row in (*period_vendor_rows, *period_bo_rows):
                 row["_period_last_date"] = period_last_date
+                row["_period_day_count"] = period_day_count
 
     has_bo_references = any(bo_records_by_period.values())
     if has_bo_references:
