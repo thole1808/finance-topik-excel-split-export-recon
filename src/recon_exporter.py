@@ -859,7 +859,9 @@ def _write_wide_sheet(
     normalized_statuses = [
         _transaction_status(row.get("status")) for row in current_day_rows
     ]
-    spacer_rows = 3
+    # RB output is consumed as a compact transaction list. Its fully blank
+    # spacer rows are omitted; keep the existing LB layout unchanged.
+    spacer_rows = 0 if sheet == "RB" else 3
     output_slots: list[
         tuple[int, Mapping[str, Any] | None, Mapping[str, Any] | None]
     ] = []
@@ -1378,6 +1380,7 @@ def build_recon_workbook(
     recon_records_df: pl.DataFrame | None = None,
     audit_metadata: Mapping[str, str] | None = None,
     progress_callback: Callable[[str], None] | None = None,
+    source_names: Mapping[str, str] | None = None,
 ) -> Path:
     """Write a recon workbook, optionally merging Backdate rows before End Date.
 
@@ -1444,6 +1447,7 @@ def build_recon_workbook(
         for side, source_rows in (("LB", lb_rows), ("RB", rb_rows)):
             paired_rows: list[dict[str, Any]] = []
             matched_count = vendor_only_count = bo_only_count = 0
+            period_counts: dict[int, tuple[int, int, int]] = {}
             for period_order in (0, 1):
                 vendor_period = [
                     row for row in source_rows
@@ -1456,6 +1460,7 @@ def build_recon_workbook(
                 result, matched, vendor_only, bo_only = _pair_vendor_and_bo(
                     vendor_period, bo_period, side, period_order
                 )
+                period_counts[period_order] = (matched, vendor_only, bo_only)
                 paired_rows.extend(result)
                 matched_count += matched
                 vendor_only_count += vendor_only
@@ -1470,6 +1475,26 @@ def build_recon_workbook(
                     f"{vendor_only_count:,} baris vendor tanpa pasangan BO; "
                     f"{bo_only_count:,} baris BO tanpa pasangan vendor."
                 )
+                for period_order, counts in period_counts.items():
+                    matched, vendor_only, bo_only = counts
+                    if not vendor_only and not bo_only:
+                        continue
+                    period = "Backdate" if period_order == 0 else "End Date"
+                    vendor_key = (
+                        f"Backdate {side}" if period_order == 0 else side
+                    )
+                    vendor_file = (source_names or {}).get(
+                        vendor_key, f"file {period} {side}"
+                    )
+                    bo_file = (source_names or {}).get(
+                        "Backdate RECON" if period_order == 0 else "Recon",
+                        f"file {period} RECON" if period_order == 0 else "file Recon",
+                    )
+                    progress_callback(
+                        f"ANOMALI {side} {period}: {vendor_only:,} baris hanya "
+                        f"di upload {vendor_file}; {bo_only:,} baris hanya di "
+                        f"upload {bo_file}; {matched:,} pasangan cocok."
+                    )
 
     workbook = xlsxwriter.Workbook(
         str(output_path),

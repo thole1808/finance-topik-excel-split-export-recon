@@ -595,6 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
+| 1.2.48 | Hapus baris pemisah kosong di sheet RB saja; log anomali menyebut nama upload dan periode, dengan pemberitahuan suara untuk operator. |
 | 1.2.47 | Audit Generate terikat hash input/output dan metadata workbook; CSV memakai IP/MAC lokal penuh; diagram stack teknologi aktual. |
 | 1.2.43 | Bandingkan BO Amount dengan Vendor Total untuk LB/RB; RB format lama fallback ke Nominal; rebuild lokal dan rilis publik dengan checksum. |
 | 1.2.42 | Pemadanan BO Biller/Vendor satu-ke-satu; output hanya LB/RB; flow diagram baru; build macOS lokal, workflow Windows manual, release publik dengan checksum. |
