@@ -161,7 +161,12 @@ def _is_tomorrow_transaction(row: Mapping[str, Any]) -> bool:
         else row.get("tanggal")
     )
     timestamp = _as_datetime(source_time)
-    return timestamp is not None and timestamp.time() >= dt.time(23, 0)
+    if timestamp is None or timestamp.time() < dt.time(23, 0):
+        return False
+    period_last_date = row.get("_period_last_date")
+    if period_last_date is not None:
+        return timestamp.date() == period_last_date
+    return True
 
 
 def _transaction_status_sort_key(row: Mapping[str, Any]) -> int:
@@ -1365,6 +1370,10 @@ def _pair_vendor_and_bo(
             "harga": vendor.get("harga") if vendor_side == "LB" else None,
             "matched": bo is not None,
             "_pair_issue": None,
+            "_period_last_date": (
+                vendor.get("_period_last_date")
+                or (bo.get("_period_last_date") if bo else None)
+            ),
         })
     for index, bo in enumerate(bo_records):
         if index not in used_bo:
@@ -1378,6 +1387,7 @@ def _pair_vendor_and_bo(
                 "harga": None,
                 "matched": False,
                 "_pair_issue": "NO VENDOR MATCH",
+                "_period_last_date": bo.get("_period_last_date"),
             })
     return result, len(matches), len(vendor_rows) - len(matches), len(bo_records) - len(used_bo)
 
@@ -1443,6 +1453,32 @@ def build_recon_workbook(
     # Records dari file recon adalah sumber BO Biller untuk End Date.
     if recon_records_df is not None and recon_records_df.height > 0:
         bo_records_by_period[1] = _records_from_recon_sheet(recon_records_df)
+
+    # For multi-day inputs, only late transactions on the final calendar day
+    # belong in the "For tomorrow" block. Earlier days remain in Current Day.
+    for period_order in (0, 1):
+        for side, source_rows in (("LB", lb_rows), ("RB", rb_rows)):
+            period_vendor_rows = [
+                row for row in source_rows
+                if row.get("_period_order", 1) == period_order
+            ]
+            period_bo_rows = [
+                row for row in bo_records_by_period[period_order]
+                if _record_vendor_side(row) == side
+            ]
+            period_dates = [
+                timestamp.date()
+                for row in period_vendor_rows
+                if (timestamp := _as_datetime(row.get("tanggal"))) is not None
+            ]
+            period_dates.extend(
+                timestamp.date()
+                for row in period_bo_rows
+                if (timestamp := _as_datetime(row.get("datetime"))) is not None
+            )
+            period_last_date = max(period_dates, default=None)
+            for row in (*period_vendor_rows, *period_bo_rows):
+                row["_period_last_date"] = period_last_date
 
     has_bo_references = any(bo_records_by_period.values())
     if has_bo_references:

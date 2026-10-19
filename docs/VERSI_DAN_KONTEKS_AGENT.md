@@ -595,6 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
+| 1.2.51 | Untuk input multi-hari, transaksi jam 23:00+ hanya masuk For tomorrow pada tanggal terakhir End Date; tanggal sebelumnya tetap Current Day. |
 | 1.2.50 | Tambah tab Download Aplikasi dengan tautan installer macOS DMG dan Windows untuk laptop/PC baru. |
 | 1.2.49 | Rapatkan baris RB yang benar-benar kosong sambil menjaga data Vendor RB; ganti nama aplikasi menjadi Auto Recon Biller dan nama output `Recon - <tanggal>`. |
 | 1.2.48 | Hapus baris pemisah kosong di sheet RB saja; log anomali menyebut nama upload dan periode, dengan pemberitahuan suara untuk operator. |
