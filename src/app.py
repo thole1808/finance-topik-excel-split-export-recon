@@ -54,7 +54,7 @@ class ReconApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.withdraw()
-        self.title(f"Recon Builder | Finance v{__version__}")
+        self.title(f"Auto Recon Biller | Finance v{__version__}")
         self.audit = AuditLog()
         self.operator = getpass.getuser().strip() or "Operator"
         self.audit.record(self.operator, "app_started")
@@ -225,7 +225,7 @@ class ReconApp(tk.Tk):
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(0, weight=1)
         ttk.Label(
-            header, text="Recon Builder", style="Header.TLabel"
+            header, text="Auto Recon Biller", style="Header.TLabel"
         ).grid(row=0, column=0, sticky="w")
         ttk.Label(
             header,
@@ -487,7 +487,7 @@ class ReconApp(tk.Tk):
         controls.grid(row=0, column=0, sticky="ew", pady=(0, 8))
         ttk.Label(
             controls,
-            text="File hasil tersimpan di folder data Recon Builder pada komputer ini.",
+            text="File hasil tersimpan di folder data aplikasi pada komputer ini.",
         ).pack(side="left")
         ttk.Button(
             controls, text="Muat ulang", command=self._refresh_generated_files
@@ -676,7 +676,7 @@ class ReconApp(tk.Tk):
             title="Ekspor riwayat pemakaian",
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")],
-            initialfile=f"ReconBuilder_History_{dt.datetime.now():%Y%m%d_%H%M%S}.csv",
+            initialfile=f"Auto_Recon_Biller_History_{dt.datetime.now():%Y%m%d_%H%M%S}.csv",
         )
         if not destination:
             return
@@ -1283,7 +1283,7 @@ class ReconApp(tk.Tk):
 
     def _test_voice(self) -> None:
         self.audit.record(self.operator, "voice_tested")
-        announce("Halo, ini tes suara Recon Builder. Speaker berfungsi.")
+        announce("Halo, ini tes suara Auto Recon Biller. Speaker berfungsi.")
         self.status.set("Tes suara dikirim ke speaker perangkat.")
         if self._voice_test_button is not None:
             self._voice_test_button.pack_forget()
@@ -1300,7 +1300,7 @@ class ReconApp(tk.Tk):
         release = self._update_info
         if not messagebox.askyesno(
             "Update tersedia",
-            f"Recon Builder v{release.version} tersedia. Unduh dan pasang sekarang?\n\n"
+            f"Auto Recon Biller v{release.version} tersedia. Unduh dan pasang sekarang?\n\n"
             "Aplikasi akan ditutup dan dibuka kembali setelah proses update.",
         ):
             self.audit.record(
@@ -1309,7 +1309,7 @@ class ReconApp(tk.Tk):
             return
         self._busy = True
         self._update_button.configure(state="disabled", text="Mengunduh update…")
-        self._terminal_write(f"Mengunduh Recon Builder v{release.version}…")
+        self._terminal_write(f"Mengunduh Auto Recon Biller v{release.version}…")
         self.audit.record(self.operator, "update_started", version=release.version)
         threading.Thread(
             target=self._download_and_start_update,
@@ -1399,7 +1399,7 @@ class ReconApp(tk.Tk):
             if not silent:
                 messagebox.showinfo(
                     "Aplikasi terbaru",
-                    f"Recon Builder v{__version__} sudah versi terbaru.",
+                    f"Auto Recon Biller v{__version__} sudah versi terbaru.",
                 )
 
     def _download_and_start_update(self, release: UpdateRelease) -> None:
@@ -1530,7 +1530,7 @@ class ReconApp(tk.Tk):
             messagebox.showerror("Folder output", str(exc))
             return
         output = output_dir / dt.datetime.now().astimezone().strftime(
-            "ReconBuilder_%Y%m%d_%H%M%S_%f.xlsx"
+            "Recon - %Y%m%d_%H%M%S_%f.xlsx"
         )
         self._pending_output_path = output
         source_paths = {"LB": lb_path, "RB": rb_path, "Recon": recon_path}

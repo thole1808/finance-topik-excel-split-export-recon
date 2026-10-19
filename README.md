@@ -1,6 +1,6 @@
-# Recon Builder — LB & RB
+# Auto Recon Biller — LB & RB
 
-**Versi aplikasi: 1.2.47** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.49** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Vendor Loket Bayar (LB) dan Rajabiller
@@ -65,8 +65,8 @@ bersifat read-only — tidak ada tombol Edit, Hapus, atau klik ganda untuk
 mengubah sel; data hanya ditampilkan untuk inspeksi sebelum Generate.
 
 Workbook Backdate ditampilkan di tab terpisah untuk sheet LB, RB, dan RECON.
-Hasil dibuat secara default pada folder data Recon Builder di komputer, dengan
-nama `ReconBuilder_YYYYMMDD_HHMMSS.xlsx` (ditambah pecahan detik untuk mencegah
+Hasil dibuat secara default pada folder data aplikasi di komputer, dengan
+nama `Recon - YYYYMMDD_HHMMSS.xlsx` (ditambah pecahan detik untuk mencegah
 nama ganda). Tab **File Hasil** menampilkan workbook yang sudah dibuat, membuka
 file, atau menyimpan salinan ke lokasi pilihan. Tombol buka output memilih file
 hasil terakhir. Aplikasi memakai akun PC/laptop yang sedang login sebagai
@@ -106,7 +106,7 @@ Hasilnya:
 - `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.pkg`
 - `dist/ReconBuilder-v<versi>-<YYYYMMDD_HHMMSS>.dmg`
 
-DMG memuat `Recon Builder.app` langsung beserta shortcut Applications. Buka
+DMG memuat `Auto Recon Biller.app` langsung beserta shortcut Applications. Buka
 DMG, seret app ke Applications, selesai. PKG bertimestamp juga dibuat sebagai
 pilihan installer terpisah. Bundle app dan file sementara berada di `dist/.build`
 selama proses packaging, lalu dibersihkan; installer final hanya berada di `dist/`.
@@ -160,7 +160,7 @@ src/
   reference_data.json          # Nama produk dan fee dari file acuan
   ref_styles.json              # Warna, format angka, font, dan lebar kolom acuan
 assets/
-  recon-builder.svg            # Master ikon Recon Builder
+  recon-builder.svg            # Master ikon Auto Recon Biller
   recon-builder.icns           # Ikon aplikasi macOS
   recon-builder.ico            # Ikon aplikasi/installer Windows
 scripts/

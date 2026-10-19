@@ -1,14 +1,20 @@
 #!/bin/bash
 set -u
 
-APP_PATH="/Applications/Recon Builder.app"
+APP_PATH="/Applications/Auto Recon Biller.app"
+LEGACY_APP_PATH="/Applications/Recon Builder.app"
 LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
 LOG_FILE="/var/log/recon-builder-installer.log"
 log() { /usr/bin/logger -t ReconBuilderInstaller "$*"; printf '%s %s\n' "$(/bin/date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG_FILE"; }
 
-if [[ ! -d "$APP_PATH/Contents" || ! -x "$APP_PATH/Contents/MacOS/Recon Builder" ]]; then
+if [[ ! -d "$APP_PATH/Contents" || ! -x "$APP_PATH/Contents/MacOS/Auto Recon Biller" ]]; then
     log "ERROR app bundle missing or executable at expected path: $APP_PATH"
     exit 1
+fi
+
+# Remove the previous display-name bundle after the renamed app is installed.
+if [[ -d "$APP_PATH/Contents" && -d "$LEGACY_APP_PATH" ]]; then
+    /bin/rm -rf "$LEGACY_APP_PATH"
 fi
 
 CONSOLE_USER="$(/usr/bin/stat -f%Su /dev/console 2>/dev/null || true)"
@@ -20,7 +26,7 @@ fi
 
 if [[ -n "$USER_HOME" ]]; then
     DESKTOP="$USER_HOME/Desktop"
-    DESKTOP_APP="$DESKTOP/Recon Builder.app"
+    DESKTOP_APP="$DESKTOP/Auto Recon Biller.app"
     /bin/mkdir -p "$DESKTOP"
     if [[ ! -e "$DESKTOP_APP" || -L "$DESKTOP_APP" ]]; then
         /bin/ln -sfn "$APP_PATH" "$DESKTOP_APP"
@@ -44,5 +50,5 @@ if [[ -n "$CONSOLE_UID" && "$CONSOLE_UID" != "0" ]]; then
     /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/killall Dock >/dev/null 2>&1 || true
 fi
 
-log "Installed Recon Builder at $APP_PATH"
+log "Installed Auto Recon Biller at $APP_PATH"
 exit 0

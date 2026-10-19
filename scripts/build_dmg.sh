@@ -80,9 +80,9 @@ mkdir -p "$PROJECT_ROOT/dist/.build/spec" \
 APP_VERSION="$($PYTHON -c "from src.version import __version__; print(__version__)")"
 BUILD_TIMESTAMP="$(date '+%Y%m%d_%H%M%S')"
 BUILD_DIR="$PROJECT_ROOT/dist/.build/macos-${APP_VERSION}-${BUILD_TIMESTAMP}"
-APP_BUNDLE="$BUILD_DIR/Recon Builder.app"
+APP_BUNDLE="$BUILD_DIR/Auto Recon Biller.app"
 
-echo "=== Build Recon Builder v$APP_VERSION ($BUILD_TIMESTAMP) ==="
+echo "=== Build Auto Recon Biller v$APP_VERSION ($BUILD_TIMESTAMP) ==="
 echo "Python: $PYTHON"
 echo "Build dir: $BUILD_DIR"
 
@@ -91,7 +91,7 @@ echo "Membangun aplikasi dengan PyInstaller..."
 "$PYTHON" -m PyInstaller \
     --noconfirm \
     --windowed \
-    --name "Recon Builder" \
+    --name "Auto Recon Biller" \
     --icon "$PROJECT_ROOT/assets/recon-builder.icns" \
     --collect-all fastexcel \
     --hidden-import fastexcel \
@@ -113,8 +113,8 @@ PKG_NAME="ReconBuilder-v${APP_VERSION}-${BUILD_TIMESTAMP}.pkg"
 echo "Mengkonfigurasi Info.plist..."
 /usr/libexec/PlistBuddy \
     -c "Set :CFBundleShortVersionString $APP_VERSION" \
-    -c "Set :CFBundleName Recon Builder" \
-    -c "Set :CFBundleDisplayName Recon Builder" \
+    -c "Set :CFBundleName Auto Recon Biller" \
+    -c "Set :CFBundleDisplayName Auto Recon Biller" \
     -c "Set :CFBundleIdentifier com.devops.reconbuilder" \
     "$APP_BUNDLE/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $APP_VERSION" \
@@ -141,16 +141,16 @@ echo "Membuat DMG..."
 DMG_STAGE="$PROJECT_ROOT/dist/macos-installer-stage"
 rm -rf "$DMG_STAGE"
 mkdir -p "$DMG_STAGE"
-ditto --rsrc --extattr "$APP_BUNDLE" "$DMG_STAGE/Recon Builder.app"
+ditto --rsrc --extattr "$APP_BUNDLE" "$DMG_STAGE/Auto Recon Biller.app"
 ln -s /Applications "$DMG_STAGE/Applications"
-printf 'Buka DMG, lalu seret Recon Builder.app ke Applications. Selesai.\n' \
+printf 'Buka DMG, lalu seret Auto Recon Biller.app ke Applications. Selesai.\n' \
     > "$DMG_STAGE/CARA INSTALL.txt"
 
 hdiutil create \
     -ov \
     -format ULFO \
     -srcowners off \
-    -volname "Recon Builder" \
+    -volname "Auto Recon Biller" \
     -srcfolder "$DMG_STAGE" \
     "$PROJECT_ROOT/dist/$DMG_NAME"
 rm -rf "$DMG_STAGE"
@@ -159,7 +159,7 @@ rm -rf "$DMG_STAGE"
 echo "Membuat PKG..."
 PKG_ROOT="$BUILD_DIR/pkgroot"
 mkdir -p "$PKG_ROOT/Applications"
-cp -a "$APP_BUNDLE" "$PKG_ROOT/Applications/Recon Builder.app"
+cp -a "$APP_BUNDLE" "$PKG_ROOT/Applications/Auto Recon Biller.app"
 
 pkgbuild \
     --root "$PKG_ROOT" \

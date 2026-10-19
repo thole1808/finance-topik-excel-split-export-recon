@@ -1,11 +1,11 @@
-# Panduan Finance — Recon Builder
+# Panduan Finance — Auto Recon Biller
 
 Panduan ini menjelaskan cara menyiapkan file, menjalankan aplikasi, dan
 memeriksa hasil export. Aplikasi hanya memproses workbook Excel `.xlsx`.
 
 ## Gambaran alur
 
-![Alur sederhana Recon Builder dari empat file upload ke laporan Excel](alur-recon/alur-recon.png)
+![Alur sederhana Auto Recon Biller dari empat file upload ke laporan Excel](alur-recon/alur-recon.png)
 
 Versi [JPG](alur-recon/alur-recon.jpg) dan sumber [SVG](alur-recon/alur-recon.svg).
 Flowchart lengkap cara kerja aplikasi: [PNG](flowchart-sistem/flowchart-sistem.png) ·
@@ -23,10 +23,10 @@ Recon menjadi referensi.
 
 ## Menjalankan aplikasi
 
-1. Di macOS, buka DMG lalu seret **Recon Builder.app** ke shortcut
+1. Di macOS, buka DMG lalu seret **Auto Recon Biller.app** ke shortcut
    **Applications**. Selesai. Petunjuk `CARA INSTALL.txt` di DMG dapat dibuka
    oleh semua pengguna. Buka Finder > Applications untuk menjalankan
-   **Recon Builder**. PKG terpisah juga tersedia;
+   **Auto Recon Biller**. PKG terpisah juga tersedia;
    installer PKG membuka Finder dan menyorot app setelah pemasangan. Di Windows,
    jalankan
    `ReconBuilder-Setup.exe`; aplikasi dipasang ke Program Files dan shortcut
@@ -55,7 +55,7 @@ Recon menjadi referensi.
     untuk mengubah sel; data hanya ditampilkan untuk inspeksi sebelum Generate.
 7. Folder output otomatis memakai folder data aplikasi pada komputer. Nama file
    dibuat dari tanggal dan waktu lokal, misalnya
-   `ReconBuilder_20261017_143025_123456.xlsx`.
+   `Recon - 20261017_143025_123456.xlsx`.
 8. Klik **Generate Recon**. Terminal proses menampilkan tahapan penulisan dan
    jumlah baris Records yang diproses. Tunggu pesan sukses.
 9. Buka file output. Tanpa Backdate, hasilnya sama seperti proses reguler.
@@ -104,7 +104,7 @@ Jendela dimaksimalkan saat dibuka, mengisi area yang tersedia pada laptop atau
 layar lebar, dan kontrol preview menyesuaikan ukuran jendela. Lebar minimum
 jendela 960 piksel; perkecil atau maksimalkan jendela sesuai ruang kerja.
 
-Ikon Recon Builder disertakan dalam aplikasi macOS dan installer Windows, lalu
+Ikon Auto Recon Biller disertakan dalam aplikasi macOS dan installer Windows, lalu
 ikut diperbarui bersama versi aplikasi. Diagram alur tersedia sebagai PNG dan
 JPG pada dokumen ini dan sebagai aset pada GitHub Release.
 

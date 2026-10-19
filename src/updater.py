@@ -1,4 +1,4 @@
-"""Check and install public GitHub releases for Recon Builder."""
+"""Check and install public GitHub releases for Auto Recon Biller."""
 
 from __future__ import annotations
 
@@ -286,13 +286,13 @@ def _macos_app_bundle() -> Path:
     for parent in Path(sys.executable).resolve().parents:
         if parent.suffix == ".app":
             return parent
-    raise UpdateError("Aplikasi harus dipasang dari ReconBuilder.app untuk update.")
+    raise UpdateError("Aplikasi harus dipasang dari Auto Recon Biller.app untuk update.")
 
 
 def _start_macos_update(dmg_path: Path, process_id: int) -> None:
     app_bundle = _macos_app_bundle()
     if "/Volumes/" in str(app_bundle):
-        raise UpdateError("Salin ReconBuilder.app ke Applications sebelum update.")
+        raise UpdateError("Salin Auto Recon Biller.app ke Applications sebelum update.")
     cache = dmg_path.parent
     mountpoint = Path(tempfile.mkdtemp(prefix="recon-update-mount-", dir=cache))
     try:
@@ -312,7 +312,7 @@ def _start_macos_update(dmg_path: Path, process_id: int) -> None:
     source_package = next(mountpoint.glob("*.pkg"), None)
     target = app_bundle
     if source_package is not None:
-        target = Path("/Applications/Recon Builder.app")
+        target = Path("/Applications/Auto Recon Biller.app")
         command = " ".join((
             f"while /bin/kill -0 {int(process_id)} 2>/dev/null; do /bin/sleep 1; done;",
             f"trap '/usr/bin/hdiutil detach {shlex.quote(str(mountpoint))} -quiet >/dev/null 2>&1 || true' EXIT;",
@@ -338,20 +338,27 @@ def _start_macos_update(dmg_path: Path, process_id: int) -> None:
     if source_bundle is None:
         subprocess.run(["/usr/bin/hdiutil", "detach", str(mountpoint), "-quiet"], check=False)
         shutil.rmtree(mountpoint, ignore_errors=True)
-        raise UpdateError("DMG tidak berisi ReconBuilder.app.")
+        raise UpdateError("DMG tidak berisi Auto Recon Biller.app.")
+    target = Path("/Applications") / source_bundle.name
+    legacy_target = app_bundle if app_bundle != target else None
     staging = target.with_name(f".{target.name}.update")
     backup = target.with_name(f".{target.name}.previous")
-    command = " ".join((
+    command_parts = [
         f"while /bin/kill -0 {int(process_id)} 2>/dev/null; do /bin/sleep 1; done;",
         f"trap '/usr/bin/hdiutil detach {shlex.quote(str(mountpoint))} -quiet >/dev/null 2>&1 || true' EXIT;",
         f"/bin/rm -rf {shlex.quote(str(staging))} {shlex.quote(str(backup))} &&",
         f"/usr/bin/ditto {shlex.quote(str(source_bundle))} {shlex.quote(str(staging))} &&",
-        f"(/bin/mv {shlex.quote(str(target))} {shlex.quote(str(backup))} || exit 1) &&",
-        f"(/bin/mv {shlex.quote(str(staging))} {shlex.quote(str(target))} || {{ /bin/mv {shlex.quote(str(backup))} {shlex.quote(str(target))}; exit 1; }}) &&",
-        f"/bin/rm -rf {shlex.quote(str(backup))} && "
+        f"if [ -e {shlex.quote(str(target))} ]; then /bin/mv {shlex.quote(str(target))} {shlex.quote(str(backup))} || exit 1; fi &&",
+        f"(/bin/mv {shlex.quote(str(staging))} {shlex.quote(str(target))} || {{ if [ -e {shlex.quote(str(backup))} ]; then /bin/mv {shlex.quote(str(backup))} {shlex.quote(str(target))}; fi; exit 1; }}) &&",
+        f"/bin/rm -rf {shlex.quote(str(backup))} &&",
+    ]
+    if legacy_target is not None:
+        command_parts.append(f"/bin/rm -rf {shlex.quote(str(legacy_target))} &&")
+    command_parts.extend((
         f"/bin/launchctl asuser $(/usr/bin/stat -f%u /dev/console) "
         f"/usr/bin/open {shlex.quote(str(target))}",
     ))
+    command = " ".join(command_parts)
     try:
         if os.access(target.parent, os.W_OK):
             subprocess.Popen(

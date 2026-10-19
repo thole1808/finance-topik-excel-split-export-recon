@@ -4,13 +4,13 @@
 
 [Setup]
 AppId={{2C94D43A-F10C-4AF9-86B1-0989ED339E64}
-AppName=Recon Builder
+AppName=Auto Recon Biller
 AppVersion={#AppVersion}
-AppPublisher=Recon Builder
+AppPublisher=Auto Recon Biller
 VersionInfoVersion={#AppVersion}
 VersionInfoProductVersion={#AppVersion}
 DefaultDirName={autopf}\Recon Builder
-DefaultGroupName=Recon Builder
+DefaultGroupName=Auto Recon Biller
 UninstallDisplayIcon={app}\ReconBuilder.exe
 OutputDir=..\..\dist
 OutputBaseFilename=ReconBuilder-Setup
@@ -27,11 +27,11 @@ PrivilegesRequired=admin
 Source: "..\..\dist\.build\ReconBuilder\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Recon Builder"; Filename: "{app}\ReconBuilder.exe"
-Name: "{autodesktop}\Recon Builder"; Filename: "{app}\ReconBuilder.exe"; Tasks: desktopicon
+Name: "{group}\Auto Recon Biller"; Filename: "{app}\ReconBuilder.exe"
+Name: "{autodesktop}\Auto Recon Biller"; Filename: "{app}\ReconBuilder.exe"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Buat shortcut di Desktop"; GroupDescription: "Shortcut tambahan:"
 
 [Run]
-Filename: "{app}\ReconBuilder.exe"; Description: "Jalankan Recon Builder"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\ReconBuilder.exe"; Description: "Jalankan Auto Recon Biller"; Flags: nowait postinstall skipifsilent

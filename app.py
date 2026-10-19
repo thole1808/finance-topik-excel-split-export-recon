@@ -1,4 +1,4 @@
-"""Launcher for the desktop Recon Builder."""
+"""Launcher for the Auto Recon Biller desktop application."""
 
 from src.app import main
 
