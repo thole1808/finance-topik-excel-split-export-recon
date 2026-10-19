@@ -1,6 +1,6 @@
 # Auto Recon Biller — LB & RB
 
-**Versi aplikasi: 1.2.49** — catatan versi dan panduan agent:
+**Versi aplikasi: 1.2.50** — catatan versi dan panduan agent:
 [docs/VERSI_DAN_KONTEKS_AGENT.md](docs/VERSI_DAN_KONTEKS_AGENT.md).
 
 Aplikasi desktop untuk membaca workbook Vendor Loket Bayar (LB) dan Rajabiller

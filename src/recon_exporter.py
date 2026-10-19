@@ -841,14 +841,15 @@ def _write_wide_sheet(
         ),
     )
     if sheet == "RB":
-        # Remove records that would serialize as completely blank rows. A
-        # vendor-only row remains because its RB source columns contain data.
+        # RB is anchored to Current Day BO Biller Recon: if BO has no source
+        # transaction, drop the row even when vendor-side data is present.
         rows = [
             row for row in rows
             if any(
                 value is not None
                 and (not isinstance(value, str) or bool(value.strip()))
-                for value in values_function(row).values()
+                for column, value in values_function(row).items()
+                if column <= 14
             )
         ]
     current_day_rows = [

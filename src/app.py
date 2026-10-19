@@ -16,6 +16,7 @@ import socket
 from functools import partial
 from pathlib import Path
 import platform
+import webbrowser
 from typing import Any
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -35,9 +36,11 @@ from src.announcements import announce
 from src.localization import format_local_datetime
 from src.version import __version__
 from src.updater import (
+    InstallerDownloads,
     UpdateError,
     UpdateRelease,
     download_update,
+    latest_installers,
     latest_update,
     start_installer,
 )
@@ -116,6 +119,11 @@ class ReconApp(tk.Tk):
         )
         self._update_button: ttk.Button | None = None
         self._voice_test_button: ttk.Button | None = None
+        self._installer_downloads: InstallerDownloads | None = None
+        self._installer_download_buttons: dict[str, ttk.Button] = {}
+        self._installer_download_status = tk.StringVar(
+            value="Memeriksa installer terbaru…"
+        )
         self._update_info: UpdateRelease | None = None
         self._update_checking = False
         self._build_ui()
@@ -128,6 +136,7 @@ class ReconApp(tk.Tk):
         })
         self._refresh_history()
         self.after(1500, self._check_updates_silently)
+        self.after(1800, self._refresh_installer_downloads)
 
     def _maximize_window(self) -> None:
         try:
@@ -312,6 +321,7 @@ class ReconApp(tk.Tk):
         self._add_preview_tab("Backdate RECON", "Backdate · RECON", editable=False)
         self._add_generated_files_tab()
         self._add_history_tab()
+        self._add_installer_downloads_tab()
         ttk.Label(
             preview,
             text="Pilih Semua untuk melihat seluruh baris. Preview hanya "
@@ -516,6 +526,120 @@ class ReconApp(tk.Tk):
         horizontal.grid(row=2, column=0, sticky="ew")
         self._generated_files_tree = tree
         self.notebook.add(frame, text="File Hasil")
+
+    def _add_installer_downloads_tab(self) -> None:
+        frame = ttk.Frame(self.notebook, padding=24)
+        frame.columnconfigure(0, weight=1)
+        ttk.Label(
+            frame,
+            text="Installer untuk laptop atau PC baru",
+            font=("Helvetica", 15, "bold"),
+        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+        ttk.Label(
+            frame,
+            text=(
+                "Pilih file sesuai perangkat. Tautan membuka unduhan resmi "
+                "Auto Recon Biller di GitHub Releases."
+            ),
+            wraplength=900,
+        ).grid(row=1, column=0, sticky="w", pady=(0, 12))
+        ttk.Label(
+            frame, textvariable=self._installer_download_status,
+            wraplength=900,
+        ).grid(row=2, column=0, sticky="w", pady=(0, 18))
+
+        buttons = ttk.Frame(frame)
+        buttons.grid(row=3, column=0, sticky="w")
+        for platform_key, label in (
+            ("macos", "Download DMG · macOS"),
+            ("windows", "Download Installer · Windows"),
+        ):
+            button = ttk.Button(
+                buttons,
+                text=label,
+                command=partial(self._open_installer_download, platform_key),
+                state="disabled",
+            )
+            button.pack(side="left", padx=(0, 10))
+            self._installer_download_buttons[platform_key] = button
+        ttk.Button(
+            buttons,
+            text="Periksa tautan lagi",
+            command=self._refresh_installer_downloads,
+        ).pack(side="left")
+        ttk.Label(
+            frame,
+            text="Untuk update aplikasi yang sedang digunakan, gunakan tombol Update di bagian atas.",
+            wraplength=900,
+        ).grid(row=4, column=0, sticky="w", pady=(20, 0))
+        self.notebook.add(frame, text="Download Aplikasi")
+
+    def _refresh_installer_downloads(self) -> None:
+        self._installer_download_status.set("Mengambil tautan installer terbaru…")
+        for button in self._installer_download_buttons.values():
+            button.configure(state="disabled")
+        threading.Thread(
+            target=self._installer_download_worker,
+            name="installer-download-links",
+            daemon=True,
+        ).start()
+
+    def _installer_download_worker(self) -> None:
+        try:
+            installers = latest_installers()
+            error = None
+        except Exception as exc:
+            installers = None
+            error = str(exc)
+        self.after(0, self._installer_downloads_loaded, installers, error)
+
+    def _installer_downloads_loaded(
+        self, installers: InstallerDownloads | None, error: str | None,
+    ) -> None:
+        self._installer_downloads = installers
+        if installers is None:
+            detail = f" ({error})" if error else ""
+            self._installer_download_status.set(
+                "Tautan installer belum bisa dimuat. "
+                "Pastikan internet tersedia, lalu periksa lagi." + detail
+            )
+            return
+        self._installer_download_status.set(
+            f"Versi terbaru: v{installers.version} · "
+            f"macOS: {installers.macos_name} · Windows: {installers.windows_name}"
+        )
+        for button in self._installer_download_buttons.values():
+            button.configure(state="normal")
+
+    def _open_installer_download(self, platform_key: str) -> None:
+        installers = self._installer_downloads
+        if installers is None:
+            messagebox.showinfo(
+                "Download aplikasi",
+                "Tautan installer belum tersedia. Periksa koneksi internet "
+                "dan klik Periksa tautan lagi.",
+            )
+            return
+        if platform_key == "macos":
+            asset_name, url = installers.macos_name, installers.macos_url
+        else:
+            asset_name, url = installers.windows_name, installers.windows_url
+        opened = webbrowser.open(url, new=2)
+        self.audit.record(
+            self.operator, "installer_download_opened",
+            version=installers.version, platform=platform_key,
+            asset=asset_name, browser_opened=bool(opened),
+        )
+        if opened:
+            self._installer_download_status.set(
+                f"Unduhan {asset_name} dibuka di browser."
+            )
+        else:
+            messagebox.showwarning(
+                "Download aplikasi",
+                "Browser tidak dapat dibuka otomatis. Buka tautan rilis "
+                f"berikut untuk mengunduh {asset_name}:\n{installers.release_url}",
+            )
 
     def _refresh_generated_files(self) -> None:
         tree = self._generated_files_tree

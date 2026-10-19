@@ -103,6 +103,16 @@ class UpdateRelease:
     html_url: str
 
 
+@dataclass(frozen=True)
+class InstallerDownloads:
+    version: str
+    macos_name: str
+    macos_url: str
+    windows_name: str
+    windows_url: str
+    release_url: str
+
+
 def _version_tuple(value: str) -> tuple[int, ...]:
     try:
         return tuple(int(part) for part in value.removeprefix("v").split("."))
@@ -216,6 +226,49 @@ def latest_update(current_version: str) -> UpdateRelease | None:
         asset=asset,
         checksum_asset=checksum_asset,
         html_url=str(release.get("html_url", "")),
+    )
+
+
+def latest_installers() -> InstallerDownloads:
+    """Find the current macOS and Windows installers on the latest release."""
+    try:
+        with _open_url(RELEASE_API) as response:
+            release = json.load(response)
+    except urllib.error.HTTPError as exc:
+        reset = _retry_after_seconds(exc)
+        hint = f" Coba lagi dalam {reset} detik." if reset else ""
+        raise UpdateError(
+            f"GitHub menolak pemeriksaan file aplikasi (HTTP {exc.code}).{hint}"
+        ) from exc
+    tag = str(release.get("tag_name", ""))
+    version = tag.removeprefix("v")
+    if not tag or not isinstance(release.get("assets"), list):
+        raise UpdateError("Rilis terbaru tidak berisi daftar file installer.")
+    assets = release["assets"]
+    macos = next((
+        item for item in assets
+        if str(item.get("name", "")).startswith(f"ReconBuilder-v{version}-")
+        and str(item.get("name", "")).endswith(".dmg")
+    ), None)
+    windows = next((
+        item for item in assets if item.get("name") == "ReconBuilder-Setup.exe"
+    ), None)
+    if macos is None or windows is None:
+        raise UpdateError("Rilis terbaru belum menyediakan installer Mac dan Windows.")
+    macos_url = str(macos.get("browser_download_url", ""))
+    windows_url = str(windows.get("browser_download_url", ""))
+    release_url = str(release.get("html_url", ""))
+    if not all(url.startswith("https://github.com/") for url in (
+        macos_url, windows_url, release_url,
+    )):
+        raise UpdateError("Tautan installer dari rilis tidak valid.")
+    return InstallerDownloads(
+        version=version,
+        macos_name=str(macos["name"]),
+        macos_url=macos_url,
+        windows_name=str(windows["name"]),
+        windows_url=windows_url,
+        release_url=release_url,
     )
 
 
