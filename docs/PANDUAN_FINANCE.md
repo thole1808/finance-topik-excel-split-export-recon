@@ -90,8 +90,10 @@ Nomor versi pada aplikasi berasal dari `src/version.py`; release memakai tag
 
 Aplikasi membacakan “Mohon tunggu. Proses generate file recon sedang berjalan.”
 saat Generate dimulai dan membacakan pemberitahuan sukses setelah file selesai
-dibuat. Tombol **Tes Suara** di bagian bawah aplikasi tersedia satu kali saja;
-setelah dipakai, tombol disembunyikan pada sesi berikutnya. Aplikasi memilih
+dibuat. Gunakan tombol **Nonaktifkan Suara** atau **Aktifkan Suara** di bagian
+bawah aplikasi untuk mengatur pemberitahuan; pilihan ini tersimpan untuk
+sesi berikutnya. Tombol **Tes Suara** tersedia satu kali saja per instalasi.
+Aplikasi memilih
 voice Indonesia yang terpasang di sistem, lalu memakai voice bawaan jika tidak
 ada. Voice sistem adalah text-to-speech, bukan rekaman manusia.
 

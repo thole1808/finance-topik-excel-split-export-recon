@@ -32,7 +32,7 @@ from src.recon_exporter import (
     read_raw_excel,
 )
 from src.audit_log import AuditLog, generated_files_directory
-from src.announcements import announce
+from src.announcements import announce, set_voice_enabled, voice_enabled
 from src.localization import format_local_datetime
 from src.version import __version__
 from src.updater import (
@@ -119,6 +119,8 @@ class ReconApp(tk.Tk):
         )
         self._update_button: ttk.Button | None = None
         self._voice_test_button: ttk.Button | None = None
+        self._voice_enabled = tk.BooleanVar(value=voice_enabled())
+        self._voice_toggle_button: ttk.Button | None = None
         self._installer_downloads: InstallerDownloads | None = None
         self._installer_download_buttons: dict[str, ttk.Button] = {}
         self._installer_download_status = tk.StringVar(
@@ -348,6 +350,12 @@ class ReconApp(tk.Tk):
         ttk.Button(
             actions, text="Buka Folder Output", command=self._open_output_folder
         ).pack(side="left")
+        self._voice_toggle_button = ttk.Button(
+            actions,
+            text=self._voice_toggle_label(),
+            command=self._toggle_voice,
+        )
+        self._voice_toggle_button.pack(side="left", padx=(8, 0))
         if not self.audit.has_action("voice_tested"):
             self._voice_test_button = ttk.Button(
                 actions, text="Tes Suara", command=self._test_voice
@@ -1411,6 +1419,21 @@ class ReconApp(tk.Tk):
         self.status.set("Tes suara dikirim ke speaker perangkat.")
         if self._voice_test_button is not None:
             self._voice_test_button.pack_forget()
+
+    def _voice_toggle_label(self) -> str:
+        return "Nonaktifkan Suara" if self._voice_enabled.get() else "Aktifkan Suara"
+
+    def _toggle_voice(self) -> None:
+        enabled = not self._voice_enabled.get()
+        set_voice_enabled(enabled)
+        self._voice_enabled.set(enabled)
+        if self._voice_toggle_button is not None:
+            self._voice_toggle_button.configure(text=self._voice_toggle_label())
+        self.audit.record(self.operator, "voice_enabled" if enabled else "voice_disabled")
+        self.status.set(
+            "Pemberitahuan suara aktif." if enabled
+            else "Pemberitahuan suara nonaktif."
+        )
 
     def _check_updates_silently(self) -> None:
         self._check_for_updates(silent=True)

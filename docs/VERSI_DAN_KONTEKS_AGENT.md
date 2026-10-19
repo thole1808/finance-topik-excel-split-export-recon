@@ -595,6 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
+| 1.2.54 | Tambah kontrol Aktifkan/Nonaktifkan Suara yang tersimpan untuk sesi berikutnya. |
 | 1.2.53 | Untuk satu hari atau rentang berapa pun, hanya transaksi pukul 23:00+ di tanggal terakhir End Date yang masuk For tomorrow; tanggal sebelumnya tetap Current Day. |
 | 1.2.51 | Untuk input multi-hari, transaksi jam 23:00+ hanya masuk For tomorrow pada tanggal terakhir End Date; tanggal sebelumnya tetap Current Day. |
 | 1.2.50 | Tambah tab Download Aplikasi dengan tautan installer macOS DMG dan Windows untuk laptop/PC baru. |

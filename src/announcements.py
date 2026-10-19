@@ -7,9 +7,42 @@ import queue
 import shutil
 import subprocess
 import threading
+import json
+
+from src.audit_log import audit_directory
 
 _messages: queue.Queue[str] = queue.Queue()
 _macos_voice: str | None | bool = False
+_preference_path = audit_directory() / "voice-settings.json"
+_state_lock = threading.Lock()
+
+
+def _load_enabled() -> bool:
+    try:
+        value = json.loads(_preference_path.read_text(encoding="utf-8"))
+        return bool(value.get("enabled", True)) if isinstance(value, dict) else True
+    except (OSError, json.JSONDecodeError):
+        return True
+
+
+_enabled = _load_enabled()
+
+
+def voice_enabled() -> bool:
+    with _state_lock:
+        return _enabled
+
+
+def set_voice_enabled(enabled: bool) -> None:
+    """Persist the operator's voice announcement preference."""
+    global _enabled
+    with _state_lock:
+        _enabled = bool(enabled)
+        _preference_path.parent.mkdir(parents=True, exist_ok=True)
+        _preference_path.write_text(
+            json.dumps({"enabled": _enabled}, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
 
 
 def _indonesian_macos_voice() -> str | None:
@@ -37,6 +70,8 @@ def _speech_worker() -> None:
     while True:
         message = _messages.get()
         try:
+            if not voice_enabled():
+                continue
             current_platform = platform.system()
             if current_platform == "Darwin" and shutil.which("say"):
                 voice = _indonesian_macos_voice()
@@ -90,4 +125,5 @@ _worker.start()
 
 def announce(message: str) -> None:
     """Speak a message without blocking the interface; preserve message order."""
-    _messages.put(message)
+    if voice_enabled():
+        _messages.put(message)
