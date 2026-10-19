@@ -140,12 +140,11 @@ rows.sort(key=(status_sort_key, datetime))
 
 ### 5.5 Pemisahan jam 23:00
 
-- **End Date pukul 23:00+**: dipindahkan ke blok "For tomorrow because different time".
-  Untuk periode tiga hari atau lebih, hanya transaksi di tanggal terakhir yang dipindahkan.
+- **End Date pukul 23:00+**: hanya transaksi di tanggal terakhir yang dipindahkan ke blok "For tomorrow because different time", baik input satu hari maupun beberapa hari.
   - Tidak muncul di blok Current Day (kolom A dan kolom recon utama)
   - Masih ada di data sumber (kolom B)
   - Tetap ada di Records
-- Untuk periode tiga hari atau lebih, tanggal sebelum tanggal terakhir tetap berada di Current Day, meskipun transaksinya pukul 23:00 atau lebih.
+- Tanggal sebelum tanggal terakhir tetap berada di Current Day, meskipun transaksinya pukul 23:00 atau lebih.
 - **Backdate pukul 23:00+**: tetap di blok utama (tidak dipindah ke For tomorrow)
 
 ### 5.6 Lookup fee

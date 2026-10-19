@@ -216,13 +216,14 @@ recon Current Day dan For tomorrow; kolom status mentah sumber serta sel lain
 tidak diberi warna.
 
 Semua tanggal yang ada di file LB dan RB diproses otomatis; aplikasi tidak
-membatasi jumlah hari. Untuk periode tiga hari atau lebih, transaksi End Date
-pada tanggal terakhir pukul 23:00–23:59 ditampilkan di
+membatasi jumlah hari. Transaksi End Date pada tanggal terakhir pukul
+23:00–23:59 ditampilkan di
 blok recon dan data sumber **For tomorrow because different time**, serta tetap
 ada di `Records`. Transaksi Backdate pukul 23:00 atau lebih tetap di blok
-utama. Untuk periode satu atau dua hari, transaksi End Date pukul 23:00 atau
-lebih tetap mengikuti aturan lama dan masuk ke bagian For tomorrow. Pada LB,
-tabel recon For tomorrow memuat kolom Datetime sampai
+utama. Transaksi pukul 23:00 atau lebih dari tanggal sebelum tanggal terakhir
+tetap ditampilkan di Current Day. Jika input hanya satu hari, hari tersebut
+adalah tanggal terakhir sehingga transaksi pukul 23:00 atau lebih masuk ke
+For tomorrow. Pada LB, tabel recon For tomorrow memuat kolom Datetime sampai
 `Recon Result`, mulai tepat di bawah header, dan data sumber tampil di
 sampingnya. Baris total per status mencakup semua transaksi sumber.
 

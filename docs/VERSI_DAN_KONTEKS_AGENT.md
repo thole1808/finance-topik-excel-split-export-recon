@@ -595,7 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
-| 1.2.52 | Aturan tanggal terakhir aktif hanya untuk periode End Date dengan 3 hari atau lebih; periode 1–2 hari tetap memindahkan seluruh transaksi pukul 23:00+. |
+| 1.2.53 | Untuk satu hari atau rentang berapa pun, hanya transaksi pukul 23:00+ di tanggal terakhir End Date yang masuk For tomorrow; tanggal sebelumnya tetap Current Day. |
 | 1.2.51 | Untuk input multi-hari, transaksi jam 23:00+ hanya masuk For tomorrow pada tanggal terakhir End Date; tanggal sebelumnya tetap Current Day. |
 | 1.2.50 | Tambah tab Download Aplikasi dengan tautan installer macOS DMG dan Windows untuk laptop/PC baru. |
 | 1.2.49 | Rapatkan baris RB yang benar-benar kosong sambil menjaga data Vendor RB; ganti nama aplikasi menjadi Auto Recon Biller dan nama output `Recon - <tanggal>`. |
