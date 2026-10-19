@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.47**
+**Versi saat ini: 1.2.55**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -595,6 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
+| 1.2.55 | Perbaiki tab Download Aplikasi agar tombol unduh tetap muncul pada macOS client saat GitHub API rate-limited; fallback URL ke halaman rilis. Publish release v1.2.54 yang sebelumnya masih draft. |
 | 1.2.54 | Tambah kontrol Aktifkan/Nonaktifkan Suara yang tersimpan untuk sesi berikutnya. |
 | 1.2.53 | Untuk satu hari atau rentang berapa pun, hanya transaksi pukul 23:00+ di tanggal terakhir End Date yang masuk For tomorrow; tanggal sebelumnya tetap Current Day. |
 | 1.2.51 | Untuk input multi-hari, transaksi jam 23:00+ hanya masuk For tomorrow pada tanggal terakhir End Date; tanggal sebelumnya tetap Current Day. |

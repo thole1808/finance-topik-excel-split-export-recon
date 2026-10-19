@@ -230,16 +230,17 @@ def latest_update(current_version: str) -> UpdateRelease | None:
 
 
 def latest_installers() -> InstallerDownloads:
-    """Find the current macOS and Windows installers on the latest release."""
+    """Find the current macOS and Windows installers on the latest release.
+
+    When the GitHub API is unavailable (e.g. unauthenticated rate-limit on
+    client machines without GITHUB_TOKEN), fall back to constructing
+    download URLs from known patterns so the app remains usable.
+    """
     try:
         with _open_url(RELEASE_API) as response:
             release = json.load(response)
-    except urllib.error.HTTPError as exc:
-        reset = _retry_after_seconds(exc)
-        hint = f" Coba lagi dalam {reset} detik." if reset else ""
-        raise UpdateError(
-            f"GitHub menolak pemeriksaan file aplikasi (HTTP {exc.code}).{hint}"
-        ) from exc
+    except Exception:
+        return _fallback_installers()
     tag = str(release.get("tag_name", ""))
     version = tag.removeprefix("v")
     if not tag or not isinstance(release.get("assets"), list):
@@ -268,6 +269,29 @@ def latest_installers() -> InstallerDownloads:
         macos_url=macos_url,
         windows_name=str(windows["name"]),
         windows_url=windows_url,
+        release_url=release_url,
+    )
+
+
+def _fallback_installers() -> InstallerDownloads:
+    """Construct installer URLs when the GitHub API is unavailable.
+
+    Uses the app's current version to build a direct EXE download link.
+    For macOS DMG (whose filename includes a build timestamp), falls back
+    to the release page so the user can pick the correct asset manually.
+    """
+    from src.version import __version__
+    release_url = f"https://github.com/{REPOSITORY}/releases/latest"
+    exe_url = (
+        f"https://github.com/{REPOSITORY}/releases/download/"
+        f"v{__version__}/ReconBuilder-Setup.exe"
+    )
+    return InstallerDownloads(
+        version=__version__,
+        macos_name="DMG Installer (buka halaman rilis)",
+        macos_url=release_url,
+        windows_name="ReconBuilder-Setup.exe",
+        windows_url=exe_url,
         release_url=release_url,
     )
 
