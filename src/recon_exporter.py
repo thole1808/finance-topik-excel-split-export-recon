@@ -848,9 +848,11 @@ def _write_wide_sheet(
     if sheet == "RB":
         # RB is anchored to Current Day BO Biller Recon: if BO has no source
         # transaction, drop the row even when vendor-side data is present.
+        # Tomorrow (23:00+) transactions are always kept so their vendor
+        # "for tomorrow" data still renders, matching the LB layout.
         rows = [
             row for row in rows
-            if any(
+            if _is_tomorrow_transaction(row) or any(
                 value is not None
                 and (not isinstance(value, str) or bool(value.strip()))
                 for column, value in values_function(row).items()
