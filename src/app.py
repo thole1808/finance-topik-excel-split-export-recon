@@ -40,10 +40,12 @@ from src.updater import (
     RollbackRelease,
     UpdateError,
     UpdateRelease,
+    download_rollback,
     download_update,
     latest_installers,
     latest_update,
     previous_release,
+    start_rollback,
     start_installer,
 )
 
@@ -711,20 +713,73 @@ class ReconApp(tk.Tk):
         if info is None:
             self._check_rollback_release()
             return
-        url = info.installer_url or info.html_url
-        opened = webbrowser.open(url, new=2)
-        self.audit.record(
-            self.operator, "rollback_download_opened",
-            version=info.version, asset="installer", browser_opened=bool(opened),
-        )
-        if opened:
-            self._rollback_status.set(f"Unduhan v{info.version} dibuka di browser.")
-        else:
-            messagebox.showwarning(
-                "Rollback",
-                "Browser tidak dapat dibuka otomatis. Buka tautan berikut:\n"
-                f"{url}",
+        if not messagebox.askyesno(
+            "Rollback ke versi sebelumnya",
+            f"Ingin kembali ke Auto Recon Biller v{info.version}?\n\n"
+            "Aplikasi akan ditutup, mengunduh v{info.version}, "
+            "dan membuka kembali setelah proses rollback selesai.",
+        ):
+            self.audit.record(
+                self.operator, "rollback_declined", version=info.version
             )
+            return
+        if self._busy:
+            return
+        self._busy = True
+        self._rollback_button.configure(
+            state="disabled", text=f"Mengunduh v{info.version}…"
+        )
+        self._terminal_write(f"Mengunduh rollback ke v{info.version}…")
+        self.audit.record(
+            self.operator, "rollback_started", version=info.version
+        )
+        threading.Thread(
+            target=self._download_and_start_rollback,
+            args=(info,),
+            daemon=True,
+        ).start()
+
+    def _download_and_start_rollback(self, info: RollbackRelease) -> None:
+        try:
+            installer = download_rollback(
+                info,
+                progress_callback=lambda completed, total: self.after(
+                    0, self._rollback_download_progress, completed, total
+                ),
+            )
+            start_rollback(installer, os.getpid())
+            error = None
+        except Exception as exc:
+            error = str(exc)
+        self.after(0, self._rollback_install_finished, info, error)
+
+    def _rollback_download_progress(self, completed: int, total: int) -> None:
+        if total <= 0:
+            return
+        percent = min(100, int(completed * 100 / total))
+        if self._rollback_button is not None:
+            self._rollback_button.configure(text=f"Mengunduh… {percent}%")
+
+    def _rollback_install_finished(
+        self, info: RollbackRelease, error: str | None
+    ) -> None:
+        self._busy = False
+        if error:
+            if self._rollback_button is not None:
+                self._rollback_button.configure(
+                    state="normal", text=f"Rollback v{info.version}"
+                )
+            self.audit.record(
+                self.operator, "rollback_failed", version=info.version,
+                error=error,
+            )
+            self._refresh_history()
+            messagebox.showerror("Rollback gagal", error)
+            return
+        self.audit.record(
+            self.operator, "rollback_installer_started", version=info.version
+        )
+        self._rollback_status.set(f"Rollback v{info.version} sedang dipasang…")
 
     def _refresh_generated_files(self) -> None:
         tree = self._generated_files_tree
@@ -1542,6 +1597,37 @@ class ReconApp(tk.Tk):
             daemon=True,
         ).start()
 
+    def _auto_rollback_if_no_update(self) -> None:
+        """When no newer release exists, automatically offer rollback."""
+        if self._update_info is None:
+            return
+        if self._rollback_info is not None:
+            info = self._rollback_info
+            if not messagebox.askyesno(
+                "Rollback ke versi sebelumnya",
+                f"Auto Recon Biller v{__version__} sudah versi terbaru.\n\n"
+                f"Ingin kembali ke v{info.version}?\n\n"
+                "Aplikasi akan ditutup, mengunduh v{info.version}, "
+                "dan membuka kembali setelah proses rollback.",
+            ):
+                self.audit.record(
+                    self.operator, "rollback_declined", version=info.version
+                )
+                return
+            self._busy = True
+            self._update_button.configure(
+                state="disabled", text=f"Mengunduh v{info.version}…"
+            )
+            self._terminal_write(f"Mengunduh rollback ke v{info.version}…")
+            self.audit.record(
+                self.operator, "rollback_started", version=info.version
+            )
+            threading.Thread(
+                target=self._download_and_start_rollback,
+                args=(info,),
+                daemon=True,
+            ).start()
+
     def _check_for_updates(self, *, silent: bool) -> None:
         if self._update_checking or self._busy:
             return
@@ -1622,10 +1708,7 @@ class ReconApp(tk.Tk):
                 f"APP v{__version__}  ·  RELEASE v{__version__} terbaru"
             )
             if not silent:
-                messagebox.showinfo(
-                    "Aplikasi terbaru",
-                    f"Auto Recon Biller v{__version__} sudah versi terbaru.",
-                )
+                self._auto_rollback_if_no_update()
 
     def _download_and_start_update(self, release: UpdateRelease) -> None:
         try:

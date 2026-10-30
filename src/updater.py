@@ -300,6 +300,50 @@ def previous_release() -> RollbackRelease | None:
     )
 
 
+def download_rollback(
+    rollback: RollbackRelease,
+    progress_callback: Callable[[int, int], None] | None = None,
+) -> Path:
+    """Download the rollback installer for a previous release version.
+
+    Falls back to a best-effort DMG/EXE name when the release assets omit
+    a checksum, so rollback still works for older published releases.
+    """
+    cache = Path.home() / "Library" / "Caches" / "Recon Builder" / "updates"
+    if platform.system() == "Windows":
+        cache = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Recon Builder" / "updates"
+    system = platform.system()
+    if system == "Darwin":
+        filename = f"ReconBuilder-v{rollback.version}-rollback.dmg"
+        installer_url = rollback.installer_url
+    elif system == "Windows":
+        filename = "ReconBuilder-Setup.exe"
+        installer_url = rollback.installer_url
+    else:
+        raise UpdateError("Rollback otomatis hanya tersedia untuk macOS dan Windows.")
+    if not installer_url:
+        raise UpdateError("Rilis rollback belum menyediakan installer untuk platform ini.")
+    destination = cache / filename
+    _download(
+        installer_url, destination,
+        progress_callback=progress_callback,
+    )
+    return destination
+
+
+def start_rollback(installer_path: Path, process_id: int) -> None:
+    """Launch a rollback installer and let it replace the running app."""
+    if not getattr(sys, "frozen", False):
+        raise UpdateError("Rollback otomatis hanya tersedia pada aplikasi terpasang.")
+    if platform.system() == "Darwin":
+        _start_macos_update(installer_path, process_id)
+        return
+    if platform.system() == "Windows":
+        _start_windows_update(installer_path, process_id)
+        return
+    raise UpdateError("Rollback otomatis hanya tersedia untuk macOS dan Windows.")
+
+
 def latest_installers() -> InstallerDownloads:
     """Find the current macOS and Windows installers on the latest release.
 
