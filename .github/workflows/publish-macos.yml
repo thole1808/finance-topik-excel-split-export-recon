@@ -1,0 +1,44 @@
+name: Publish macOS Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: macos-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Build macOS DMG and PKG
+        run: ./scripts/build_dmg.sh
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd dist
+          shasum -a 256 *.dmg *.pkg > SHA256SUMS.txt
+
+      - name: Upload assets to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          gh release upload "$GITHUB_REF_NAME" *.dmg *.pkg SHA256SUMS.txt --clobber
