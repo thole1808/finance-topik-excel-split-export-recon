@@ -595,7 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
-| 1.2.56 | Perbaiki bug sheet RB agar kolom 'Vendor RB for tomorrow because different time' tidak kosong. Filter RB sebelumnya menghapus transaksi 23:00+ karena kolom BO Biller kosong; kini transaksi masa depan dikecualikan dari filter sehingga data vendor tetap tampil, konsisten dengan layout LB. |
+| 1.2.56 | Perbaiki bug sheet RB agar kolom 'Vendor RB for tomorrow because different time' tidak kosong. Filter RB sebelumnya menghapus transaksi 23:00+ karena kolom BO Biller kosong; kini transaksi masa depan dikecualikan dari filter sehingga data vendor tetap tampil, konsisten dengan layout LB. Tambah tombol Rollback dengan picture di tab Download Aplikasi untuk mengunduh versi sebelumnya (v1.2.55). |
 | 1.2.55 | Perbaiki tab Download Aplikasi agar tombol unduh tetap muncul pada macOS client saat GitHub API rate-limited; fallback URL ke halaman rilis. Publish release v1.2.54 yang sebelumnya masih draft. |
 | 1.2.54 | Tambah kontrol Aktifkan/Nonaktifkan Suara yang tersimpan untuk sesi berikutnya. |
 | 1.2.53 | Untuk satu hari atau rentang berapa pun, hanya transaksi pukul 23:00+ di tanggal terakhir End Date yang masuk For tomorrow; tanggal sebelumnya tetap Current Day. |

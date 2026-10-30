@@ -44,6 +44,7 @@ jobs:
             --add-data "$workspace\src\ref_styles.json;src" `
             --add-data "$workspace\src\fee_tables.json;src" `
             --add-data "$workspace\src\reference_data.json;src" `
+            --add-data "$workspace\assets\rollback.png;assets" `
             --distpath dist/.build `
             --workpath dist/.build/pyinstaller `
             --specpath dist/.build/spec `

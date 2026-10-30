@@ -101,6 +101,7 @@ echo "Membangun aplikasi dengan PyInstaller..."
     --add-data "$PROJECT_ROOT/src/ref_styles.json:src" \
     --add-data "$PROJECT_ROOT/src/fee_tables.json:src" \
     --add-data "$PROJECT_ROOT/src/reference_data.json:src" \
+    --add-data "$PROJECT_ROOT/assets/rollback.png:assets" \
     --distpath "$BUILD_DIR" \
     --specpath "$PROJECT_ROOT/dist/.build/spec" \
     --workpath "$PROJECT_ROOT/dist/.build/pyinstaller" \

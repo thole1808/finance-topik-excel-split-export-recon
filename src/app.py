@@ -37,11 +37,13 @@ from src.localization import format_local_datetime
 from src.version import __version__
 from src.updater import (
     InstallerDownloads,
+    RollbackRelease,
     UpdateError,
     UpdateRelease,
     download_update,
     latest_installers,
     latest_update,
+    previous_release,
     start_installer,
 )
 
@@ -126,6 +128,10 @@ class ReconApp(tk.Tk):
         self._installer_download_status = tk.StringVar(
             value="Memeriksa installer terbaru…"
         )
+        self._rollback_info: RollbackRelease | None = None
+        self._rollback_button: ttk.Button | None = None
+        self._rollback_status = tk.StringVar(value="Mencari versi sebelumnya…")
+        self._rollback_image: tk.PhotoImage | None = None
         self._update_info: UpdateRelease | None = None
         self._update_checking = False
         self._build_ui()
@@ -580,7 +586,43 @@ class ReconApp(tk.Tk):
             text="Untuk update aplikasi yang sedang digunakan, gunakan tombol Update di bagian atas.",
             wraplength=900,
         ).grid(row=4, column=0, sticky="w", pady=(20, 0))
+
+        separator = ttk.Separator(frame, orient="horizontal")
+        separator.grid(row=5, column=0, sticky="ew", pady=(24, 12))
+
+        ttk.Label(
+            frame,
+            text="Rollback ke Versi Sebelumnya",
+            font=("Helvetica", 13, "bold"),
+        ).grid(row=6, column=0, sticky="w", pady=(0, 8))
+        ttk.Label(
+            frame,
+            text=(
+                "Jika mengalami masalah dengan versi terbaru, unduh "
+                "dan pasang kembali versi sebelumnya."
+            ),
+            wraplength=900,
+        ).grid(row=7, column=0, sticky="w", pady=(0, 12))
+
+        rollback_row = ttk.Frame(frame)
+        rollback_row.grid(row=8, column=0, sticky="w")
+        self._rollback_image = self._load_rollback_icon()
+        self._rollback_button = ttk.Button(
+            rollback_row,
+            text="Rollback",
+            image=self._rollback_image,
+            compound="left",
+            command=self._on_rollback_button,
+            state="disabled",
+        )
+        self._rollback_button.pack(side="left", padx=(0, 10))
+        ttk.Label(
+            rollback_row,
+            textvariable=self._rollback_status,
+            wraplength=800,
+        ).pack(side="left")
         self.notebook.add(frame, text="Download Aplikasi")
+        self._check_rollback_release()
 
     def _refresh_installer_downloads(self) -> None:
         self._installer_download_status.set("Mengambil tautan installer terbaru…")
@@ -647,6 +689,69 @@ class ReconApp(tk.Tk):
                 "Download aplikasi",
                 "Browser tidak dapat dibuka otomatis. Buka tautan rilis "
                 f"berikut untuk mengunduh {asset_name}:\n{installers.release_url}",
+            )
+
+    def _load_rollback_icon(self) -> tk.PhotoImage | None:
+        if getattr(sys, "frozen", False):
+            image_path = Path(sys._MEIPASS) / "assets" / "rollback.png"
+        else:
+            image_path = (
+                Path(__file__).resolve().parent.parent
+                / "assets" / "rollback.png"
+            )
+        try:
+            return tk.PhotoImage(file=str(image_path))
+        except Exception:
+            return None
+
+    def _check_rollback_release(self) -> None:
+        self._rollback_info = None
+        if self._rollback_button is not None:
+            self._rollback_button.configure(state="disabled")
+        self._rollback_status.set("Mencari versi sebelumnya…")
+        threading.Thread(
+            target=self._rollback_worker,
+            daemon=True,
+        ).start()
+
+    def _rollback_worker(self) -> None:
+        try:
+            info = previous_release()
+        except Exception:
+            info = None
+        self.after(0, self._rollback_loaded, info)
+
+    def _rollback_loaded(self, info: RollbackRelease | None) -> None:
+        self._rollback_info = info
+        if info is None:
+            self._rollback_status.set("Versi sebelumnya tidak ditemukan.")
+            if self._rollback_button is not None:
+                self._rollback_button.configure(state="disabled")
+            return
+        self._rollback_status.set(
+            f"v{info.version} — klik tombol untuk mengunduh"
+        )
+        if self._rollback_button is not None:
+            self._rollback_button.configure(state="normal")
+
+    def _on_rollback_button(self) -> None:
+        info = self._rollback_info
+        if info is None:
+            self._check_rollback_release()
+            return
+        url = info.installer_url or info.html_url
+        opened = webbrowser.open(url, new=2)
+        self.audit.record(
+            self.operator, "rollback_download_opened",
+            version=info.version, asset="installer", browser_opened=bool(opened),
+        )
+        if opened:
+            self._rollback_status.set(f"Unduhan v{info.version} dibuka di browser.")
+        else:
+            messagebox.showwarning(
+                "Rollback",
+                "Browser tidak dapat dibuka otomatis. Buka tautan berikut:\n"
+                f"{url}",
             )
 
     def _refresh_generated_files(self) -> None:

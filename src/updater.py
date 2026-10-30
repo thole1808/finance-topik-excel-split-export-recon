@@ -229,6 +229,77 @@ def latest_update(current_version: str) -> UpdateRelease | None:
     )
 
 
+RELEASES_API = (
+    f"https://api.github.com/repos/{REPOSITORY}/releases"
+    f"?per_page=10&sort=created_at"
+)
+
+
+@dataclass(frozen=True)
+class RollbackRelease:
+    version: str
+    tag: str
+    html_url: str
+    installer_url: str | None
+
+
+def previous_release() -> RollbackRelease | None:
+    """Return the release before the latest one for rollback, if available.
+
+    Skips draft and pre-release entries so the most recent *published*
+    stable release — the one preceding the current version — is returned.
+    """
+    try:
+        with _open_url(RELEASES_API) as response:
+            data = json.load(response)
+    except Exception:
+        return None
+    published = [
+        r for r in data
+        if not r.get("draft", False) and not r.get("prerelease", False)
+    ]
+    if len(published) < 2:
+        return None
+    release = published[1]
+    tag = str(release.get("tag_name", ""))
+    version = tag.removeprefix("v")
+    if not version:
+        return None
+    assets = release.get("assets", [])
+    if not isinstance(assets, list):
+        assets = []
+    system = platform.system()
+    installer_url: str | None = None
+    if system == "Darwin":
+        macos_asset = next(
+            (
+                item for item in assets
+                if str(item.get("name", "")).startswith(f"ReconBuilder-v{version}-")
+                and str(item.get("name", "")).endswith(".dmg")
+            ),
+            None,
+        )
+        if macos_asset is not None:
+            installer_url = str(macos_asset.get("browser_download_url", ""))
+            if not installer_url:
+                installer_url = None
+    elif system == "Windows":
+        exe_asset = next(
+            (item for item in assets if item.get("name") == "ReconBuilder-Setup.exe"),
+            None,
+        )
+        if exe_asset is not None:
+            installer_url = str(exe_asset.get("browser_download_url", ""))
+            if not installer_url:
+                installer_url = None
+    return RollbackRelease(
+        version=version,
+        tag=tag,
+        html_url=str(release.get("html_url", "")),
+        installer_url=installer_url,
+    )
+
+
 def latest_installers() -> InstallerDownloads:
     """Find the current macOS and Windows installers on the latest release.
 
