@@ -145,6 +145,7 @@ class ReconApp(tk.Tk):
         self._refresh_history()
         self.after(1500, self._check_updates_silently)
         self.after(1800, self._refresh_installer_downloads)
+        self.after(2000, self._check_rollback_release)
 
     def _maximize_window(self) -> None:
         try:
@@ -258,6 +259,13 @@ class ReconApp(tk.Tk):
             font=("Helvetica", 9, "bold"),
         )
         self._release_status_label.grid(row=2, column=0, sticky="w", pady=(8, 0))
+        self._rollback_image = self._load_rollback_icon()
+        self._rollback_button = ttk.Button(
+            header, text="Rollback", image=self._rollback_image,
+            compound="left", command=self._on_rollback_button,
+            state="disabled",
+        )
+        self._rollback_button.grid(row=2, column=1, sticky="e", padx=(24, 0))
         ttk.Label(
             header, text="Powered By DevOps", background="#102A43",
             foreground="#C7D8E7", font=("Helvetica", 10, "bold"),
@@ -586,43 +594,7 @@ class ReconApp(tk.Tk):
             text="Untuk update aplikasi yang sedang digunakan, gunakan tombol Update di bagian atas.",
             wraplength=900,
         ).grid(row=4, column=0, sticky="w", pady=(20, 0))
-
-        separator = ttk.Separator(frame, orient="horizontal")
-        separator.grid(row=5, column=0, sticky="ew", pady=(24, 12))
-
-        ttk.Label(
-            frame,
-            text="Rollback ke Versi Sebelumnya",
-            font=("Helvetica", 13, "bold"),
-        ).grid(row=6, column=0, sticky="w", pady=(0, 8))
-        ttk.Label(
-            frame,
-            text=(
-                "Jika mengalami masalah dengan versi terbaru, unduh "
-                "dan pasang kembali versi sebelumnya."
-            ),
-            wraplength=900,
-        ).grid(row=7, column=0, sticky="w", pady=(0, 12))
-
-        rollback_row = ttk.Frame(frame)
-        rollback_row.grid(row=8, column=0, sticky="w")
-        self._rollback_image = self._load_rollback_icon()
-        self._rollback_button = ttk.Button(
-            rollback_row,
-            text="Rollback",
-            image=self._rollback_image,
-            compound="left",
-            command=self._on_rollback_button,
-            state="disabled",
-        )
-        self._rollback_button.pack(side="left", padx=(0, 10))
-        ttk.Label(
-            rollback_row,
-            textvariable=self._rollback_status,
-            wraplength=800,
-        ).pack(side="left")
         self.notebook.add(frame, text="Download Aplikasi")
-        self._check_rollback_release()
 
     def _refresh_installer_downloads(self) -> None:
         self._installer_download_status.set("Mengambil tautan installer terbaru…")
@@ -723,16 +695,16 @@ class ReconApp(tk.Tk):
 
     def _rollback_loaded(self, info: RollbackRelease | None) -> None:
         self._rollback_info = info
-        if info is None:
-            self._rollback_status.set("Versi sebelumnya tidak ditemukan.")
-            if self._rollback_button is not None:
-                self._rollback_button.configure(state="disabled")
-            return
-        self._rollback_status.set(
-            f"v{info.version} — klik tombol untuk mengunduh"
-        )
         if self._rollback_button is not None:
-            self._rollback_button.configure(state="normal")
+            if info is None:
+                self._rollback_button.configure(
+                    state="disabled", text="Rollback"
+                )
+            else:
+                self._rollback_button.configure(
+                    state="normal",
+                    text=f"Rollback v{info.version}",
+                )
 
     def _on_rollback_button(self) -> None:
         info = self._rollback_info
@@ -1548,6 +1520,7 @@ class ReconApp(tk.Tk):
             return
         if self._update_info is None:
             self._check_for_updates(silent=False)
+            self._check_rollback_release()
             return
         release = self._update_info
         if not messagebox.askyesno(
