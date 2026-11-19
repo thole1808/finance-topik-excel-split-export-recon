@@ -176,13 +176,13 @@ def _transaction_status_sort_key(row: Mapping[str, Any]) -> int:
 
 def _status_highlight(status: Any) -> dict[str, Any] | None:
     normalized = _transaction_status(status)
+    if not normalized:
+        return None
     colors = {
         "SUCCESS": ("#C6EFCE", "#006100"),
         "FAILED": ("#FFC7CE", "#9C0006"),
     }
-    color = colors.get(normalized)
-    if color is None:
-        return None
+    color = colors.get(normalized, ("#FFEB9C", "#9C6500"))
     return {
         "bg_color": color[0],
         "font_color": color[1],
@@ -1070,9 +1070,11 @@ def _write_wide_sheet(
             }
 
         for column in range(1, output_max_column + 1):
+            # Both the recon "Transaction Status" columns and the vendor
+            # "Status" columns get the default green/red status fill.
             status_columns = (
-                {12, 51} if sheet == "LB"
-                else {12, 61}
+                {12, 27, 51, 62} if sheet == "LB"
+                else {12, 29, 45, 61}
             )
             if sheet == "LB":
                 is_main_column = 1 <= column <= 19
@@ -1089,28 +1091,17 @@ def _write_wide_sheet(
             )
             if is_main_column or is_current_source_column:
                 value = current_day_values.get(column)
-                status_row = current_day_record
-                has_status_row = status_row is not None
             elif is_tomorrow_column:
                 value = tomorrow_values.get(
                     column - tomorrow_recon_start + 1
                 )
-                status_row = tomorrow_record
-                has_status_row = status_row is not None
             elif is_tomorrow_source_column:
                 value = tomorrow_values.get(column)
-                status_row = tomorrow_record
-                has_status_row = status_row is not None
             else:
                 value = None
-                status_row = None
-                has_status_row = False
             row_highlight = (
-                _status_highlight(status_row.get("status"))
-                if (
-                    column in status_columns
-                    or (sheet == "LB" and column == 51)
-                ) and has_status_row
+                _status_highlight(value)
+                if column in status_columns and value is not None
                 else None
             )
             formula_data = formulas.get(column)
