@@ -174,22 +174,6 @@ def _transaction_status_sort_key(row: Mapping[str, Any]) -> int:
     return {"SUCCESS": 0, "FAILED": 1}.get(status, 2)
 
 
-def _status_highlight(status: Any) -> dict[str, Any] | None:
-    normalized = _transaction_status(status)
-    if not normalized:
-        return None
-    colors = {
-        "SUCCESS": ("#C6EFCE", "#006100"),
-        "FAILED": ("#FFC7CE", "#9C0006"),
-    }
-    color = colors.get(normalized, ("#FFEB9C", "#9C6500"))
-    return {
-        "bg_color": color[0],
-        "font_color": color[1],
-        "pattern": 1,
-    }
-
-
 def _status_text(value: Any) -> str:
     cleaned = _clean(value)
     return str(cleaned).strip().upper() if cleaned is not None else ""
@@ -1070,12 +1054,6 @@ def _write_wide_sheet(
             }
 
         for column in range(1, output_max_column + 1):
-            # Both the recon "Transaction Status" columns and the vendor
-            # "Status" columns get the default green/red status fill.
-            status_columns = (
-                {12, 27, 51, 62} if sheet == "LB"
-                else {12, 29, 45, 61}
-            )
             if sheet == "LB":
                 is_main_column = 1 <= column <= 19
                 is_current_source_column = 21 <= column <= 37
@@ -1099,11 +1077,6 @@ def _write_wide_sheet(
                 value = tomorrow_values.get(column)
             else:
                 value = None
-            row_highlight = (
-                _status_highlight(value)
-                if column in status_columns and value is not None
-                else None
-            )
             formula_data = formulas.get(column)
             date_columns = (
                 {1, 21, 40, 56} if sheet == "LB"
@@ -1126,10 +1099,7 @@ def _write_wide_sheet(
                 formula=formula_data[0] if formula_data else None,
                 cached_value=formula_data[1] if formula_data else None,
                 format_cache=format_cache,
-                format_overrides={
-                    **(cell_overrides or {}),
-                    **(row_highlight or {}),
-                } or None,
+                format_overrides=cell_overrides or None,
             )
         if excel_row in subtotal_rows:
             first_data_row, last_data_row, status_rows = subtotal_rows[excel_row]
