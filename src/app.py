@@ -134,6 +134,7 @@ class ReconApp(tk.Tk):
         self._rollback_button: ttk.Button | None = None
         self._rollback_status = tk.StringVar(value="Mencari versi sebelumnya…")
         self._rollback_image: tk.PhotoImage | None = None
+        self._rollback_prompt_pending = False
         self._update_info: UpdateRelease | None = None
         self._update_checking = False
         self._build_ui()
@@ -666,17 +667,27 @@ class ReconApp(tk.Tk):
             )
 
     def _load_rollback_icon(self) -> tk.PhotoImage | None:
-        if getattr(sys, "frozen", False):
-            image_path = Path(sys._MEIPASS) / "assets" / "rollback.png"
-        else:
-            image_path = (
-                Path(__file__).resolve().parent.parent
-                / "assets" / "rollback.png"
-            )
-        try:
-            return tk.PhotoImage(file=str(image_path))
-        except Exception:
-            return None
+        candidates: list[Path] = []
+        bundle_root = getattr(sys, "_MEIPASS", None)
+        if bundle_root:
+            root = Path(bundle_root)
+            candidates.append(root / "assets" / "rollback.png")
+            candidates.append(root.parent / "Resources" / "assets" / "rollback.png")
+        executable = Path(sys.executable).resolve()
+        for parent in executable.parents[:5]:
+            candidates.append(parent / "Resources" / "assets" / "rollback.png")
+            candidates.append(parent / "assets" / "rollback.png")
+        candidates.append(
+            Path(__file__).resolve().parent.parent / "assets" / "rollback.png"
+        )
+        for image_path in candidates:
+            if not image_path.is_file():
+                continue
+            try:
+                return tk.PhotoImage(file=str(image_path))
+            except Exception:
+                continue
+        return None
 
     def _check_rollback_release(self) -> None:
         self._rollback_info = None
@@ -707,6 +718,15 @@ class ReconApp(tk.Tk):
                     state="normal",
                     text=f"Rollback v{info.version}",
                 )
+        if getattr(self, "_rollback_prompt_pending", False):
+            self._rollback_prompt_pending = False
+            if info is not None:
+                self._offer_rollback(info)
+            elif self._update_info is None:
+                messagebox.showinfo(
+                    "Aplikasi terbaru",
+                    f"Auto Recon Biller v{__version__} sudah versi terbaru.",
+                )
 
     def _on_rollback_button(self) -> None:
         info = self._rollback_info
@@ -716,8 +736,8 @@ class ReconApp(tk.Tk):
         if not messagebox.askyesno(
             "Rollback ke versi sebelumnya",
             f"Ingin kembali ke Auto Recon Biller v{info.version}?\n\n"
-            "Aplikasi akan ditutup, mengunduh v{info.version}, "
-            "dan membuka kembali setelah proses rollback selesai.",
+            "Aplikasi akan ditutup, mengunduh "
+            f"v{info.version}, dan membuka kembali setelah proses rollback selesai.",
         ):
             self.audit.record(
                 self.operator, "rollback_declined", version=info.version
@@ -1598,35 +1618,38 @@ class ReconApp(tk.Tk):
         ).start()
 
     def _auto_rollback_if_no_update(self) -> None:
-        """When no newer release exists, automatically offer rollback."""
-        if self._update_info is None:
-            return
+        """When no newer release exists, offer rollback to the previous release."""
         if self._rollback_info is not None:
-            info = self._rollback_info
-            if not messagebox.askyesno(
-                "Rollback ke versi sebelumnya",
-                f"Auto Recon Biller v{__version__} sudah versi terbaru.\n\n"
-                f"Ingin kembali ke v{info.version}?\n\n"
-                "Aplikasi akan ditutup, mengunduh v{info.version}, "
-                "dan membuka kembali setelah proses rollback.",
-            ):
-                self.audit.record(
-                    self.operator, "rollback_declined", version=info.version
-                )
-                return
-            self._busy = True
-            self._update_button.configure(
-                state="disabled", text=f"Mengunduh v{info.version}…"
-            )
-            self._terminal_write(f"Mengunduh rollback ke v{info.version}…")
+            self._offer_rollback(self._rollback_info)
+            return
+        self._rollback_prompt_pending = True
+        self._check_rollback_release()
+
+    def _offer_rollback(self, info: RollbackRelease) -> None:
+        if not messagebox.askyesno(
+            "Rollback ke versi sebelumnya",
+            f"Auto Recon Biller v{__version__} sudah versi terbaru.\n\n"
+            f"Ingin kembali ke v{info.version}?\n\n"
+            "Aplikasi akan ditutup, mengunduh "
+            f"v{info.version}, dan membuka kembali setelah proses rollback.",
+        ):
             self.audit.record(
-                self.operator, "rollback_started", version=info.version
+                self.operator, "rollback_declined", version=info.version
             )
-            threading.Thread(
-                target=self._download_and_start_rollback,
-                args=(info,),
-                daemon=True,
-            ).start()
+            return
+        self._busy = True
+        self._update_button.configure(
+            state="disabled", text=f"Mengunduh v{info.version}…"
+        )
+        self._terminal_write(f"Mengunduh rollback ke v{info.version}…")
+        self.audit.record(
+            self.operator, "rollback_started", version=info.version
+        )
+        threading.Thread(
+            target=self._download_and_start_rollback,
+            args=(info,),
+            daemon=True,
+        ).start()
 
     def _check_for_updates(self, *, silent: bool) -> None:
         if self._update_checking or self._busy:

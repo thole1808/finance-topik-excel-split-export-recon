@@ -1,6 +1,6 @@
 # Versi aplikasi dan konteks untuk agent
 
-**Versi saat ini: 1.2.58**
+**Versi saat ini: 1.2.59**
 
 Sumber versi tunggal: [`src/version.py`](../src/version.py).
 
@@ -595,6 +595,7 @@ serta stack teknologi aktual di `docs/technology-stack/` (SVG, PNG, dan JPG).
 
 ## Riwayat versi ringkas
 
+| 1.2.59 | Perbaiki tombol Periksa Update agar dialog rollback selalu muncul saat aplikasi sudah versi terbaru (sebelumnya dialog tidak tampil). Tombol Rollback dengan gambar di header kini memuat ikon dari bundle aplikasi dengan fallback path, lalu mengunduh dan memasang versi sebelumnya otomatis. |
 | 1.2.58 | Hapus pewarnaan background hijau/merah pada kolom status di sheet LB dan RB. Sel status kini tampil polos mengikuti style template, tanpa fill warna. |
 | 1.2.57 | Warna default hijau/merah pada kolom status di sheet LB dan RB. Kolom Transaction Status (12/51 di LB, 12/61 di RB) dan kolom Status vendor (27/62 di LB, 29/45 di RB) kini otomatis berwarna: SUCCESS hijau, FAILED merah, status lain kuning. Update aplikasi tetap lewat tombol Periksa Update. |
 | 1.2.56 | Perbaiki bug sheet RB agar kolom 'Vendor RB for tomorrow because different time' tidak kosong. Filter RB sebelumnya menghapus transaksi 23:00+ karena kolom BO Biller kosong; kini transaksi masa depan dikecualikan dari filter sehingga data vendor tetap tampil, konsisten dengan layout LB. Tambah tombol Rollback dengan picture di tab Download Aplikasi untuk mengunduh versi sebelumnya (v1.2.55). |
